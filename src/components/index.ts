@@ -2,38 +2,41 @@
 // SPDX-FileCopyrightText: 2026 the Mosaic authors
 
 /*
- * The component catalogue. Importing this module registers every built-in node
- * type into the SDUI registry. Three tiers register here, in order:
+ * The component catalogue. Two tiers register here:
  *
- *   1. Primitives      — the irreducible building blocks (Box/Text/Image/…).
- *   2. Native components — containers + interactive controls that carry state
- *                          or behaviour, so they can't be pure primitive trees.
- *   3. Definitions     — presentational components expressed AS primitive trees
- *                        (PosterCard so far; step B moves the rest here).
+ *   1. PRIMITIVES — the irreducible, client-provided vocabulary. This is the
+ *      only native code, and it is the tech-agnostic contract each client (web,
+ *      Flutter) implements. Presentational (Box/Text/Image/Icon/Spacer/Fragment/
+ *      Outlet), interactive/stateful (Pressable + the form inputs, Tabs, Menu,
+ *      RatingControl, SeasonSelector), and computed/animated (ProgressBar,
+ *      Skeleton) leaves that a static data tree genuinely cannot express.
  *
- * A module extends any tier: register() a native component, or defineComponent()
- * a definition delivered as data.
+ *   2. DEFINITIONS — every *composition*, expressed as primitive trees
+ *      (definitions.ts + definitions.layout.ts). There are no hand-coded
+ *      component "holdouts": if it composes primitives, it is data. A module
+ *      contributes the same way (mock/moduleComponents.ts).
  */
 
 import { registerAll } from "@/sdui/registry";
 import { defineComponents } from "@/sdui/template";
 
 import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives";
-import { Screen, Section, Carousel, Grid, Stack, Tabs, Divider } from "./layout";
-import { Menu, SearchBar, TextField, Toggle, Select, Slider, RatingControl, ProgressBar, Pagination } from "./controls";
-import { SeasonSelector, RelatedRail } from "./media";
-import { Skeleton, ErrorState } from "./feedback";
+import { Tabs } from "./layout";
+import { Menu, SearchBar, TextField, Toggle, Select, Slider, RatingControl, ProgressBar } from "./controls";
+import { SeasonSelector } from "./media";
+import { Skeleton } from "./feedback";
 import { PLATFORM_DEFINITIONS } from "./definitions";
+import { LAYOUT_DEFINITIONS } from "./definitions.layout";
 
 let installed = false;
 
-/** Idempotently register all built-in components. Call once at boot. */
+/** Idempotently register the vocabulary + all definitions. Call once at boot. */
 export function installComponents(): void {
   if (installed) return;
   installed = true;
 
   registerAll({
-    // 1. primitives
+    // 1. primitives — presentational
     Box,
     Text,
     Image,
@@ -43,17 +46,8 @@ export function installComponents(): void {
     Fragment,
     Outlet,
 
-    // 2. native — layout containers
-    Screen,
-    Section,
-    Carousel,
-    Grid,
-    Stack,
+    // 1. primitives — interactive / stateful (own their state)
     Tabs,
-    Divider,
-
-    // 2. native — interactive controls (state). Button/IconButton are now
-    // definitions.
     Menu,
     SearchBar,
     TextField,
@@ -61,21 +55,13 @@ export function installComponents(): void {
     Select,
     Slider,
     RatingControl,
-    ProgressBar,
-    Pagination,
-
-    // 2. native — media. SeasonSelector holds selection state; RelatedRail
-    // branches on child count. Everything else presentational moved to
-    // definitions.
     SeasonSelector,
-    RelatedRail,
 
-    // 2. native — feedback. Skeleton (keyframe animation) and ErrorState
-    // (category→tone mapping) stay native.
+    // 1. primitives — computed / animated
+    ProgressBar,
     Skeleton,
-    ErrorState,
   });
 
-  // 3. definitions — presentational components built from primitives.
-  defineComponents(PLATFORM_DEFINITIONS);
+  // 2. definitions — every composition, as data.
+  defineComponents([...PLATFORM_DEFINITIONS, ...LAYOUT_DEFINITIONS]);
 }

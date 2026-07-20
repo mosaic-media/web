@@ -57,11 +57,25 @@ export type GradientStop = ColorToken | "transparent";
 
 /** Layout + box styling for the Box primitive. All values are tokens/enums. */
 export interface BoxStyle {
+  /** Layout mode. "grid" enables the grid-* fields (Flutter: GridView). */
+  layout?: "flex" | "grid";
   direction?: "row" | "column";
   gap?: SpaceToken;
   align?: Align;
   justify?: Justify;
   wrap?: boolean;
+
+  /** grid: responsive auto-fill columns of at least this width (px). */
+  gridMin?: number;
+  /** grid: flow direction — "column" makes a horizontal rail. */
+  gridFlow?: "row" | "column";
+  /** grid: fixed track size for a rail (px). */
+  gridAutoColumns?: number;
+
+  /** Horizontal scroll + snap, for carousels. */
+  overflowX?: "auto" | "hidden" | "visible";
+  snap?: "x" | "y";
+  snapAlign?: "start" | "center";
 
   p?: SpaceToken;
   px?: SpaceToken;
@@ -139,15 +153,23 @@ const dim = (d?: Dimension): string | undefined => {
 
 /** Translate a token-based BoxStyle into concrete web CSS. */
 export function boxToCss(s: BoxStyle): CSSProperties {
-  const css: CSSProperties = {
-    display: "flex",
-    flexDirection: s.direction === "row" ? "row" : "column",
-    boxSizing: "border-box",
-  };
+  const css: CSSProperties = { boxSizing: "border-box" };
+  if (s.layout === "grid") {
+    css.display = "grid";
+    if (s.gridMin !== undefined) css.gridTemplateColumns = `repeat(auto-fill, minmax(${s.gridMin}px, 1fr))`;
+    if (s.gridFlow) css.gridAutoFlow = s.gridFlow;
+    if (s.gridAutoColumns !== undefined) css.gridAutoColumns = `${s.gridAutoColumns}px`;
+  } else {
+    css.display = "flex";
+    css.flexDirection = s.direction === "row" ? "row" : "column";
+    if (s.align) css.alignItems = ALIGN[s.align];
+    if (s.justify) css.justifyContent = JUSTIFY[s.justify];
+    if (s.wrap) css.flexWrap = "wrap";
+  }
   if (s.gap !== undefined) css.gap = space(s.gap);
-  if (s.align) css.alignItems = ALIGN[s.align];
-  if (s.justify) css.justifyContent = JUSTIFY[s.justify];
-  if (s.wrap) css.flexWrap = "wrap";
+  if (s.overflowX) css.overflowX = s.overflowX;
+  if (s.snap) css.scrollSnapType = `${s.snap} proximity`;
+  if (s.snapAlign) css.scrollSnapAlign = s.snapAlign;
 
   if (s.p !== undefined) css.padding = space(s.p);
   if (s.px !== undefined) {

@@ -170,7 +170,16 @@ const browse: UINode = {
         posterCard("Blade Runner 2049", "Film"),
       ],
     },
-    { type: "Pagination", props: { page: 1, pages: 6, screen: "browse" } },
+    {
+      type: "Pagination",
+      props: {
+        label: "1 / 6",
+        hasPrev: false,
+        hasNext: true,
+        prevAction: { kind: "navigate", screen: "browse", params: { page: 0 } },
+        nextAction: { kind: "navigate", screen: "browse", params: { page: 2 } },
+      },
+    },
   ],
 };
 

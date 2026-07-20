@@ -220,24 +220,5 @@ export function ProgressBar({ node }: { node: UINode }) {
   );
 }
 
-/** Pagination — page dots / prev-next; emits navigate actions carrying page. */
-export function Pagination({ node }: { node: UINode }) {
-  const { emit } = useRuntime();
-  const page = prop<number>(node, "page", 1);
-  const pages = prop<number>(node, "pages", 1);
-  const screen = prop<string>(node, "screen", "");
-  const go = (p: number) => screen && emit({ kind: "navigate", screen, params: { page: p } });
-  return (
-    <nav className="msc-pagination" aria-label="Pagination">
-      <button className="msc-iconbtn msc-iconbtn--ghost" disabled={page <= 1} aria-label="Previous" onClick={() => go(page - 1)}>
-        <Icon name="chevron-right" style={{ transform: "rotate(180deg)" }} />
-      </button>
-      <span className="msc-pagination__label">
-        {page} / {pages}
-      </span>
-      <button className="msc-iconbtn msc-iconbtn--ghost" disabled={page >= pages} aria-label="Next" onClick={() => go(page + 1)}>
-        <Icon name="chevron-right" />
-      </button>
-    </nav>
-  );
-}
+// Pagination is now a definition (server supplies prev/next actions) — see
+// components/definitions.layout.ts.

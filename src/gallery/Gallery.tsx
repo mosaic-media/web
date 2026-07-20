@@ -111,7 +111,7 @@ const GROUPS: Group[] = [
       { name: "Slider", node: { type: "Slider", props: { label: "Result limit", min: 5, max: 100, value: 40 } } },
       { name: "RatingControl", node: { type: "RatingControl", props: { value: 4 } } },
       { name: "ProgressBar", node: { type: "ProgressBar", props: { value: 0.4 } } },
-      { name: "Pagination", node: { type: "Pagination", props: { page: 2, pages: 6, screen: "browse" } } },
+      { name: "Pagination", node: { type: "Pagination", props: { label: "2 / 6", hasPrev: true, hasNext: true, prevAction: { kind: "toast", message: "Prev" }, nextAction: { kind: "toast", message: "Next" } } } },
     ],
   },
   {

@@ -132,7 +132,14 @@ function expandNode(tmpl: UINode, args: Args, host: UINode): UINode[] {
  */
 export function defineComponent(def: ComponentDefinition): void {
   register(def.name, ({ node }): ReactElement => {
-    const args: Args = { ...(def.params ?? {}), ...(node.props ?? {}) };
+    const args: Args = {
+      ...(def.params ?? {}),
+      ...(node.props ?? {}),
+      // Injected: lets a template branch on what the caller handed it, e.g.
+      // $if: { $bind: "$childCount" } for an empty-vs-populated rail.
+      $childCount: node.children?.length ?? 0,
+      $slots: node.slots ? Object.keys(node.slots) : [],
+    };
     const expanded = expandNode(def.template, args, node);
     return (
       <>
