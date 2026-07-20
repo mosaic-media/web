@@ -21,6 +21,7 @@ import { registerAll } from "../sdui/registry";
 import { defineComponents } from "../sdui/template";
 
 import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives";
+import { AppShell, NavItem } from "./shell";
 import { Tabs } from "./layout";
 import { TextInput, Switch, SelectInput, Menu, SearchBar, Slider, RatingControl, ProgressBar, ProgressRing } from "./controls";
 import { SeasonSelector } from "./media";
@@ -45,6 +46,10 @@ export function installComponents(): void {
     Spacer,
     Fragment,
     Outlet,
+
+    // 1. primitives — the server-emitted app frame (ADR 0031)
+    AppShell,
+    NavItem,
 
     // 1. primitives — interactive / stateful (own their state)
     Tabs,
