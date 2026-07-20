@@ -56,7 +56,13 @@ export function App() {
       <div className="msc-app">
         <aside className="msc-sidebar">
           <div className="msc-sidebar__brand">
-            <span className="msc-sidebar__logo" aria-hidden />
+            <img
+              className="msc-sidebar__logo"
+              src={`${import.meta.env.BASE_URL}mosaic-icon-${theme}.png`}
+              alt="Mosaic"
+              width={30}
+              height={30}
+            />
             <span className="msc-sidebar__name">Mosaic</span>
           </div>
           <nav className="msc-sidebar__nav">
