@@ -37,7 +37,7 @@ export function App() {
       <div className="sb">
         <aside className="sb-side">
           <div className="sb-brand">
-            <span className="sb-logo" aria-hidden />
+            <img className="sb-logo" src={`${import.meta.env.BASE_URL}mosaic-icon-${theme}.png`} alt="Mosaic" width={32} height={32} />
             <div>
               <div className="sb-brand__name">Mosaic SDUI</div>
               <div className="sb-brand__sub">Component storybook</div>
