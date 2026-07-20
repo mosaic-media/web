@@ -13,49 +13,30 @@ The Platform (and its optional modules) decide *what* to show. The Shell only de
 
 ## Architecture
 
-Only two kinds of thing exist (see "The component model" below): a small set of
-native **primitives**, and **definitions** — everything else, as data.
+The Shell is now a **thin app** on top of a shared runtime. The whole SDUI
+renderer — primitives, registry, recursive renderer, definition expander, runtime
+provider, and the token-driven skin — lives in
+[`@mosaic-media/sdui-react`](https://github.com/mosaic-media/mosaic-sdui-react)
+(its own repo). This repo holds only the application: chrome, routing, and the
+mock payloads it renders until the Platform emits real ones.
 
 ```
 src/
-  sdui/                 the runtime — framework-agnostic in spirit
-    types.ts            UINode + Action envelope (the wire contract)
-    style.ts            token-only style vocabulary (BoxStyle/TextStyle) → CSS
-    registry.tsx        type string → React component
-    Renderer.tsx        recursive tree walker (RenderNode / Children / Slot)
-    template.tsx        ComponentDefinition + expander ($bind/$match/$each/…)
-    context.tsx         ShellRuntime handed to every component
-    ShellProvider.tsx   interprets every Action; owns overlays + toasts
-  components/
-    ── PRIMITIVES (the only native code — the cross-client contract) ──
-    primitives.tsx      Box, Text, Image, Icon, Pressable, Spacer, Fragment, Outlet
-    controls.tsx        TextInput, Switch, SelectInput, Menu, SearchBar, Slider,
-                        RatingControl, ProgressBar (own state / computed output)
-    layout.tsx          Tabs (owns selection + panels)
-    media.tsx           SeasonSelector (owns selection)
-    feedback.tsx        Skeleton (keyframe animation)
-    ── DEFINITIONS (every composition, as data) ──
-    definitions.ts      PosterCard, HeroBanner, EpisodeRow, DetailHeader,
-                        PersonChip, GenreTag, SourcePicker, PlaybackBar, Button,
-                        IconButton, Badge, Banner, StatusIndicator, EmptyState,
-                        TextField, Toggle, Select
-    definitions.layout.ts  Screen, Section, Stack, Grid, Carousel, Divider,
-                        Pagination, ErrorState, RelatedRail
-    ──
-    host.tsx            OverlayHost + ToastHost (mounted once by the Shell)
-    index.ts            installComponents() — registers primitives + definitions
-  styles/
-    tokens.css          THE design seam — colours, spacing, radii, type, motion
-    global.css          reset + base
-    components.css       skin for the native primitives (definitions style inline from tokens)
+  main.tsx              installComponents() from @mosaic-media/sdui-react; mounts App
+  App.tsx               the chrome: sidebar + topbar + tiny screen router
   mock/screens.ts       sample SDUI payloads (home, detail, browse, search, settings)
   mock/moduleComponents.ts  a simulated module contributing components as data
   gallery/Gallery.tsx   live component gallery — every tile is a real UINode
-  lib/platform.ts       GraphQL client (errors normalised to Platform categories)
-  App.tsx               the chrome: sidebar + topbar + tiny screen router
 ```
 
+Dependencies: `@mosaic-media/sdui-react` (the renderer) — which brings the
+component vocabulary and the skin (`@mosaic-media/sdui-react/styles.css`). Browse
+every component live at the
+[storybook](https://mosaic-media.github.io/mosaic-storybook/).
+
 ### The component model
+
+The renderer's model (implemented in `@mosaic-media/sdui-react`, [ADR 0024](https://github.com/mosaic-media/mosaic-architecture/blob/main/docs/adr/0024-primitives-and-definitions.md)):
 
 The key idea for a multi-client, module-extensible UI: **there are no hand-coded
 component "holdouts."** If it composes primitives, it is data. The only native
@@ -64,24 +45,24 @@ Flutter) implements.
 
 1. **Primitives** — the irreducible leaves. Presentational ones (`Box`/`Text`/
    `Image`/`Icon`/`Pressable`/`Spacer`) take a *token-only* style vocabulary
-   (`sdui/style.ts`) — flex/grid, spacing/colour/radius/type tokens, no raw
+   — flex/grid, spacing/colour/radius/type tokens, no raw
    px/hex, no `:hover`. Deliberately the **web ∩ Flutter** intersection, so the
    same node renders on any client. The rest are native only for a concrete
    reason a static tree can't overcome — a widget owns local state (inputs,
    `Tabs`, `Menu`), its output couples to that state (`Slider` shows its value,
    `SearchBar`'s submit carries the term), or it's computed/animated
    (`ProgressBar`, `Skeleton`).
-2. **Definitions** — *everything else*, expressed as primitive trees
-   (`sdui/template.tsx`). This is what a **module** ships: a `ComponentDefinition`
-   is data — a name, params, and a template — registered via `defineComponent`,
-   at build time or delivered at runtime. Template markers: `{$bind}` (dot
-   paths), `{$match}` (enum→value), `$if`/`$ifNot`, `$each` (iteration),
-   `Outlet` (children/slot passthrough), and injected `$childCount`.
+2. **Definitions** — *everything else*, expressed as primitive trees. This is
+   what a **module** ships: a `ComponentDefinition` is data — a name, params, and
+   a template — registered via `defineComponent`, at build time or delivered at
+   runtime. Template markers: `{$bind}` (dot paths), `{$match}` (enum→value),
+   `$if`/`$ifNot`, `$each` (iteration), `Outlet` (children/slot passthrough), and
+   injected `$childCount`.
 
-`components/definitions*.ts` rebuild the Shell's *own* components this way —
-containers included — the proof the vocabulary is expressive enough for a module
-to build any look from data. `mock/moduleComponents.ts` simulates a module doing
-exactly that (`module.StatChip`, `module.Panel`). Open the **Components** gallery
+The runtime rebuilds *its own* components this way — containers included — the
+proof the vocabulary is expressive enough for a module to build any look from
+data. This repo's `mock/moduleComponents.ts` simulates a module doing exactly
+that. Open the **Components** gallery (or the [storybook](https://mosaic-media.github.io/mosaic-storybook/))
 to see it live.
 
 **Known boundaries** (each maps to a future vocab addition): definitions drop
