@@ -107,7 +107,14 @@ compatibility by construction.
   is a future Platform module (Remote Media). The Shell only expresses intent.
 - **Module settings** (`settings` screen) demonstrate the form controls backing
   ADR 0021's user-managed, opaque module settings.
-- **Licensing** is not yet chosen for this repo — decide before first publish
-  (the Platform is AGPL-3.0, the SDK Apache-2.0, modules MIT; a GraphQL client
-  is a separate question). No `LICENSE` file is committed yet on purpose.
+## Licensing
+
+**AGPL-3.0-only** (see [`LICENSE`](LICENSE)); every source file carries an SPDX
+header. This applies [ADR 0022](https://github.com/mosaic-media/mosaic-architecture/blob/main/docs/adr/0022-licensing.md):
+the shell is a **first-party client**, part of the protected product, so it
+matches the Platform's copyleft — as Jellyfin, Nextcloud and Immich all license
+their official clients. It carries **no** Module Linking Exception (that frees
+compiled-in modules; the shell links nothing into the Platform). The
+technology-agnostic SDUI *contract*, when extracted, stays permissive like the
+SDK — so third-party clients (in any language, any license) remain possible.
 ```

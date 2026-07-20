@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * The component registry — the heart of the SDUI loop. A `type` string in the
  * server payload resolves to a React component here. Registering a component is

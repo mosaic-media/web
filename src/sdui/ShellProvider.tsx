@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * ShellProvider wires the runtime: it owns overlay + toast state, forwards
  * navigation to the host, and interprets every Action kind. It is the one place

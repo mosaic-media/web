@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * Thin GraphQL client for the Mosaic Platform (default :8081/graphql, proxied
  * through Vite in dev). This is intentionally minimal — the Shell skeleton

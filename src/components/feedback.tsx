@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * Feedback & state components. The parts a media UI forgets until they hurt:
  * loading skeletons, empty states, error states (mapped to Platform error

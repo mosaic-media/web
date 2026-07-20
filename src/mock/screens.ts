@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * Mock SDUI payloads. These are exactly the shape the Platform will send: trees
  * of UINodes with Action envelopes. The Shell renders them with zero knowledge

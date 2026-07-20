@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * The component catalogue. Importing this module registers every built-in node
  * type into the SDUI registry. A module or future package can call register()

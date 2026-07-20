@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * Host renderers for ambient surfaces the ShellProvider owns: the overlay stack
  * (modal / sheet / drawer) and the toast stack. These aren't in the registry —

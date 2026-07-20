@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * Runtime context handed to every rendered component: how to dispatch actions,
  * and access to whatever ambient services the Shell provides (navigation,

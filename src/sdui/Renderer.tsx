@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * The recursive renderer. Give it a UINode (or a list) and it walks the tree,
  * resolving each node's `type` through the registry. Components pull their own

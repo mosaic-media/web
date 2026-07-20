@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * Small cross-component helpers: a classnames joiner, the action-emit hook, and
  * a compact inline SVG icon set (no external icon font — the Shell ships zero

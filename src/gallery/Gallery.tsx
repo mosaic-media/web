@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * A lightweight component gallery — a Storybook-lite. Every entry is a real
  * UINode rendered through the real registry, so this page doubles as living

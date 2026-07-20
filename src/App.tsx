@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * The Shell chrome: a persistent sidebar + topbar wrapping a routed, server-
  * defined screen. Routing here is intentionally tiny (a screen-name stack) —

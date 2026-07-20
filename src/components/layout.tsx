@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * Layout primitives. These are the container node types: they know nothing
  * about media, they only arrange children (and named slots). Everything else in

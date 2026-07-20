@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-FileCopyrightText: 2026 the Mosaic authors
+
 /*
  * Rendered when the registry has no component for a node's `type`. This is the
  * forward-compatibility guarantee: an old Shell shown a new node type degrades
