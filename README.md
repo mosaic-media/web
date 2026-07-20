@@ -13,33 +13,75 @@ The Platform (and its optional modules) decide *what* to show. The Shell only de
 
 ## Architecture
 
+Components sort into three tiers (see "The component model" below):
+
 ```
 src/
   sdui/                 the runtime — framework-agnostic in spirit
     types.ts            UINode + Action envelope (the wire contract)
+    style.ts            token-only style vocabulary (BoxStyle/TextStyle) → CSS
     registry.tsx        type string → React component
     Renderer.tsx        recursive tree walker (RenderNode / Children / Slot)
+    template.tsx        ComponentDefinition + expander ($bind/$match/$each/…)
     context.tsx         ShellRuntime handed to every component
     ShellProvider.tsx   interprets every Action; owns overlays + toasts
   components/
-    layout.tsx          Screen, Section, Carousel, Grid, Stack, Tabs, Divider, Spacer
-    controls.tsx        Button, IconButton, Menu, SearchBar, TextField, Toggle,
+    primitives.tsx      TIER 1 — Box, Text, Image, Icon, Pressable, Spacer,
+                        Fragment, Outlet (the irreducible building blocks)
+    definitions.ts      TIER 3 — presentational components AS primitive trees:
+                        PosterCard, HeroBanner, EpisodeRow, DetailHeader,
+                        PersonChip, GenreTag, SourcePicker, PlaybackBar, Button,
+                        IconButton, Badge, Banner, StatusIndicator, EmptyState
+    layout.tsx          TIER 2 native — Screen, Section, Carousel, Grid, Stack,
+                        Tabs, Divider (CSS grid / scroll-snap / state)
+    controls.tsx        TIER 2 native — Menu, SearchBar, TextField, Toggle,
                         Select, Slider, RatingControl, ProgressBar, Pagination
-    media.tsx           PosterCard, HeroBanner, EpisodeRow, DetailHeader,
-                        SeasonSelector, RelatedRail, SourcePicker, PlaybackBar,
-                        PersonChip, GenreTag
-    feedback.tsx        Skeleton, EmptyState, ErrorState, Banner, Badge, StatusIndicator
+    media.tsx           TIER 2 native — SeasonSelector, RelatedRail
+    feedback.tsx        TIER 2 native — Skeleton, ErrorState
     host.tsx            OverlayHost + ToastHost (mounted once by the Shell)
-    index.ts            installComponents() — registers the whole vocabulary
+    index.ts            installComponents() — registers all three tiers
   styles/
     tokens.css          THE design seam — colours, spacing, radii, type, motion
     global.css          reset + base
-    components.css       the skin (every class reads a token, nothing hardcoded)
+    components.css       skin for the native tiers (primitives style inline from tokens)
   mock/screens.ts       sample SDUI payloads (home, detail, browse, search, settings)
+  mock/moduleComponents.ts  a simulated module contributing components as data
   gallery/Gallery.tsx   live component gallery — every tile is a real UINode
   lib/platform.ts       GraphQL client (errors normalised to Platform categories)
   App.tsx               the chrome: sidebar + topbar + tiny screen router
 ```
+
+### The component model
+
+The key idea for a multi-client, module-extensible UI: a component is either a
+**native leaf** (client code) or a **definition** (pure data). The split is by
+what a static data tree can express, not by taste.
+
+1. **Primitives** — the irreducible leaves. `Box`/`Text`/`Image`/`Icon`/
+   `Pressable`/`Spacer` take a *token-only* style vocabulary (`sdui/style.ts`) —
+   flex, spacing/colour/radius/type tokens, no raw px/hex, no `:hover`. That
+   vocabulary is deliberately the **web ∩ Flutter** intersection, so the same
+   node renders on any client.
+2. **Native components** — containers and stateful/animated/computed widgets a
+   static tree can't express (CSS grid, scroll-snap, local state, keyframes,
+   enum→logic mapping). A bounded set, client-provided.
+3. **Definitions** — presentational components expressed *as primitive trees*
+   (`sdui/template.tsx`). This is what a **module** ships: a `ComponentDefinition`
+   is data — a name, params, and a template of primitives — registered via
+   `defineComponent`, at build time or delivered at runtime. Template markers:
+   `{$bind}` (with dot paths), `{$match}` (enum→value), `$if`/`$ifNot`,
+   `$each` (iteration), and `Outlet` (children/slot passthrough).
+
+`components/definitions.ts` rebuilds the Shell's own presentational components
+this way — the proof the vocabulary is expressive enough for a module to build
+any look from data. `mock/moduleComponents.ts` simulates a module doing exactly
+that (`module.StatChip`, `module.Panel`). Open the **Components** gallery to see
+all three tiers live.
+
+**Known boundaries** (each maps to a future vocab addition): converted buttons
+drop per-variant `:hover` shifts (interaction state isn't static); bindings can't
+compute (no substring, so a name-initial avatar shows the name); layout uses
+flex-wrap rather than true responsive breakpoints.
 
 ### The wire contract
 
