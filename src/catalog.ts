@@ -86,8 +86,24 @@ export const GROUPS: Group[] = [
         name: "HeroBanner",
         node: {
           type: "HeroBanner",
-          props: { title: "Spirited Away", meta: ["2001", "Anime Film", "PG"], overview: "A young girl wanders into a world of spirits." },
-          slots: { actions: [{ type: "Button", props: { label: "Play", variant: "primary", icon: "play", action: { kind: "toast", message: "Play" } } }, { type: "Button", props: { label: "Details", variant: "secondary", action: { kind: "toast", message: "Details" } } }] },
+          props: {
+            kicker: "Continue watching",
+            title: "Spirited Away",
+            nativeTitle: "千と千尋の神隠し",
+            meta: ["2001", "Anime Film", "PG"],
+            overview: "A young girl wanders into a world of spirits.",
+          },
+          slots: {
+            actions: [{ type: "Button", props: { label: "Play", variant: "primary", icon: "play", action: { kind: "toast", message: "Play" } } }, { type: "Button", props: { label: "Details", variant: "secondary", action: { kind: "toast", message: "Details" } } }],
+            aside: {
+              type: "Box",
+              props: { style: { minWidth: 200, p: 4, gap: 2, radius: "lg", bg: "surface", glass: true, border: true } },
+              children: [
+                { type: "Text", props: { text: "Information", style: { variant: "xs", color: "text-faint", transform: "uppercase" } } },
+                { type: "Text", props: { text: "Studio Ghibli · 125 min", style: { variant: "sm" } } },
+              ],
+            },
+          },
         },
       },
       { name: "EpisodeRow", node: { type: "EpisodeRow", props: { index: 1, title: "Asteroid Blues", runtime: "24m", watched: true, overview: "Spike and Jet chase a bounty.", action: { kind: "toast", message: "Play E1" } } } },
@@ -125,6 +141,7 @@ export const GROUPS: Group[] = [
       { name: "Slider", node: { type: "Slider", props: { label: "Result limit", min: 5, max: 100, value: 40 } } },
       { name: "RatingControl", node: { type: "RatingControl", props: { value: 4 } } },
       { name: "ProgressBar", node: { type: "ProgressBar", props: { value: 0.4 } } },
+      { name: "ProgressRing", node: { type: "ProgressRing", props: { value: 0.84 } } },
       { name: "Pagination", node: { type: "Pagination", props: { label: "2 / 6", hasPrev: true, hasNext: true, prevAction: { kind: "toast", message: "Prev" }, nextAction: { kind: "toast", message: "Next" } } } },
     ],
   },
