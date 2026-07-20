@@ -465,6 +465,46 @@ const heroBanner: ComponentDefinition = {
   },
 };
 
+/** TextField — label + bare TextInput + help. */
+const textField: ComponentDefinition = {
+  name: "TextField",
+  template: {
+    type: "Box",
+    props: { style: { gap: 2 } },
+    children: [
+      { type: "Text", props: { $if: { $bind: "label" }, text: { $bind: "label" }, style: { variant: "sm", weight: "medium", color: "text-muted" } } },
+      { type: "TextInput", props: { inputType: { $bind: "inputType" }, placeholder: { $bind: "placeholder" }, value: { $bind: "value" } } },
+      { type: "Text", props: { $if: { $bind: "help" }, text: { $bind: "help" }, style: { variant: "xs", color: "text-faint" } } },
+    ],
+  },
+};
+
+/** Toggle — bare Switch + label. */
+const toggle: ComponentDefinition = {
+  name: "Toggle",
+  template: {
+    type: "Box",
+    props: { style: { direction: "row", align: "center", gap: 3 } },
+    children: [
+      { type: "Switch", props: { value: { $bind: "value" }, action: { $bind: "action" } } },
+      { type: "Text", props: { $if: { $bind: "label" }, text: { $bind: "label" }, style: { variant: "sm" } } },
+    ],
+  },
+};
+
+/** Select — label + bare SelectInput. */
+const select: ComponentDefinition = {
+  name: "Select",
+  template: {
+    type: "Box",
+    props: { style: { gap: 2 } },
+    children: [
+      { type: "Text", props: { $if: { $bind: "label" }, text: { $bind: "label" }, style: { variant: "sm", weight: "medium", color: "text-muted" } } },
+      { type: "SelectInput", props: { options: { $bind: "options" }, value: { $bind: "value" } } },
+    ],
+  },
+};
+
 export const PLATFORM_DEFINITIONS: ComponentDefinition[] = [
   posterCard,
   badge,
@@ -480,4 +520,7 @@ export const PLATFORM_DEFINITIONS: ComponentDefinition[] = [
   detailHeader,
   playbackBar,
   heroBanner,
+  textField,
+  toggle,
+  select,
 ];

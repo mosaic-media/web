@@ -2,29 +2,88 @@
 // SPDX-FileCopyrightText: 2026 the Mosaic authors
 
 /*
- * Interactive controls — the native leaves. Form controls (needed for module
- * settings — ADR 0021 — and admin config) are stateful and emit an Action on
- * change; Menu/Pagination carry local state too. Button and IconButton, being
- * stateless, are now primitive definitions (components/definitions.ts). All read
- * tokens, none hardcode colour.
+ * Interactive PRIMITIVES. Each stays native for one concrete reason a static
+ * data tree can't overcome:
+ *   - TextInput/SelectInput/Switch — own their input value (local state)
+ *   - Menu                          — owns open/closed state
+ *   - SearchBar                     — the submit Action must carry the live
+ *                                     input value (state → action payload)
+ *   - Slider                        — displays its own live value beside itself
+ *                                     (output couples to internal state)
+ *   - RatingControl                 — owns selection state
+ *   - ProgressBar                   — fill width is computed from `value`
+ *
+ * The LABELLED form controls (TextField/Toggle/Select) were compositions of a
+ * bare input + static chrome, so they moved to definitions (definitions.ts).
  */
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import type { Action, UINode } from "@/sdui/types";
 import { prop } from "@/sdui/registry";
 import { useRuntime } from "@/sdui/context";
 import { cx, Icon, type IconName } from "./shared";
+
+/** TextInput — bare text field owning its value. */
+export function TextInput({ node }: { node: UINode }) {
+  const kind = prop<string>(node, "inputType", "text");
+  const placeholder = prop<string>(node, "placeholder", "");
+  const [value, setValue] = useState(prop<string>(node, "value", ""));
+  return (
+    <input
+      className="msc-field__input"
+      type={kind}
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+    />
+  );
+}
+
+/** Switch — bare on/off toggle owning its state; emits an Action on change. */
+export function Switch({ node }: { node: UINode }) {
+  const { emit } = useRuntime();
+  const action = prop<Action | undefined>(node, "action", undefined);
+  const [on, setOn] = useState(prop<boolean>(node, "value", false));
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      className={cx("msc-toggle__track", on && "is-on")}
+      onClick={() => {
+        setOn((v) => !v);
+        emit(action);
+      }}
+    >
+      <span className="msc-toggle__thumb" />
+    </button>
+  );
+}
+
+/** SelectInput — bare dropdown owning its value. */
+export function SelectInput({ node }: { node: UINode }) {
+  const options = prop<Array<{ value: string; label: string }>>(node, "options", []);
+  const [value, setValue] = useState(prop<string>(node, "value", options[0]?.value ?? ""));
+  return (
+    <div className="msc-select">
+      <select className="msc-select__el" value={value} onChange={(e) => setValue(e.target.value)}>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <Icon name="chevron-down" className="msc-select__chevron" />
+    </div>
+  );
+}
 
 /** Menu — a click-to-open list of actionable items. */
 export function Menu({ node }: { node: UINode }) {
   const { emit } = useRuntime();
   const [open, setOpen] = useState(false);
   const label = prop<string>(node, "label", "Menu");
-  const items = prop<Array<{ label: string; icon?: IconName; action?: Action; tone?: string }>>(
-    node,
-    "items",
-    [],
-  );
+  const items = prop<Array<{ label: string; icon?: IconName; action?: Action; tone?: string }>>(node, "items", []);
   return (
     <div className={cx("msc-menu", open && "is-open")} onMouseLeave={() => setOpen(false)}>
       <button className="msc-iconbtn msc-iconbtn--ghost" aria-label={label} onClick={() => setOpen((o) => !o)}>
@@ -52,7 +111,7 @@ export function Menu({ node }: { node: UINode }) {
   );
 }
 
-/** SearchBar — emits a `query`/`navigate` action carrying the term on submit. */
+/** SearchBar — the submit Action carries the live term, so it owns its input. */
 export function SearchBar({ node }: { node: UINode }) {
   const { emit } = useRuntime();
   const placeholder = prop<string>(node, "placeholder", "Search your library…");
@@ -79,83 +138,7 @@ export function SearchBar({ node }: { node: UINode }) {
   );
 }
 
-export function TextField({ node }: { node: UINode }) {
-  const id = useId();
-  const label = prop<string | undefined>(node, "label", undefined);
-  const placeholder = prop<string>(node, "placeholder", "");
-  const help = prop<string | undefined>(node, "help", undefined);
-  const kind = prop<string>(node, "inputType", "text");
-  const [value, setValue] = useState(prop<string>(node, "value", ""));
-  return (
-    <div className="msc-field">
-      {label && (
-        <label className="msc-field__label" htmlFor={id}>
-          {label}
-        </label>
-      )}
-      <input
-        id={id}
-        className="msc-field__input"
-        type={kind}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-      />
-      {help && <p className="msc-field__help">{help}</p>}
-    </div>
-  );
-}
-
-export function Toggle({ node }: { node: UINode }) {
-  const { emit } = useRuntime();
-  const label = prop<string | undefined>(node, "label", undefined);
-  const action = prop<Action | undefined>(node, "action", undefined);
-  const [on, setOn] = useState(prop<boolean>(node, "value", false));
-  return (
-    <label className="msc-toggle">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        className={cx("msc-toggle__track", on && "is-on")}
-        onClick={() => {
-          setOn((v) => !v);
-          emit(action);
-        }}
-      >
-        <span className="msc-toggle__thumb" />
-      </button>
-      {label && <span className="msc-toggle__label">{label}</span>}
-    </label>
-  );
-}
-
-export function Select({ node }: { node: UINode }) {
-  const id = useId();
-  const label = prop<string | undefined>(node, "label", undefined);
-  const options = prop<Array<{ value: string; label: string }>>(node, "options", []);
-  const [value, setValue] = useState(prop<string>(node, "value", options[0]?.value ?? ""));
-  return (
-    <div className="msc-field">
-      {label && (
-        <label className="msc-field__label" htmlFor={id}>
-          {label}
-        </label>
-      )}
-      <div className="msc-select">
-        <select id={id} className="msc-select__el" value={value} onChange={(e) => setValue(e.target.value)}>
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <Icon name="chevron-down" className="msc-select__chevron" />
-      </div>
-    </div>
-  );
-}
-
+/** Slider — shows its own live value, so output couples to internal state. */
 export function Slider({ node }: { node: UINode }) {
   const label = prop<string | undefined>(node, "label", undefined);
   const min = prop<number>(node, "min", 0);
@@ -169,19 +152,12 @@ export function Slider({ node }: { node: UINode }) {
           <span className="msc-slider__value">{value}</span>
         </div>
       )}
-      <input
-        className="msc-slider"
-        type="range"
-        min={min}
-        max={max}
-        value={value}
-        onChange={(e) => setValue(Number(e.target.value))}
-      />
+      <input className="msc-slider" type="range" min={min} max={max} value={value} onChange={(e) => setValue(Number(e.target.value))} />
     </div>
   );
 }
 
-/** RatingControl — clickable stars. Read-only when no action given. */
+/** RatingControl — clickable stars owning the selection. */
 export function RatingControl({ node }: { node: UINode }) {
   const { emit } = useRuntime();
   const max = prop<number>(node, "max", 5);
@@ -206,19 +182,13 @@ export function RatingControl({ node }: { node: UINode }) {
   );
 }
 
-/** ProgressBar — watched progress / loading determinate state. */
+/** ProgressBar — fill width computed from `value` (0..1). */
 export function ProgressBar({ node }: { node: UINode }) {
   const value = Math.max(0, Math.min(1, prop<number>(node, "value", 0)));
   const tone = prop<string>(node, "tone", "accent");
   return (
     <div className="msc-progress" role="progressbar" aria-valuenow={Math.round(value * 100)}>
-      <div
-        className={cx("msc-progress__fill", `msc-progress__fill--${tone}`)}
-        style={{ width: `${value * 100}%` }}
-      />
+      <div className={cx("msc-progress__fill", `msc-progress__fill--${tone}`)} style={{ width: `${value * 100}%` }} />
     </div>
   );
 }
-
-// Pagination is now a definition (server supplies prev/next actions) — see
-// components/definitions.layout.ts.

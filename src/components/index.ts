@@ -22,7 +22,7 @@ import { defineComponents } from "@/sdui/template";
 
 import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives";
 import { Tabs } from "./layout";
-import { Menu, SearchBar, TextField, Toggle, Select, Slider, RatingControl, ProgressBar } from "./controls";
+import { TextInput, Switch, SelectInput, Menu, SearchBar, Slider, RatingControl, ProgressBar } from "./controls";
 import { SeasonSelector } from "./media";
 import { Skeleton } from "./feedback";
 import { PLATFORM_DEFINITIONS } from "./definitions";
@@ -50,9 +50,9 @@ export function installComponents(): void {
     Tabs,
     Menu,
     SearchBar,
-    TextField,
-    Toggle,
-    Select,
+    TextInput,
+    Switch,
+    SelectInput,
     Slider,
     RatingControl,
     SeasonSelector,
