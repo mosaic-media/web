@@ -7,8 +7,8 @@
  * is now a $match definition; Badge/Banner/StatusIndicator/EmptyState too.
  */
 
-import type { UINode } from "@/sdui/types";
-import { prop } from "@/sdui/registry";
+import type { UINode } from "../sdui/types";
+import { prop } from "../sdui/registry";
 import { cx } from "./shared";
 
 /** Skeleton — shimmer placeholder. `shape` picks a preset silhouette. */

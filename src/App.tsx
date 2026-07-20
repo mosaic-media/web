@@ -9,10 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { ShellProvider } from "@/sdui/ShellProvider";
-import { RenderNode } from "@/sdui/Renderer";
-import { OverlayHost, ToastHost } from "@/components/host";
-import { Icon } from "@/components/shared";
+import { ShellProvider, RenderNode, OverlayHost, ToastHost, Icon } from "@mosaic-media/sdui-react";
 import { SCREENS, NAV_ITEMS } from "@/mock/screens";
 import { Gallery } from "@/gallery/Gallery";
 

@@ -4,11 +4,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import "@/styles/tokens.css";
-import "@/styles/global.css";
-import "@/styles/components.css";
+import "@mosaic-media/sdui-react/styles.css";
 
-import { installComponents } from "@/components";
+import { installComponents } from "@mosaic-media/sdui-react";
 import { installMockModuleComponents } from "@/mock/moduleComponents";
 import { App } from "@/App";
 

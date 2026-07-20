@@ -11,7 +11,7 @@
 import { Fragment } from "react";
 import type { UINode } from "./types";
 import { resolve } from "./registry";
-import { Unknown } from "@/components/feedback/Unknown";
+import { Unknown } from "../components/feedback/Unknown";
 
 export function RenderNode({ node }: { node: UINode }) {
   const Component = resolve(node.type);

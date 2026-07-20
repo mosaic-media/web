@@ -10,7 +10,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import type { Action, ActionResult, Tone, UINode } from "./types";
 import { ShellRuntimeContext, type OverlayHandle } from "./context";
-import { gql, PlatformError } from "@/lib/platform";
+import { gql, PlatformError } from "../lib/platform";
 
 export interface ToastItem {
   id: string;

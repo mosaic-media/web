@@ -18,9 +18,9 @@
  */
 
 import { useState } from "react";
-import type { Action, UINode } from "@/sdui/types";
-import { prop } from "@/sdui/registry";
-import { useRuntime } from "@/sdui/context";
+import type { Action, UINode } from "../sdui/types";
+import { prop } from "../sdui/registry";
+import { useRuntime } from "../sdui/context";
 import { cx, Icon, type IconName } from "./shared";
 
 /** TextInput — bare text field owning its value. */

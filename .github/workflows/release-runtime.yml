@@ -1,0 +1,23 @@
+name: release-runtime
+
+# Publishes @mosaic-media/sdui-react to npm on a tag like "sdui-react-v0.1.0".
+# Requires an NPM_TOKEN repository secret (npm automation token, @mosaic-media
+# scope). Manual alternative: npm run build:pkg && npm publish -w @mosaic-media/sdui-react --access public
+on:
+  push:
+    tags: ["sdui-react-v*"]
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm install
+      - run: npm run build -w @mosaic-media/sdui-react
+      - run: npm publish -w @mosaic-media/sdui-react --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -7,9 +7,9 @@
  * a definition (components/definitions.ts, definitions.layout.ts).
  */
 
-import type { Action, UINode } from "@/sdui/types";
-import { prop } from "@/sdui/registry";
-import { useRuntime } from "@/sdui/context";
+import type { Action, UINode } from "../sdui/types";
+import { prop } from "../sdui/registry";
+import { useRuntime } from "../sdui/context";
 import { useState } from "react";
 import { cx } from "./shared";
 

@@ -11,7 +11,7 @@
  * honest for a skeleton with no media library attached yet.
  */
 
-import type { UINode } from "@/sdui/types";
+import type { UINode } from "@mosaic-media/sdui-react";
 
 const nav = (screen: string, params?: Record<string, unknown>): UINode["props"] => ({
   action: { kind: "navigate", screen, params },

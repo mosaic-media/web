@@ -12,7 +12,7 @@
  * payload) and be registered at runtime; here we register them at boot.
  */
 
-import { defineComponents, type ComponentDefinition } from "@/sdui/template";
+import { defineComponents, type ComponentDefinition } from "@mosaic-media/sdui-react";
 
 const statChip: ComponentDefinition = {
   name: "module.StatChip",

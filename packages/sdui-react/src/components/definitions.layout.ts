@@ -13,7 +13,7 @@
  *   - RelatedRail      → $childCount injected into args (empty-vs-populated)
  */
 
-import type { ComponentDefinition } from "@/sdui/template";
+import type { ComponentDefinition } from "../sdui/template";
 
 const screen: ComponentDefinition = {
   name: "Screen",

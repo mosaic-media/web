@@ -7,9 +7,7 @@
  * documentation and a smoke test: if a component breaks, its tile breaks here.
  */
 
-import type { UINode } from "@/sdui/types";
-import { RenderNode } from "@/sdui/Renderer";
-import { registeredTypes } from "@/sdui/registry";
+import { RenderNode, registeredTypes, type UINode } from "@mosaic-media/sdui-react";
 
 interface Demo {
   name: string;

@@ -11,7 +11,7 @@
  * feedback components render uniformly regardless of transport detail.
  */
 
-import type { PlatformErrorCategory } from "@/sdui/types";
+import type { PlatformErrorCategory } from "../sdui/types";
 
 const ENDPOINT = "/graphql";
 

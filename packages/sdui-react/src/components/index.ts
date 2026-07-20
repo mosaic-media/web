@@ -17,8 +17,8 @@
  *      contributes the same way (mock/moduleComponents.ts).
  */
 
-import { registerAll } from "@/sdui/registry";
-import { defineComponents } from "@/sdui/template";
+import { registerAll } from "../sdui/registry";
+import { defineComponents } from "../sdui/template";
 
 import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives";
 import { Tabs } from "./layout";

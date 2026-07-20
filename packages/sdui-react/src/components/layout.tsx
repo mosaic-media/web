@@ -9,9 +9,9 @@
  */
 
 import { useState } from "react";
-import type { UINode } from "@/sdui/types";
-import { prop } from "@/sdui/registry";
-import { Slot } from "@/sdui/Renderer";
+import type { UINode } from "../sdui/types";
+import { prop } from "../sdui/registry";
+import { Slot } from "../sdui/Renderer";
 import { cx } from "./shared";
 
 /**

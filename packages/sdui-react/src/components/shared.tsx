@@ -8,10 +8,10 @@
  */
 
 import type { CSSProperties } from "react";
-import type { Action } from "@/sdui/types";
-import { useRuntime } from "@/sdui/context";
-import { prop } from "@/sdui/registry";
-import type { UINode } from "@/sdui/types";
+import type { Action } from "../sdui/types";
+import { useRuntime } from "../sdui/context";
+import { prop } from "../sdui/registry";
+import type { UINode } from "../sdui/types";
 
 export function cx(...parts: Array<string | false | null | undefined>): string {
   return parts.filter(Boolean).join(" ");

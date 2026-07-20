@@ -13,7 +13,7 @@
  * here — that belongs to interactive primitives, not to static composition.
  */
 
-import type { ComponentDefinition } from "@/sdui/template";
+import type { ComponentDefinition } from "../sdui/template";
 
 const posterCard: ComponentDefinition = {
   name: "PosterCard",

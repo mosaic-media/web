@@ -14,11 +14,11 @@
  */
 
 import type { CSSProperties } from "react";
-import type { Action, UINode } from "@/sdui/types";
-import { prop } from "@/sdui/registry";
-import { Children } from "@/sdui/Renderer";
-import { useRuntime } from "@/sdui/context";
-import { boxToCss, textToCss, type BoxStyle, type ColorToken, type SpaceToken, type TextStyle } from "@/sdui/style";
+import type { Action, UINode } from "../sdui/types";
+import { prop } from "../sdui/registry";
+import { Children } from "../sdui/Renderer";
+import { useRuntime } from "../sdui/context";
+import { boxToCss, textToCss, type BoxStyle, type ColorToken, type SpaceToken, type TextStyle } from "../sdui/style";
 import { cx, Icon, type IconName } from "./shared";
 
 /** Box — the workhorse container: flex layout + token box styling. */
