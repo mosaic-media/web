@@ -10,8 +10,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ShellProvider, RenderNode, OverlayHost, ToastHost, Icon, refreshArtLight } from "@mosaic-media/sdui-react";
+import type { UINode } from "@mosaic-media/sdui-react";
 import { SCREENS, NAV_ITEMS } from "@/mock/screens";
 import { Gallery } from "@/gallery/Gallery";
+import { devSignIn } from "@/lib/session";
+import { fetchScreen, LIVE_SCREENS } from "@/lib/screens";
+
+/** A minimal SDUI error node for the chrome to render on a failure. */
+const errorNode = (category: string, message: string): UINode => ({
+  type: "ErrorState",
+  props: { category, message },
+});
 
 type Theme = "dark" | "light";
 
@@ -28,9 +37,56 @@ interface Route {
 }
 
 export function App() {
-  const [stack, setStack] = useState<Route[]>([{ screen: "home" }]);
+  const [stack, setStack] = useState<Route[]>([{ screen: "search" }]);
   const [theme, setTheme] = useState<Theme>("dark");
   const current = stack[stack.length - 1];
+
+  // Dev sign-in on boot: arm the runtime client with a session so both the
+  // screen queries and the actions the runtime dispatches are authenticated,
+  // without a login form (see lib/session).
+  const [session, setSession] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    devSignIn().then(
+      (s) => !cancelled && setSession(s),
+      (e: unknown) => !cancelled && setAuthError(e instanceof Error ? e.message : "Sign-in failed"),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Live screen loading: when the current route is a Platform-emitted screen,
+  // fetch and render it; otherwise the mock chrome screens are used below.
+  const isLive = LIVE_SCREENS.has(current.screen);
+  const paramsKey = JSON.stringify(current.params ?? null);
+  const [liveNode, setLiveNode] = useState<UINode | null>(null);
+  const [screenError, setScreenError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!isLive || !session) return;
+    let cancelled = false;
+    setLoading(true);
+    setScreenError(null);
+    fetchScreen(current.screen, current.params, session).then(
+      (node) => {
+        if (cancelled) return;
+        setLiveNode(node);
+        setLoading(false);
+      },
+      (e: unknown) => {
+        if (cancelled) return;
+        setScreenError(e instanceof Error ? e.message : "Failed to load screen");
+        setLoading(false);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+    // paramsKey stands in for current.params (a fresh object each render).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLive, current.screen, paramsKey, session]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -142,7 +198,7 @@ export function App() {
                 className="msc-search__input"
                 placeholder="Search for anime, movies, shows…"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") go("search");
+                  if (e.key === "Enter") setStack([{ screen: "search", params: { text: e.currentTarget.value } }]);
                 }}
               />
             </div>
@@ -167,15 +223,22 @@ export function App() {
           <main className="msc-content">
             {current.screen === "__gallery" ? (
               <Gallery />
+            ) : isLive ? (
+              authError ? (
+                <RenderNode node={errorNode("Unavailable", authError)} />
+              ) : !session || loading ? (
+                <p className="msc-content__note">Connecting to the Platform…</p>
+              ) : screenError ? (
+                <RenderNode node={errorNode("Unavailable", screenError)} />
+              ) : liveNode ? (
+                <RenderNode node={liveNode} />
+              ) : (
+                <p className="msc-content__note">Loading…</p>
+              )
             ) : screenNode ? (
               <RenderNode node={screenNode} />
             ) : (
-              <RenderNode
-                node={{
-                  type: "ErrorState",
-                  props: { category: "NotFound", message: `No screen named "${current.screen}".` },
-                }}
-              />
+              <RenderNode node={errorNode("NotFound", `No screen named "${current.screen}".`)} />
             )}
           </main>
         </div>

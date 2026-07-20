@@ -397,6 +397,6 @@ export const SCREENS: Record<string, UINode> = {
 
 export const NAV_ITEMS: Array<{ screen: string; label: string; icon: "home" | "grid" | "search" | "list" | "play" }> = [
   { screen: "home", label: "Home", icon: "home" },
-  { screen: "browse", label: "Browse", icon: "grid" },
   { screen: "search", label: "Search", icon: "search" },
+  { screen: "collections", label: "Collections", icon: "list" },
 ];
