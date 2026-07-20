@@ -5,18 +5,14 @@
   "description": "The Mosaic Shell — a server-driven-UI web client for the Mosaic media platform.",
   "license": "AGPL-3.0-only",
   "type": "module",
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
-    "build:pkg": "npm run build -w @mosaic-media/sdui-react",
-    "dev": "npm run build:pkg && vite",
-    "build": "npm run build:pkg && tsc -b && vite build",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "npm run build:pkg && tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
-    "@mosaic-media/sdui-react": "*",
+    "@mosaic-media/sdui-react": "file:../mosaic-sdui-react",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
