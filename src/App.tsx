@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { ShellProvider, RenderNode, OverlayHost, ToastHost, Icon } from "@mosaic-media/sdui-react";
+import { ShellProvider, RenderNode, OverlayHost, ToastHost, Icon, refreshArtLight } from "@mosaic-media/sdui-react";
 import { SCREENS, NAV_ITEMS } from "@/mock/screens";
 import { Gallery } from "@/gallery/Gallery";
 
@@ -27,6 +27,9 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    // The ambient wash sits at a different intensity per theme — repaint the
+    // standing artwork light so it follows the toggle.
+    refreshArtLight();
   }, [theme]);
 
   const navigate = useCallback((screen: string, params?: Record<string, unknown>) => {

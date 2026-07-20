@@ -13,13 +13,26 @@
 
 import type { UINode } from "@mosaic-media/sdui-react";
 
+// Local showcase artwork, keyed by title. Same-origin so the artlight canvas
+// sampler can read it without tainting. Titles absent here keep the placeholder
+// and the ambient wash falls back to the accent duo.
+const ART: Record<string, string> = {
+  "Cowboy Bebop": "/art/cowboy-bebop.svg",
+  Dune: "/art/dune.svg",
+  Severance: "/art/severance.svg",
+  Frieren: "/art/frieren.svg",
+  "Blade Runner 2049": "/art/blade-runner.svg",
+  "Chainsaw Man": "/art/chainsaw-man.svg",
+  "Your Name": "/art/your-name.svg",
+};
+
 const nav = (screen: string, params?: Record<string, unknown>): UINode["props"] => ({
   action: { kind: "navigate", screen, params },
 });
 
 const posterCard = (title: string, mediaType: string, extra: Record<string, unknown> = {}): UINode => ({
   type: "PosterCard",
-  props: { title, mediaType, ...nav("detail", { title }), ...extra },
+  props: { title, mediaType, ...(ART[title] ? { poster: ART[title] } : {}), ...nav("detail", { title }), ...extra },
 });
 
 function rail(title: string, items: UINode[], seeAll = true): UINode {
@@ -40,6 +53,7 @@ const home: UINode = {
       type: "HeroBanner",
       props: {
         title: "Spirited Away",
+        backdrop: "/art/hero-spirited.svg",
         meta: ["2001", "Anime Film", "PG"],
         overview:
           "A young girl wanders into a world of spirits and must find the courage to free her parents and return home.",
@@ -103,6 +117,7 @@ const detail: UINode = {
       type: "DetailHeader",
       props: {
         title: "Cowboy Bebop",
+        poster: "/art/cowboy-bebop.svg",
         year: "1998",
         mediaType: "Anime Series",
         rating: "8.9",
