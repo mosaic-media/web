@@ -31,6 +31,11 @@ export type { ShellRuntime, OverlayHandle } from "./sdui/context";
 export { boxToCss, textToCss } from "./sdui/style";
 export type { BoxStyle, TextStyle, ColorToken, SpaceToken, RadiusToken } from "./sdui/style";
 
+// Art-light: the artwork-driven ambient "refraction" wash. The Image primitive
+// drives it via `artLight`; consumers only need refreshArtLight() on theme change.
+export { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, refreshArtLight } from "./sdui/artlight";
+export type { Rgb } from "./sdui/artlight";
+
 // The built-in component vocabulary (primitives + definitions).
 export { installComponents } from "./components";
 export { OverlayHost, ToastHost } from "./components/host";

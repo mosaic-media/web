@@ -34,10 +34,14 @@
   cursor: not-allowed;
 }
 .msc-pressable--lift {
-  transition: transform var(--dur-med) var(--ease), box-shadow var(--dur-med) var(--ease);
+  transition: transform var(--dur-med) var(--ease), box-shadow var(--dur-med) var(--ease),
+    filter var(--dur-med) var(--ease);
 }
 .msc-pressable--lift:hover:not(:disabled) {
   transform: translateY(-4px);
+  /* Lift toward the light: closer surfaces catch a stronger accent glow. */
+  box-shadow: var(--glow-accent);
+  filter: saturate(1.05);
 }
 .msc-prim-placeholder {
   color: var(--color-text-faint);
@@ -59,8 +63,13 @@
   flex-direction: column;
   gap: var(--space-5);
   padding: var(--space-5) var(--space-4);
-  background: var(--color-surface);
+  /* Frosted glass that catches the artwork's colour along its top edge (the
+     accent tint is art-driven), fading into the neutral surface below. */
+  background: linear-gradient(178deg, var(--color-accent-quiet), transparent 40%), var(--color-surface);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border-right: 1px solid var(--color-border);
+  box-shadow: inset -1px 0 0 var(--color-accent-quiet);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -74,9 +83,9 @@
 .msc-sidebar__logo {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
-  background: conic-gradient(from 210deg, var(--color-accent), #8b5cf6, #22d3ee, var(--color-accent));
-  box-shadow: var(--shadow-1);
+  border-radius: 9px;
+  background: var(--gradient-brand);
+  box-shadow: var(--glow-accent);
 }
 .msc-sidebar__name {
   font-size: var(--text-lg);
@@ -118,6 +127,7 @@
 .msc-navitem.is-active {
   background: var(--color-accent-quiet);
   color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent-quiet), var(--glow-accent);
 }
 .msc-sidebar__foot {
   margin-top: auto;
@@ -142,9 +152,12 @@
   justify-content: space-between;
   gap: var(--space-4);
   padding: var(--space-3) var(--shell-gutter);
-  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
-  backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--color-bg) 64%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border-bottom: 1px solid var(--color-border);
+  /* A hairline of the artwork's colour under the topbar — a lit edge. */
+  box-shadow: 0 1px 0 var(--color-accent-quiet);
 }
 .msc-topbar__left,
 .msc-topbar__right {
@@ -236,6 +249,8 @@
   top: calc(100% + var(--space-1));
   min-width: 180px;
   background: var(--color-surface-overlay);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-2);
@@ -276,6 +291,7 @@
 }
 .msc-search:focus-within {
   border-color: var(--color-accent);
+  box-shadow: var(--glow-accent);
 }
 .msc-search__icon {
   color: var(--color-text-faint);
@@ -348,7 +364,7 @@
   flex: none;
 }
 .msc-toggle__track.is-on {
-  background: var(--color-accent);
+  background: var(--gradient-accent);
 }
 .msc-toggle__thumb {
   position: absolute;
@@ -426,7 +442,7 @@
 .msc-progress__fill {
   height: 100%;
   border-radius: inherit;
-  background: var(--color-accent);
+  background: var(--gradient-accent);
   transition: width var(--dur-med) var(--ease);
 }
 .msc-progress__fill--success {
@@ -455,9 +471,10 @@
   font-weight: var(--weight-medium);
 }
 .msc-seasons__pill.is-active {
-  background: var(--color-accent);
+  background: var(--gradient-accent);
   color: var(--color-text-on-accent);
   border-color: transparent;
+  box-shadow: var(--glow-accent);
 }
 
 /* ──────────── computed / animated primitives ──────────── */
@@ -542,11 +559,15 @@
   position: absolute;
   inset: 0;
   background: var(--color-scrim);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 .msc-overlay__panel {
   position: relative;
-  background: var(--color-surface);
+  background: var(--color-surface-overlay);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--color-border);
   box-shadow: var(--shadow-3);
   overflow: auto;
   animation: msc-pop var(--dur-med) var(--ease);
@@ -624,6 +645,8 @@
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--color-surface-overlay);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--color-border-strong);
   box-shadow: var(--shadow-2);
   animation: msc-pop var(--dur-med) var(--ease);

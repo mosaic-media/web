@@ -42,6 +42,7 @@ const posterCard: ComponentDefinition = {
               src: { $bind: "poster" },
               alt: { $bind: "title" },
               placeholder: { $bind: "mediaType" },
+              artLight: "focus",
               style: { width: "full", height: "full" },
             },
           },
@@ -246,7 +247,7 @@ const button: ComponentDefinition = {
         $match: {
           on: { $bind: "variant" },
           cases: {
-            primary: { ...buttonBase, bg: "accent", color: "text-on-accent" },
+            primary: { ...buttonBase, bgGradient: { from: "accent", to: "info", angle: 122 }, color: "text-on-accent" },
             secondary: { ...buttonBase, bg: "surface-raised", color: "text", border: true, borderColor: "border-strong" },
             ghost: { ...buttonBase, color: "text-muted" },
             danger: { ...buttonBase, bg: "danger-quiet", color: "danger", border: true, borderColor: "danger" },
@@ -357,7 +358,7 @@ const detailHeader: ComponentDefinition = {
       {
         type: "Box",
         props: { style: { width: 220, aspectRatio: "2 / 3", radius: "md", overflow: "hidden", bg: "surface-raised", shadow: "2" } },
-        children: [{ type: "Image", props: { src: { $bind: "poster" }, placeholder: { $bind: "mediaType" }, style: { width: "full", height: "full" } } }],
+        children: [{ type: "Image", props: { src: { $bind: "poster" }, placeholder: { $bind: "mediaType" }, artLight: "ambient", style: { width: "full", height: "full" } } }],
       },
       {
         type: "Box",
@@ -412,7 +413,7 @@ const playbackBar: ComponentDefinition = {
     children: [
       {
         type: "Pressable",
-        props: { action: { $bind: "action" }, label: "Resume", style: { width: 44, height: 44, radius: "pill", align: "center", justify: "center", bg: "accent", color: "text-on-accent" } },
+        props: { action: { $bind: "action" }, label: "Resume", style: { width: 44, height: 44, radius: "pill", align: "center", justify: "center", bgGradient: { from: "accent", to: "info", angle: 122 }, color: "text-on-accent" } },
         children: [{ type: "Icon", props: { name: "play" } }],
       },
       {
@@ -441,7 +442,7 @@ const heroBanner: ComponentDefinition = {
     type: "Box",
     props: { style: { position: "relative", radius: "lg", overflow: "hidden", minHeight: 340, justify: "end" } },
     children: [
-      { type: "Image", props: { src: { $bind: "backdrop" }, placeholder: " ", style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "full", height: "full" } } },
+      { type: "Image", props: { src: { $bind: "backdrop" }, placeholder: " ", artLight: "ambient", style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "full", height: "full" } } },
       { type: "Box", props: { style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, bgGradient: { from: "bg", to: "transparent", angle: 70 } } } },
       {
         type: "Box",

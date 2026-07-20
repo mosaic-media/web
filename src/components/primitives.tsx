@@ -13,12 +13,13 @@
  * primitive's job. Fragment / Outlet exist for the template mechanism.
  */
 
-import type { CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import type { Action, UINode } from "../sdui/types";
 import { prop } from "../sdui/registry";
 import { Children } from "../sdui/Renderer";
 import { useRuntime } from "../sdui/context";
 import { boxToCss, textToCss, type BoxStyle, type ColorToken, type SpaceToken, type TextStyle } from "../sdui/style";
+import { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, type Rgb } from "../sdui/artlight";
 import { cx, Icon, type IconName } from "./shared";
 
 /** Box — the workhorse container: flex layout + token box styling. */
@@ -43,14 +44,41 @@ export function Text({ node }: { node: UINode }) {
   );
 }
 
-/** Image — falls back to a typed placeholder when `src` is absent. */
+/** Image — falls back to a typed placeholder when `src` is absent.
+ *
+ *  Opt-in `artLight` makes the image a source for the ambient "refraction"
+ *  wash (sdui/artlight.ts): "ambient" installs its palette as the screen's
+ *  standing light (the hero backdrop); "focus" lends its palette while hovered
+ *  (a poster), reverting on leave. Sampling is web-only and best-effort — if the
+ *  canvas is unreadable it does nothing and the fallback duo stays. */
 export function Image({ node }: { node: UINode }) {
   const src = prop<string | undefined>(node, "src", undefined);
   const alt = prop<string>(node, "alt", "");
   const fit = prop<"cover" | "contain">(node, "fit", "cover");
   const placeholder = prop<string | undefined>(node, "placeholder", undefined);
+  const artLight = prop<"ambient" | "focus" | undefined>(node, "artLight", undefined);
   const style = prop<BoxStyle>(node, "style", {});
   const css = boxToCss(style);
+
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const palette = useRef<Rgb[] | null>(null);
+
+  const sample = () => {
+    const el = imgRef.current;
+    if (!el || !el.complete || el.naturalWidth === 0) return null;
+    if (!palette.current) palette.current = sampleArtColors(el);
+    return palette.current;
+  };
+
+  // The ambient source owns the standing light for as long as it's mounted.
+  useEffect(() => {
+    if (artLight !== "ambient") return;
+    const el = imgRef.current;
+    if (el?.complete) setAmbientArt(sample());
+    return () => clearAmbientArt();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artLight, src]);
+
   if (!src) {
     return (
       <div className="msc-prim-placeholder" style={{ ...css, alignItems: "center", justifyContent: "center" }}>
@@ -58,7 +86,36 @@ export function Image({ node }: { node: UINode }) {
       </div>
     );
   }
-  return <img src={src} alt={alt} loading="lazy" style={{ ...css, display: "block", objectFit: fit }} />;
+
+  const artProps = artLight
+    ? {
+        crossOrigin: "anonymous" as const,
+        onLoad: () => {
+          palette.current = null;
+          if (artLight === "ambient") setAmbientArt(sample());
+        },
+        ...(artLight === "focus"
+          ? {
+              onMouseEnter: () => {
+                const c = sample();
+                if (c) focusArt(c);
+              },
+              onMouseLeave: () => releaseArt(),
+            }
+          : {}),
+      }
+    : {};
+
+  return (
+    <img
+      ref={imgRef}
+      src={src}
+      alt={alt}
+      loading={artLight === "ambient" ? "eager" : "lazy"}
+      style={{ ...css, display: "block", objectFit: fit }}
+      {...artProps}
+    />
+  );
 }
 
 /** Icon — a glyph from the built-in set, tokenised colour + size. */

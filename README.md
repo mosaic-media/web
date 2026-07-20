@@ -10,7 +10,30 @@ It is a **client implementation**, not the contract. The technology-agnostic con
 - **Registry + renderer** — `register`/`resolve`, `RenderNode` (recursive tree walk), and the `Unknown` fallback for open-vocabulary forward-compat.
 - **Definition expander** — `defineComponent` + the `$bind`/`$match`/`$each`/`$if`/`Outlet` template engine, so components delivered as data render like native ones.
 - **Runtime** — `ShellProvider` (interprets `Action` envelopes, owns overlays + toasts), `useRuntime`, `OverlayHost`/`ToastHost`, and a GraphQL client.
+- **Art-light** — the artwork-driven ambient "refraction" wash. An `Image` marked `artLight="ambient"|"focus"` samples its palette (canvas) and feeds it into the `--art-glow-*` tokens behind `--ambient`; the focused artwork colours the UI, falling back to the accent duo when nothing is in focus. Web-only enhancement; the fallback is always valid.
 - **The token-driven skin** — shipped as `@mosaic-media/sdui-react/styles.css`.
+
+## The skin is lightweight (for now)
+
+The current visual skin is a **lightweight, first-pass skin** — enough to make the
+whole SDUI vocabulary look coherent in both themes, not the final design. It's a
+placeholder for the real **Mosaic Design Language**, which will replace it later.
+
+What's here today:
+
+- A **token palette** (`src/styles/tokens.css`) in the "refraction" language —
+  cool violet-indigo glass in dark, warm pink-lavender glass in light. Every
+  component reads these tokens; nothing hardcodes colour, spacing, radius or
+  type. **Reskinning is editing this one file.**
+- **Art-light**, a lightweight take on the concept's refraction system: the
+  focused artwork is sampled (a small canvas, no colour-science library) and its
+  hue drives both the ambient wash (`--art-glow-*`) and the accent every
+  component derives from (`--accent-rgb` → buttons, nav, glows, focus rings).
+  When no artwork is in focus it falls back to the brand accent duo — the
+  fallback is always valid, so a client that omits art-light loses nothing.
+
+When the Design Language lands it swaps the token values (and, if it wants,
+retires art-light); the primitives, definitions and renderer don't change.
 
 ## Use it
 

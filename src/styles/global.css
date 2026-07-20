@@ -22,7 +22,13 @@ body {
   font-size: var(--text-md);
   line-height: var(--leading-normal);
   color: var(--color-text);
-  background: var(--color-bg);
+  /* The artwork is the light source: an ambient wash sits behind everything,
+     fixed so the whole surface feels lit from one direction as content scrolls. */
+  background-color: var(--color-bg);
+  background-image: var(--ambient);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   min-height: 100vh;

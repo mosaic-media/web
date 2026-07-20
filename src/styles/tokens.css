@@ -7,6 +7,12 @@
  * radii or type sizes; they read these variables. Reskin the whole Shell by
  * editing this file alone.
  *
+ * The skin follows the Mosaic "refraction" language: the artwork is the light
+ * source and UI surfaces behave like frosted acrylic that catches its colour.
+ * That shows up here as cool violet-indigo glass in the dark theme and warm
+ * pink-lavender glass in the light theme, glowing accent gradients, and shadows
+ * tinted toward the accent so raised surfaces read as lit rather than stamped.
+ *
  * Dark is the default (a media app lives in a dim room). Light is provided so
  * the token contract is proven in both directions. The active theme is chosen
  * by [data-theme] on <html>; system preference is the fallback.
@@ -16,27 +22,56 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  /* Surfaces — from the back of the screen forward */
-  --color-bg: #0b0d12;
-  --color-surface: #14171f;
-  --color-surface-raised: #1b1f2a;
-  --color-surface-overlay: #222735;
-  --color-scrim: rgba(6, 8, 12, 0.66);
+  /* Surfaces — from the back of the screen forward. Deep blue-black base with
+     glass panels that sit slightly translucent so ambient light shows through. */
+  --color-bg: #07080f;
+  --color-surface: rgba(20, 22, 34, 0.72);
+  --color-surface-raised: rgba(30, 33, 50, 0.74);
+  --color-surface-overlay: rgba(40, 44, 66, 0.86);
+  --color-scrim: rgba(4, 5, 12, 0.66);
+
+  /* Ambient "artwork light" — a wash painted behind the app chrome. Its three
+     glow colours default to the accent duo but are overridden at runtime by the
+     focused artwork's palette (sdui/artlight.ts). --ambient only lays out where
+     the light falls; the colour lives in the --art-glow-* vars so it can
+     cross-fade (see the @property registration below). */
+  --art-glow-1: rgba(124, 108, 255, 0.24);
+  --art-glow-2: rgba(34, 211, 238, 0.16);
+  --art-glow-3: rgba(236, 110, 173, 0.11);
+  --ambient: radial-gradient(1100px 620px at 18% -8%, var(--art-glow-1), transparent 60%),
+    radial-gradient(900px 560px at 88% 6%, var(--art-glow-2), transparent 62%),
+    radial-gradient(1200px 800px at 60% 108%, var(--art-glow-3), transparent 60%);
 
   /* Lines & borders */
-  --color-border: rgba(255, 255, 255, 0.09);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border: rgba(150, 160, 220, 0.14);
+  --color-border-strong: rgba(165, 175, 235, 0.26);
 
   /* Text */
-  --color-text: #eef1f7;
-  --color-text-muted: #a4adbe;
-  --color-text-faint: #6b7386;
-  --color-text-on-accent: #0b0d12;
+  --color-text: #eef1fb;
+  --color-text-muted: #a7aec6;
+  --color-text-faint: #6d7492;
+  --color-text-on-accent: #ffffff;
 
-  /* Brand accent — placeholder Mosaic teal/indigo. Swap for the real DL. */
-  --color-accent: #5b8cff;
-  --color-accent-hover: #7aa2ff;
-  --color-accent-quiet: rgba(91, 140, 255, 0.14);
+  /* Brand accent — the refractive violet-indigo, held as an RGB triplet so the
+     art-light runtime can retint EVERY accent-derived surface (buttons, active
+     nav, glows, focus rings, progress) from one value. `--accent-rgb` is what
+     artlight.ts overrides with the focused artwork's dominant hue; clearing it
+     falls back to this brand duo. Everything below derives from the triplet. */
+  --accent-rgb: 124, 108, 255;
+  --accent-2-rgb: 34, 211, 238;
+  --accent-quiet-a: 0.18;
+  --glow-ring-a: 0.4;
+  --glow-spread-a: 0.34;
+
+  --color-accent: rgb(var(--accent-rgb));
+  --color-accent-hover: color-mix(in srgb, rgb(var(--accent-rgb)) 78%, #ffffff);
+  --color-accent-quiet: rgba(var(--accent-rgb), var(--accent-quiet-a));
+
+  /* Accent + brand gradients (used by chrome; never as a text colour). The
+     accent gradient follows the art; the brand gradient stays fixed identity. */
+  --gradient-accent: linear-gradient(122deg, rgb(var(--accent-rgb)) 0%, rgb(var(--accent-2-rgb)) 100%);
+  --gradient-warm: linear-gradient(122deg, #ff8fb4 0%, #a855f7 52%, #5b8cff 100%);
+  --gradient-brand: conic-gradient(from 210deg, #5b8cff, #8b5cf6, #22d3ee, #5b8cff);
 
   /* Semantic status — these map to Platform error categories in feedback UI */
   --color-success: #3fbf7f;
@@ -52,33 +87,57 @@
 
   /* Media chrome */
   --color-rating: #ffc857;
-  --color-progress-track: rgba(255, 255, 255, 0.16);
+  --color-progress-track: rgba(150, 160, 220, 0.18);
 
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.45);
-  --shadow-3: 0 18px 50px rgba(0, 0, 0, 0.55);
+  /* Frosted-glass blur radius for chrome + overlays. */
+  --glass-blur: 18px;
+
+  /* Shadows carry a subtle accent-tinted glow so raised surfaces read as lit. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 12px 34px rgba(5, 6, 20, 0.55), 0 0 0 1px rgba(160, 170, 255, 0.05);
+  --shadow-3: 0 26px 70px rgba(3, 4, 14, 0.7), 0 0 44px rgba(var(--accent-rgb), 0.16);
+  --glow-accent: 0 0 0 1px rgba(var(--accent-rgb), var(--glow-ring-a)),
+    0 10px 34px rgba(var(--accent-rgb), var(--glow-spread-a));
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --color-bg: #f4f5f8;
-  --color-surface: #ffffff;
-  --color-surface-raised: #ffffff;
-  --color-surface-overlay: #ffffff;
-  --color-scrim: rgba(20, 23, 31, 0.42);
+  /* Warm frosted daylight — panels are translucent white over the ambient wash. */
+  --color-bg: #f2ecf6;
+  --color-surface: rgba(255, 255, 255, 0.72);
+  --color-surface-raised: rgba(255, 255, 255, 0.82);
+  --color-surface-overlay: rgba(255, 255, 255, 0.94);
+  --color-scrim: rgba(58, 40, 78, 0.3);
 
-  --color-border: rgba(16, 20, 30, 0.1);
-  --color-border-strong: rgba(16, 20, 30, 0.18);
+  --art-glow-1: rgba(255, 158, 196, 0.5);
+  --art-glow-2: rgba(150, 190, 255, 0.42);
+  --art-glow-3: rgba(181, 124, 255, 0.34);
+  --ambient: radial-gradient(1100px 640px at 16% -10%, var(--art-glow-1), transparent 60%),
+    radial-gradient(1000px 620px at 92% -4%, var(--art-glow-2), transparent 62%),
+    radial-gradient(1200px 820px at 62% 112%, var(--art-glow-3), transparent 60%);
 
-  --color-text: #141821;
-  --color-text-muted: #545c6e;
-  --color-text-faint: #8a92a3;
+  --color-border: rgba(90, 60, 130, 0.12);
+  --color-border-strong: rgba(90, 60, 130, 0.22);
+
+  --color-text: #2a2340;
+  --color-text-muted: #6a6183;
+  --color-text-faint: #9990ad;
   --color-text-on-accent: #ffffff;
 
-  --color-accent: #3f6fe0;
-  --color-accent-hover: #2f5bc7;
-  --color-accent-quiet: rgba(63, 111, 224, 0.12);
+  /* Only the accent INPUTS change per theme; --color-accent, --color-accent-quiet,
+     --gradient-accent and --glow-accent are derived once (dark block) from these
+     and recompute here automatically. On light we darken the hover instead of
+     lightening it. */
+  --accent-rgb: 168, 85, 247;
+  --accent-2-rgb: 122, 162, 255;
+  --accent-quiet-a: 0.14;
+  --glow-ring-a: 0.32;
+  --glow-spread-a: 0.3;
+  --color-accent-hover: color-mix(in srgb, rgb(var(--accent-rgb)) 82%, #000000);
+
+  --gradient-warm: linear-gradient(122deg, #ff9ec4 0%, #b57cff 52%, #8ab6ff 100%);
+  --gradient-brand: conic-gradient(from 210deg, #7aa2ff, #b57cff, #ff9ec4, #7aa2ff);
 
   --color-success: #1f9d63;
   --color-warning: #b9822a;
@@ -90,12 +149,14 @@
   --color-danger-quiet: rgba(210, 63, 75, 0.13);
   --color-info-quiet: rgba(63, 111, 224, 0.12);
 
-  --color-rating: #d99a1f;
-  --color-progress-track: rgba(16, 20, 30, 0.14);
+  --color-rating: #e0a11a;
+  --color-progress-track: rgba(90, 60, 130, 0.16);
 
-  --shadow-1: 0 1px 2px rgba(16, 20, 30, 0.08);
-  --shadow-2: 0 6px 20px rgba(16, 20, 30, 0.12);
-  --shadow-3: 0 18px 50px rgba(16, 20, 30, 0.18);
+  --glass-blur: 20px;
+
+  --shadow-1: 0 1px 2px rgba(60, 40, 90, 0.1);
+  --shadow-2: 0 12px 30px rgba(90, 60, 130, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.5);
+  --shadow-3: 0 24px 60px rgba(90, 60, 130, 0.2), 0 0 40px rgba(var(--accent-rgb), 0.18);
 }
 
 :root {
@@ -109,11 +170,11 @@
   --space-7: 48px;
   --space-8: 64px;
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  /* Radii — generous, to match the soft acrylic panels of the language. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
   --radius-pill: 999px;
 
   /* Typography */
@@ -141,10 +202,39 @@
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
   --dur-fast: 120ms;
   --dur-med: 220ms;
+  --dur-slow: 620ms;
 
   /* Layout */
   --shell-max: 1440px;
   --shell-gutter: clamp(var(--space-4), 4vw, var(--space-7));
   --z-overlay: 100;
   --z-toast: 200;
+}
+
+/*
+ * Register the ambient glow colours as <color> so a change from one artwork's
+ * palette to the next CROSS-FADES instead of snapping. Browsers without
+ * @property support ignore this and the wash simply updates instantly — the
+ * fallback duo and the runtime override both still work. The transition lives
+ * on :root because artlight.ts writes the vars there.
+ */
+@property --art-glow-1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --art-glow-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --art-glow-3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+:root {
+  transition: --art-glow-1 var(--dur-slow) var(--ease),
+    --art-glow-2 var(--dur-slow) var(--ease), --art-glow-3 var(--dur-slow) var(--ease);
 }
