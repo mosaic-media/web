@@ -1,16 +1,7 @@
-/* Storybook chrome. Reuses the SDUI tokens (loaded from
-   @mosaic-media/sdui-react/styles.css) so it matches the components. */
-
-* {
-  box-sizing: border-box;
-}
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  color: var(--color-text);
-  background: var(--color-bg);
-  -webkit-font-smoothing: antialiased;
-}
+/* Storybook chrome only. The reset, base typography and the body background
+   (including the ambient artwork-light wash) all come from the SDUI skin
+   loaded via @mosaic-media/sdui-react/styles.css — this file must not redeclare
+   or override them, only add the storybook-specific `.sb-*` layout. */
 
 .sb {
   display: grid;
