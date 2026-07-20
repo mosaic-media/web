@@ -1,0 +1,26 @@
+{
+  "name": "mosaic-storybook",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A live, bespoke storybook for the Mosaic SDUI component library.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@mosaic-media/sdui": "^0.1.0",
+    "@mosaic-media/sdui-react": "^0.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
