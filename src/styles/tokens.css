@@ -1,0 +1,136 @@
+/*
+ * Design tokens — the single seam the server references and the future
+ * Mosaic Design Language replaces. Components never hardcode colours, spacing,
+ * radii or type sizes; they read these variables. Reskin the whole Shell by
+ * editing this file alone.
+ *
+ * Dark is the default (a media app lives in a dim room). Light is provided so
+ * the token contract is proven in both directions. The active theme is chosen
+ * by [data-theme] on <html>; system preference is the fallback.
+ */
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces — from the back of the screen forward */
+  --color-bg: #0b0d12;
+  --color-surface: #14171f;
+  --color-surface-raised: #1b1f2a;
+  --color-surface-overlay: #222735;
+  --color-scrim: rgba(6, 8, 12, 0.66);
+
+  /* Lines & borders */
+  --color-border: rgba(255, 255, 255, 0.09);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Text */
+  --color-text: #eef1f7;
+  --color-text-muted: #a4adbe;
+  --color-text-faint: #6b7386;
+  --color-text-on-accent: #0b0d12;
+
+  /* Brand accent — placeholder Mosaic teal/indigo. Swap for the real DL. */
+  --color-accent: #5b8cff;
+  --color-accent-hover: #7aa2ff;
+  --color-accent-quiet: rgba(91, 140, 255, 0.14);
+
+  /* Semantic status — these map to Platform error categories in feedback UI */
+  --color-success: #3fbf7f;
+  --color-warning: #e6b055;
+  --color-danger: #ef5f6b;
+  --color-info: #5b8cff;
+
+  /* Media chrome */
+  --color-rating: #ffc857;
+  --color-progress-track: rgba(255, 255, 255, 0.16);
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg: #f4f5f8;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-overlay: #ffffff;
+  --color-scrim: rgba(20, 23, 31, 0.42);
+
+  --color-border: rgba(16, 20, 30, 0.1);
+  --color-border-strong: rgba(16, 20, 30, 0.18);
+
+  --color-text: #141821;
+  --color-text-muted: #545c6e;
+  --color-text-faint: #8a92a3;
+  --color-text-on-accent: #ffffff;
+
+  --color-accent: #3f6fe0;
+  --color-accent-hover: #2f5bc7;
+  --color-accent-quiet: rgba(63, 111, 224, 0.12);
+
+  --color-success: #1f9d63;
+  --color-warning: #b9822a;
+  --color-danger: #d23f4b;
+  --color-info: #3f6fe0;
+
+  --color-rating: #d99a1f;
+  --color-progress-track: rgba(16, 20, 30, 0.14);
+
+  --shadow-1: 0 1px 2px rgba(16, 20, 30, 0.08);
+  --shadow-2: 0 6px 20px rgba(16, 20, 30, 0.12);
+  --shadow-3: 0 18px 50px rgba(16, 20, 30, 0.18);
+}
+
+:root {
+  /* Spacing scale (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+
+  /* Typography */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-mono: "SFMono-Regular", ui-monospace, "JetBrains Mono", Menlo,
+    Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.85rem;
+  --text-md: 0.95rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.45rem;
+  --text-2xl: 1.9rem;
+  --text-3xl: 2.6rem;
+
+  --weight-regular: 400;
+  --weight-medium: 550;
+  --weight-bold: 700;
+
+  --leading-tight: 1.18;
+  --leading-normal: 1.5;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
+
+  /* Layout */
+  --shell-max: 1440px;
+  --shell-gutter: clamp(var(--space-4), 4vw, var(--space-7));
+  --z-overlay: 100;
+  --z-toast: 200;
+}
