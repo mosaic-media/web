@@ -120,22 +120,24 @@ const divider: ComponentDefinition = {
 };
 
 /** Pagination — server supplies prev/next actions + enabled flags (no client
- *  arithmetic; the server knows the page targets). */
+ *  arithmetic; the server knows the page targets). Arrows are circular
+ *  bordered buttons; the label is optional (arrow-only rails omit it). */
+const pageArrow = { width: 34, height: 34, radius: "pill", align: "center", justify: "center", bg: "surface-raised", border: true, color: "text-muted" };
 const pagination: ComponentDefinition = {
   name: "Pagination",
   template: {
     type: "Box",
-    props: { style: { direction: "row", align: "center", justify: "center", gap: 4 } },
+    props: { style: { direction: "row", align: "center", justify: "center", gap: 3 } },
     children: [
       {
         type: "Pressable",
-        props: { action: { $bind: "prevAction" }, disabled: { $ifNot: { $bind: "hasPrev" } }, label: "Previous", style: { width: 38, height: 38, radius: "md", align: "center", justify: "center", color: "text-muted" } },
-        children: [{ type: "Icon", props: { name: "chevron-right", size: "1.1em" } }],
+        props: { action: { $bind: "prevAction" }, disabled: { $ifNot: { $bind: "hasPrev" } }, label: "Previous", style: pageArrow },
+        children: [{ type: "Icon", props: { name: "chevron-left", size: "1.1em" } }],
       },
-      { type: "Text", props: { text: { $bind: "label" }, style: { variant: "sm", color: "text-muted", tabular: true } } },
+      { type: "Text", props: { $if: { $bind: "label" }, text: { $bind: "label" }, style: { variant: "sm", color: "text-muted", tabular: true } } },
       {
         type: "Pressable",
-        props: { action: { $bind: "nextAction" }, disabled: { $ifNot: { $bind: "hasNext" } }, label: "Next", style: { width: 38, height: 38, radius: "md", align: "center", justify: "center", color: "text-muted" } },
+        props: { action: { $bind: "nextAction" }, disabled: { $ifNot: { $bind: "hasNext" } }, label: "Next", style: pageArrow },
         children: [{ type: "Icon", props: { name: "chevron-right", size: "1.1em" } }],
       },
     ],

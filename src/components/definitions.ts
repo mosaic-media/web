@@ -50,7 +50,7 @@ const posterCard: ComponentDefinition = {
             type: "Box",
             props: {
               $if: { $bind: "badge" },
-              style: { position: "absolute", top: 2, left: 2, bg: "surface-overlay", radius: "sm", px: 2, py: 1 },
+              style: { position: "absolute", top: 2, left: 2, bg: "surface-overlay", glass: true, border: true, radius: "sm", px: 2, py: 1 },
             },
             children: [{ type: "Text", props: { text: { $bind: "badge" }, style: { variant: "xs", weight: "medium" } } }],
           },
@@ -173,7 +173,7 @@ const personChip: ComponentDefinition = {
       {
         type: "Box",
         props: { style: { width: 42, height: 42, radius: "pill", overflow: "hidden", bg: "surface-overlay", align: "center", justify: "center" } },
-        children: [{ type: "Image", props: { src: { $bind: "avatar" }, placeholder: { $bind: "name" }, style: { width: "full", height: "full" } } }],
+        children: [{ type: "Image", props: { src: { $bind: "avatar" }, placeholder: { $bind: "name" }, placeholderMode: "initials", style: { width: "full", height: "full" } } }],
       },
       {
         type: "Box",
@@ -435,31 +435,65 @@ const playbackBar: ComponentDefinition = {
   },
 };
 
-/** HeroBanner — backdrop layer + gradient scrim + content, from primitives. */
+/** HeroBanner — backdrop layer + gradient scrim + content, from primitives.
+ *  Concept-shaped: an optional `kicker` pill ("Continue watching"), an optional
+ *  `nativeTitle`, meta rendered as bordered pills, and an `aside` slot for a
+ *  ratings/info panel docked to the right edge of the card. */
 const heroBanner: ComponentDefinition = {
   name: "HeroBanner",
   template: {
     type: "Box",
-    props: { style: { position: "relative", radius: "lg", overflow: "hidden", minHeight: 340, justify: "end" } },
+    props: { style: { position: "relative", radius: "xl", overflow: "hidden", minHeight: 380, justify: "end", border: true } },
     children: [
       { type: "Image", props: { src: { $bind: "backdrop" }, placeholder: " ", artLight: "ambient", style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "full", height: "full" } } },
+      /* Two scrim layers: a side wash toward the text column and a bottom-up
+         wash under it, so copy stays legible over bright artwork in both themes. */
       { type: "Box", props: { style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, bgGradient: { from: "bg", to: "transparent", angle: 70 } } } },
+      { type: "Box", props: { style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, bgGradient: { from: "bg", to: "transparent", angle: 0 } } } },
       {
         type: "Box",
-        props: { style: { position: "relative", p: 6, gap: 3, maxWidth: "620px" } },
+        props: { style: { position: "relative", direction: "row", align: "end", gap: 6, p: 6, grow: true, wrap: true } },
         children: [
-          { type: "Text", props: { text: { $bind: "title" }, style: { variant: "3xl", weight: "bold" } } },
           {
             type: "Box",
-            props: { $if: { $bind: "meta" }, style: { direction: "row", gap: 3, wrap: true } },
-            children: [{ type: "Text", props: { $each: { $bind: "meta" }, $as: "m", text: { $bind: "m" }, style: { variant: "sm", color: "text-muted" } } }],
+            props: { style: { gap: 3, grow: true, maxWidth: 620, justify: "end" } },
+            children: [
+              {
+                type: "Box",
+                props: { $if: { $bind: "kicker" }, style: { direction: "row" } },
+                children: [
+                  {
+                    type: "Box",
+                    props: { style: { direction: "row", align: "center", gap: 2, px: 3, py: 1, radius: "pill", bg: "surface-overlay", glass: true, border: true } },
+                    children: [
+                      { type: "Box", props: { style: { width: 6, height: 6, radius: "pill", bg: "accent" } } },
+                      { type: "Text", props: { text: { $bind: "kicker" }, style: { variant: "xs", weight: "medium", transform: "uppercase" } } },
+                    ],
+                  },
+                ],
+              },
+              { type: "Text", props: { text: { $bind: "title" }, style: { variant: "3xl", weight: "bold" } } },
+              { type: "Text", props: { $if: { $bind: "nativeTitle" }, text: { $bind: "nativeTitle" }, style: { variant: "lg", color: "text-muted" } } },
+              {
+                type: "Box",
+                props: { $if: { $bind: "meta" }, style: { direction: "row", gap: 2, wrap: true, align: "center" } },
+                children: [
+                  {
+                    type: "Box",
+                    props: { $each: { $bind: "meta" }, $as: "m", style: { bg: "surface-overlay", glass: true, border: true, radius: "pill", px: 3, py: 1 } },
+                    children: [{ type: "Text", props: { text: { $bind: "m" }, style: { variant: "xs", color: "text-muted" } } }],
+                  },
+                ],
+              },
+              { type: "Text", props: { $if: { $bind: "overview" }, text: { $bind: "overview" }, style: { color: "text-muted" } } },
+              {
+                type: "Box",
+                props: { style: { direction: "row", gap: 3, wrap: true, pt: 2 } },
+                children: [{ type: "Outlet", props: { name: "actions" } }],
+              },
+            ],
           },
-          { type: "Text", props: { $if: { $bind: "overview" }, text: { $bind: "overview" }, style: { color: "text-muted" } } },
-          {
-            type: "Box",
-            props: { style: { direction: "row", gap: 3, wrap: true } },
-            children: [{ type: "Outlet", props: { name: "actions" } }],
-          },
+          { type: "Outlet", props: { name: "aside" } },
         ],
       },
     ],

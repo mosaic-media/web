@@ -56,6 +56,7 @@ export function Image({ node }: { node: UINode }) {
   const alt = prop<string>(node, "alt", "");
   const fit = prop<"cover" | "contain">(node, "fit", "cover");
   const placeholder = prop<string | undefined>(node, "placeholder", undefined);
+  const placeholderMode = prop<"label" | "initials">(node, "placeholderMode", "label");
   const artLight = prop<"ambient" | "focus" | undefined>(node, "artLight", undefined);
   const style = prop<BoxStyle>(node, "style", {});
   const css = boxToCss(style);
@@ -80,9 +81,23 @@ export function Image({ node }: { node: UINode }) {
   }, [artLight, src]);
 
   if (!src) {
+    // "label" shows a truncated type label (poster placeholders); "initials"
+    // condenses a name to 1–2 letters (avatar-sized placeholders).
+    const text =
+      placeholder === undefined
+        ? undefined
+        : placeholderMode === "initials"
+          ? placeholder
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((w) => w[0])
+              .join("")
+              .toUpperCase()
+          : placeholder.slice(0, 14);
     return (
       <div className="msc-prim-placeholder" style={{ ...css, alignItems: "center", justifyContent: "center" }}>
-        {placeholder && <span>{placeholder.slice(0, 14)}</span>}
+        {text && <span>{text}</span>}
       </div>
     );
   }

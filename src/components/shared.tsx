@@ -28,6 +28,7 @@ export type IconName =
   | "play"
   | "search"
   | "chevron-right"
+  | "chevron-left"
   | "chevron-down"
   | "star"
   | "plus"
@@ -40,12 +41,17 @@ export type IconName =
   | "success"
   | "external"
   | "grid"
-  | "list";
+  | "list"
+  | "home"
+  | "settings"
+  | "sun"
+  | "moon";
 
 const PATHS: Record<IconName, string> = {
   play: "M8 5v14l11-7z",
   search: "M10 4a6 6 0 104.9 9.5l4.3 4.3 1.4-1.4-4.3-4.3A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z",
   "chevron-right": "M9 6l6 6-6 6",
+  "chevron-left": "M15 6l-6 6 6 6",
   "chevron-down": "M6 9l6 6 6-6",
   star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z",
   plus: "M12 5v14M5 12h14",
@@ -59,6 +65,10 @@ const PATHS: Record<IconName, string> = {
   external: "M14 5h5v5M19 5l-8 8M12 5H6a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1v-6",
   grid: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
   list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+  home: "M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10",
+  settings: "M3 6h11M18 6h3M16.5 4.5v3M3 12h5M12 12h9M9.5 10.5v3M3 18h11M18 18h3M16.5 16.5v3",
+  sun: "M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4",
+  moon: "M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z",
 };
 
 const FILLED: Partial<Record<IconName, boolean>> = { play: true, star: true };

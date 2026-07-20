@@ -88,6 +88,9 @@ export interface BoxStyle {
   bg?: ColorToken;
   /** Linear gradient background (Flutter-portable). Overrides `bg` if both set. */
   bgGradient?: { from: GradientStop; to: GradientStop; angle?: number };
+  /** Frosted-glass backdrop blur (web: backdrop-filter; Flutter: BackdropFilter).
+   *  Pair with a translucent `bg` so what's behind shows through the frost. */
+  glass?: boolean;
   color?: ColorToken;
   radius?: RadiusToken;
   border?: boolean;
@@ -189,6 +192,10 @@ export function boxToCss(s: BoxStyle): CSSProperties {
   if (s.bgGradient) {
     const stop = (c: GradientStop) => (c === "transparent" ? "transparent" : `var(--color-${c})`);
     css.background = `linear-gradient(${s.bgGradient.angle ?? 180}deg, ${stop(s.bgGradient.from)}, ${stop(s.bgGradient.to)})`;
+  }
+  if (s.glass) {
+    css.backdropFilter = "blur(var(--glass-blur))";
+    css.WebkitBackdropFilter = "blur(var(--glass-blur))";
   }
   if (s.color) css.color = color(s.color);
   if (s.radius) css.borderRadius = `var(--radius-${s.radius})`;

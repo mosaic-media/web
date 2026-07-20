@@ -52,27 +52,34 @@
 }
 
 /* ─────────────────────── app chrome ─────────────────────── */
+/* Concept layout: the sidebar is a floating rounded glass panel beside the
+   content, not a full-bleed column — everything sits on the ambient wash. */
 .msc-app {
   display: grid;
   grid-template-columns: 248px 1fr;
+  gap: var(--space-5);
   min-height: 100vh;
+  padding: 0 var(--space-4) var(--space-4);
 }
 
 .msc-sidebar {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
   padding: var(--space-5) var(--space-4);
   /* Frosted glass that catches the artwork's colour along its top edge (the
      accent tint is art-driven), fading into the neutral surface below. */
   background: linear-gradient(178deg, var(--color-accent-quiet), transparent 40%), var(--color-surface);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-right: 1px solid var(--color-border);
-  box-shadow: inset -1px 0 0 var(--color-accent-quiet);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-2);
   position: sticky;
-  top: 0;
-  height: 100vh;
+  top: var(--space-4);
+  margin-top: var(--space-4);
+  height: calc(100vh - 2 * var(--space-4));
+  overflow-y: auto;
 }
 .msc-sidebar__brand {
   display: flex;
@@ -129,13 +136,84 @@
   color: var(--color-accent);
   box-shadow: inset 0 0 0 1px var(--color-accent-quiet), var(--glow-accent);
 }
+.msc-sidebar__label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-faint);
+  padding: var(--space-2) var(--space-2) 0;
+}
+.msc-sidebar__recent {
+  display: flex;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+}
+.msc-sidebar__thumb {
+  width: 44px;
+  aspect-ratio: 2 / 3;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.msc-sidebar__thumb:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-accent);
+}
+.msc-sidebar__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .msc-sidebar__foot {
   margin-top: auto;
-  padding: 0 var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.msc-usercard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.msc-usercard:hover {
+  border-color: var(--color-border-strong);
+}
+.msc-usercard__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.msc-usercard__name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.msc-usercard__role {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+}
+.msc-usercard .msc-icon {
+  color: var(--color-text-faint);
 }
 .msc-sidebar__version {
   font-size: var(--text-xs);
   color: var(--color-text-faint);
+  padding: 0 var(--space-2);
 }
 
 .msc-main {
@@ -143,27 +221,28 @@
   display: flex;
   flex-direction: column;
 }
+/* The header floats directly on the ambient wash like every other panel — no
+   full-bleed band, no border. The search field is its own glass element. */
 .msc-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 560px) 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-3) var(--shell-gutter);
-  background: color-mix(in srgb, var(--color-bg) 64%, transparent);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border-bottom: 1px solid var(--color-border);
-  /* A hairline of the artwork's colour under the topbar — a lit edge. */
-  box-shadow: 0 1px 0 var(--color-accent-quiet);
+  /* Match the content gutter so the crumb/search align with the cards below. */
+  padding: var(--space-4) var(--shell-gutter) var(--space-2);
 }
 .msc-topbar__left,
 .msc-topbar__right {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+.msc-topbar__right {
+  justify-content: flex-end;
+}
+.msc-topbar__search {
+  width: 100%;
+  max-width: none;
 }
 .msc-topbar__crumb {
   font-weight: var(--weight-medium);
@@ -284,6 +363,8 @@
   align-items: center;
   gap: var(--space-3);
   background: var(--color-surface-raised);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   padding: var(--space-3) var(--space-4);
@@ -453,6 +534,32 @@
 }
 .msc-progress__fill--danger {
   background: var(--color-danger);
+}
+
+.msc-ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+.msc-ring svg {
+  position: absolute;
+  inset: 0;
+}
+.msc-ring__track {
+  fill: none;
+  stroke: var(--color-progress-track);
+}
+.msc-ring__fill {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--dur-med) var(--ease), stroke var(--dur-slow) var(--ease);
+}
+.msc-ring__value {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
 }
 
 .msc-seasons {
@@ -762,23 +869,31 @@
   }
   .msc-sidebar {
     position: fixed;
-    bottom: 0;
+    bottom: var(--space-2);
     top: auto;
-    left: 0;
-    right: 0;
+    left: var(--space-2);
+    right: var(--space-2);
     height: auto;
+    margin-top: 0;
     flex-direction: row;
     align-items: center;
     gap: var(--space-2);
-    border-right: none;
-    border-top: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
     padding: var(--space-2);
     z-index: 50;
     overflow-x: auto;
   }
   .msc-sidebar__brand,
   .msc-sidebar__foot,
-  .msc-sidebar__sep {
+  .msc-sidebar__sep,
+  .msc-sidebar__label,
+  .msc-sidebar__recent {
+    display: none;
+  }
+  .msc-topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .msc-topbar__crumb {
     display: none;
   }
   .msc-sidebar__nav {

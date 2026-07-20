@@ -192,3 +192,31 @@ export function ProgressBar({ node }: { node: UINode }) {
     </div>
   );
 }
+
+/** ProgressRing — circular progress with the percentage in the centre. The arc
+ *  is computed from `value` (0..1), so like ProgressBar it stays native. */
+export function ProgressRing({ node }: { node: UINode }) {
+  const value = Math.max(0, Math.min(1, prop<number>(node, "value", 0)));
+  const size = prop<number>(node, "size", 84);
+  const stroke = 7;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="msc-ring" style={{ width: size, height: size }} role="progressbar" aria-valuenow={Math.round(value * 100)}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+        <circle className="msc-ring__track" cx={size / 2} cy={size / 2} r={r} strokeWidth={stroke} />
+        <circle
+          className="msc-ring__fill"
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          strokeWidth={stroke}
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - value)}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+      <span className="msc-ring__value">{Math.round(value * 100)}%</span>
+    </div>
+  );
+}

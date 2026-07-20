@@ -22,7 +22,7 @@ import { defineComponents } from "../sdui/template";
 
 import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives";
 import { Tabs } from "./layout";
-import { TextInput, Switch, SelectInput, Menu, SearchBar, Slider, RatingControl, ProgressBar } from "./controls";
+import { TextInput, Switch, SelectInput, Menu, SearchBar, Slider, RatingControl, ProgressBar, ProgressRing } from "./controls";
 import { SeasonSelector } from "./media";
 import { Skeleton } from "./feedback";
 import { PLATFORM_DEFINITIONS } from "./definitions";
@@ -59,6 +59,7 @@ export function installComponents(): void {
 
     // 1. primitives — computed / animated
     ProgressBar,
+    ProgressRing,
     Skeleton,
   });
 
