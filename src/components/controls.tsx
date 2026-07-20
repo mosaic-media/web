@@ -17,7 +17,7 @@
  * bare input + static chrome, so they moved to definitions (definitions.ts).
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Action, UINode } from "../sdui/types";
 import { prop } from "../sdui/registry";
 import { useRuntime } from "../sdui/context";
@@ -113,17 +113,22 @@ export function Menu({ node }: { node: UINode }) {
 
 /** SearchBar — the submit Action carries the live term, so it owns its input. */
 export function SearchBar({ node }: { node: UINode }) {
-  const { emit } = useRuntime();
+  const { emit, input } = useRuntime();
   const placeholder = prop<string>(node, "placeholder", "Search your library…");
   const screen = prop<string>(node, "submitScreen", "search");
   const [value, setValue] = useState(prop<string>(node, "value", ""));
+  // In a live session, stream the value up as it changes, debounced so a fast
+  // typist does not fan a request out per keystroke (ADR 0032).
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => () => clearTimeout(timer.current), []);
   return (
     <form
       className="msc-search"
       role="search"
       onSubmit={(e) => {
         e.preventDefault();
-        emit({ kind: "navigate", screen, params: { q: value } });
+        if (input) input(value);
+        else emit({ kind: "navigate", screen, params: { text: value } });
       }}
     >
       <Icon name="search" className="msc-search__icon" />
@@ -132,7 +137,14 @@ export function SearchBar({ node }: { node: UINode }) {
         type="search"
         value={value}
         placeholder={placeholder}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value;
+          setValue(v);
+          if (input) {
+            clearTimeout(timer.current);
+            timer.current = setTimeout(() => input(v), 220);
+          }
+        }}
       />
     </form>
   );

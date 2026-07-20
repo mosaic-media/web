@@ -25,12 +25,17 @@ interface ShellProviderProps {
   children: ReactNode;
   /** Render prop for overlays/toasts so the host controls where they mount. */
   render: (ui: { overlays: OverlayHandle[]; toasts: ToastItem[]; dismissOverlay: () => void; dismissToast: (id: string) => void }) => ReactNode;
+  /** Live session (ADR 0032): when present, an Invoke action is sent up the
+   *  socket instead of run as a one-shot GraphQL mutation, and onInput streams a
+   *  field value for search-as-you-type. Absent → the request/response path. */
+  onInvoke?: (mutation: string, input?: Record<string, unknown>) => void;
+  onInput?: (value: string) => void;
 }
 
 let seq = 0;
 const nextId = (p: string) => `${p}-${++seq}`;
 
-export function ShellProvider({ screen, onNavigate, onBack, children, render }: ShellProviderProps) {
+export function ShellProvider({ screen, onNavigate, onBack, children, render, onInvoke, onInput }: ShellProviderProps) {
   const [overlays, setOverlays] = useState<OverlayHandle[]>([]);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -99,15 +104,30 @@ export function ShellProvider({ screen, onNavigate, onBack, children, render }: 
           pushToast(`Play requested for part ${action.partId}`, "accent");
           return { ok: true };
 
-        case "invoke":
-        case "query": {
-          const document =
-            action.kind === "invoke"
-              ? `mutation Shell($input: JSON) { ${action.mutation}(input: $input) }`
-              : action.query;
-          const variables = action.kind === "invoke" ? { input: action.input } : action.variables;
+        case "invoke": {
+          // In a live session, hand the mutation to the socket; the server runs
+          // it and pushes the result (a toast, a re-render).
+          if (onInvoke) {
+            onInvoke(action.mutation, action.input);
+            return { ok: true };
+          }
+          const document = `mutation Shell($input: JSON) { ${action.mutation}(input: $input) }`;
           try {
-            const data = await gql(document, variables);
+            const data = await gql(document, { input: action.input });
+            return { ok: true, data };
+          } catch (e) {
+            const err =
+              e instanceof PlatformError
+                ? { category: e.category, message: e.message }
+                : ({ category: "Internal", message: "Unexpected error" } as const);
+            pushToast(err.message, "danger");
+            return { ok: false, error: err };
+          }
+        }
+
+        case "query": {
+          try {
+            const data = await gql(action.query, action.variables);
             return { ok: true, data };
           } catch (e) {
             const err =
@@ -132,7 +152,7 @@ export function ShellProvider({ screen, onNavigate, onBack, children, render }: 
           return { ok: false, error: { category: "InvalidArgument", message: "Unknown action" } };
       }
     },
-    [onNavigate, onBack, dismissOverlay, pushToast],
+    [onNavigate, onBack, dismissOverlay, pushToast, onInvoke],
   );
 
   const emit = useCallback(
@@ -142,7 +162,7 @@ export function ShellProvider({ screen, onNavigate, onBack, children, render }: 
     [dispatch],
   );
 
-  const runtime = useMemo(() => ({ dispatch, emit, screen }), [dispatch, emit, screen]);
+  const runtime = useMemo(() => ({ dispatch, emit, screen, input: onInput }), [dispatch, emit, screen, onInput]);
 
   return (
     <ShellRuntimeContext.Provider value={runtime}>

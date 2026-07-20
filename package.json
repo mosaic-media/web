@@ -1,6 +1,6 @@
 {
   "name": "@mosaic-media/sdui-react",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "React runtime for the Mosaic SDUI contract: primitives, registry, renderer, definition expander, and the token-driven skin.",
   "license": "AGPL-3.0-only",
   "type": "module",

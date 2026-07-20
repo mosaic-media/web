@@ -24,6 +24,10 @@ export interface ShellRuntime {
   emit: (action?: Action) => void;
   /** Current screen name, for highlighting nav. */
   screen: string;
+  /** Stream a field value up as it changes (search-as-you-type). Present only
+   *  in a live session (ADR 0032); absent otherwise, so a component falls back
+   *  to submit-on-enter. */
+  input?: (value: string) => void;
 }
 
 export const ShellRuntimeContext = createContext<ShellRuntime | null>(null);
