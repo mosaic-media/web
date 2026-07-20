@@ -13,7 +13,7 @@
  * primitive's job. Fragment / Outlet exist for the template mechanism.
  */
 
-import { useEffect, useRef, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Action, UINode } from "../sdui/types";
 import { prop } from "../sdui/registry";
 import { Children } from "../sdui/Renderer";
@@ -63,6 +63,11 @@ export function Image({ node }: { node: UINode }) {
 
   const imgRef = useRef<HTMLImageElement | null>(null);
   const palette = useRef<Rgb[] | null>(null);
+  // artLight needs a CORS-anonymous request so the canvas is readable, but a CDN
+  // that sends no CORS headers then fails the request and the image never shows.
+  // On such a failure we retry once without crossOrigin: the image displays, and
+  // only its ambient sampling is lost.
+  const [corsBlocked, setCorsBlocked] = useState(false);
 
   const sample = () => {
     const el = imgRef.current;
@@ -102,13 +107,17 @@ export function Image({ node }: { node: UINode }) {
     );
   }
 
+  const useCors = artLight !== undefined && !corsBlocked;
   const artProps = artLight
     ? {
-        crossOrigin: "anonymous" as const,
+        ...(useCors ? { crossOrigin: "anonymous" as const } : {}),
         onLoad: () => {
           palette.current = null;
           if (artLight === "ambient") setAmbientArt(sample());
         },
+        // A CORS-less CDN fails the anonymous request; drop crossOrigin and let
+        // the image load plainly (sampling is skipped for it).
+        onError: useCors ? () => setCorsBlocked(true) : undefined,
         ...(artLight === "focus"
           ? {
               onMouseEnter: () => {
@@ -123,6 +132,8 @@ export function Image({ node }: { node: UINode }) {
 
   return (
     <img
+      // Remount when falling back so the browser re-fetches without crossOrigin.
+      key={useCors ? "cors" : "plain"}
       ref={imgRef}
       src={src}
       alt={alt}
