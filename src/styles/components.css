@@ -18,6 +18,36 @@
   vertical-align: -0.15em;
 }
 
+/* ─────────────────────── primitives ─────────────────────── */
+/* Box/Text/Image/Icon/Spacer style themselves inline from tokens; only the
+   interactive primitive (Pressable) and the Image placeholder need CSS here. */
+.msc-pressable {
+  border: none;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.msc-pressable:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.msc-pressable--lift {
+  transition: transform var(--dur-med) var(--ease), box-shadow var(--dur-med) var(--ease);
+}
+.msc-pressable--lift:hover:not(:disabled) {
+  transform: translateY(-4px);
+}
+.msc-prim-placeholder {
+  color: var(--color-text-faint);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: linear-gradient(140deg, var(--color-surface-raised), var(--color-surface-overlay));
+}
+
 /* ─────────────────────── app chrome ─────────────────────── */
 .msc-app {
   display: grid;

@@ -9,10 +9,13 @@ import "@/styles/global.css";
 import "@/styles/components.css";
 
 import { installComponents } from "@/components";
+import { installMockModuleComponents } from "@/mock/moduleComponents";
 import { App } from "@/App";
 
-// Register the built-in SDUI vocabulary before first render.
+// Register the built-in SDUI vocabulary, then a simulated module's own
+// primitive-composed components, before first render.
 installComponents();
+installMockModuleComponents();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

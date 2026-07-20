@@ -127,6 +127,65 @@ const GROUPS: Group[] = [
       { name: "Unknown (forward-compat)", node: { type: "SomeFutureModuleCard", props: {} } },
     ],
   },
+  {
+    title: "Primitives",
+    blurb: "The irreducible, token-only building blocks. Every presentational component (and every module component) composes from these — the same tree renders on any client.",
+    demos: [
+      {
+        name: "Box + Text + Icon (composed inline)",
+        wide: true,
+        node: {
+          type: "Box",
+          props: { style: { direction: "row", gap: 3, align: "center", p: 4, bg: "surface-raised", radius: "lg", border: true } },
+          children: [
+            { type: "Icon", props: { name: "play", color: "accent", size: 22 } },
+            {
+              type: "Box",
+              props: { style: { gap: 1 } },
+              children: [
+                { type: "Text", props: { text: "Composed from primitives", style: { variant: "md", weight: "bold" } } },
+                { type: "Text", props: { text: "Box · Text · Icon — token styles only", style: { variant: "sm", color: "text-muted" } } },
+              ],
+            },
+            { type: "Spacer", props: { grow: true } },
+            { type: "Pressable", props: { action: { kind: "toast", message: "Pressable fired" }, lift: true, style: { bg: "accent", color: "text-on-accent", radius: "md", px: 4, py: 2 } }, children: [{ type: "Text", props: { text: "Pressable" } }] },
+          ],
+        },
+      },
+      { name: "PosterCard (this IS a primitive definition)", node: poster("Cowboy Bebop", "Anime Series", { subtitle: "S1 · E12", progress: 0.6, badge: "NEW" }) },
+    ],
+  },
+  {
+    title: "Module-defined (from primitives)",
+    blurb: "Components a module contributed as pure data — the Platform never shipped them. Registered at runtime via defineComponent; the Shell expands the primitive template like any other node.",
+    demos: [
+      {
+        name: "module.StatChip",
+        wide: true,
+        node: {
+          type: "Box",
+          props: { style: { direction: "row", gap: 2, wrap: true } },
+          children: [
+            { type: "module.StatChip", props: { icon: "star", label: "Rating", value: "8.9" } },
+            { type: "module.StatChip", props: { icon: "grid", label: "Episodes", value: "26", tone: "success" } },
+            { type: "module.StatChip", props: { icon: "info", label: "Year", value: "1998", tone: "info" } },
+          ],
+        },
+      },
+      {
+        name: "module.Panel (Outlet passthrough)",
+        wide: true,
+        node: {
+          type: "module.Panel",
+          props: { title: "A module-defined panel" },
+          children: [
+            { type: "Text", props: { text: "The caller's children flow into the panel body through an Outlet.", style: { color: "text-muted" } } },
+            { type: "module.StatChip", props: { icon: "check", label: "Nested", value: "works" } },
+          ],
+        },
+      },
+    ],
+  },
 ];
 
 export function Gallery() {

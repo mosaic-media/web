@@ -36,36 +36,7 @@ function Poster({ src, alt, kind }: { src?: string; alt: string; kind?: string }
   );
 }
 
-export function PosterCard({ node }: { node: UINode }) {
-  const { emit } = useRuntime();
-  const title = prop<string>(node, "title", "Untitled");
-  const subtitle = prop<string | undefined>(node, "subtitle", undefined);
-  const mediaType = prop<string | undefined>(node, "mediaType", undefined);
-  const poster = prop<string | undefined>(node, "poster", undefined);
-  const progress = prop<number | undefined>(node, "progress", undefined);
-  const badge = prop<string | undefined>(node, "badge", undefined);
-  const action = prop<Action | undefined>(node, "action", undefined);
-  return (
-    <button className="msc-poster" onClick={() => emit(action)}>
-      <div className="msc-poster__art">
-        <Poster src={poster} alt={title} kind={mediaType} />
-        {badge && <span className="msc-poster__badge">{badge}</span>}
-        <span className="msc-poster__play" aria-hidden>
-          <Icon name="play" />
-        </span>
-        {progress !== undefined && (
-          <div className="msc-poster__progress">
-            <ProgressBar node={{ type: "ProgressBar", props: { value: progress } }} />
-          </div>
-        )}
-      </div>
-      <div className="msc-poster__meta">
-        <span className="msc-poster__title">{title}</span>
-        {subtitle && <span className="msc-poster__subtitle">{subtitle}</span>}
-      </div>
-    </button>
-  );
-}
+// PosterCard is now a primitive-composed definition (see components/definitions.ts).
 
 export function HeroBanner({ node }: { node: UINode }) {
   const title = prop<string>(node, "title", "");
