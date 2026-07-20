@@ -16,7 +16,9 @@ import { cx } from "./shared";
 export function SeasonSelector({ node }: { node: UINode }) {
   const { emit } = useRuntime();
   const seasons = prop<Array<{ id: string; label: string; action?: Action }>>(node, "seasons", []);
-  const [active, setActive] = useState(seasons[0]?.id);
+  // `selected` lets the server keep the highlight in step with the season it
+  // rendered (a season switch re-navigates); absent, it defaults to the first.
+  const [active, setActive] = useState(prop<string | undefined>(node, "selected", undefined) ?? seasons[0]?.id);
   return (
     <div className="msc-seasons" role="tablist">
       {seasons.map((s) => (

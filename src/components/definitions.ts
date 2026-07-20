@@ -472,7 +472,14 @@ const heroBanner: ComponentDefinition = {
                   },
                 ],
               },
-              { type: "Text", props: { text: { $bind: "title" }, style: { variant: "3xl", weight: "bold" } } },
+              /* Title treatment: the clearlogo when the source has one (ADR
+                 0034), else the title set as text. */
+              {
+                type: "Box",
+                props: { $if: { $bind: "logo" }, style: { height: 96, maxWidth: 460 } },
+                children: [{ type: "Image", props: { src: { $bind: "logo" }, fit: "contain", placeholder: " ", style: { width: "full", height: "full" } } }],
+              },
+              { type: "Text", props: { $ifNot: { $bind: "logo" }, text: { $bind: "title" }, style: { variant: "3xl", weight: "bold" } } },
               { type: "Text", props: { $if: { $bind: "nativeTitle" }, text: { $bind: "nativeTitle" }, style: { variant: "lg", color: "text-muted" } } },
               {
                 type: "Box",
