@@ -21,6 +21,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/graphql": { target: platform, changeOrigin: true },
+      // Artwork the Platform proxies (ADR 0030) — same-origin so the artlight
+      // canvas is readable without any CORS.
+      "/artwork": { target: platform, changeOrigin: true },
     },
   },
 });
