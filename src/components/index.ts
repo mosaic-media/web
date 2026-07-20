@@ -20,20 +20,8 @@ import { defineComponents } from "@/sdui/template";
 
 import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives";
 import { Screen, Section, Carousel, Grid, Stack, Tabs, Divider } from "./layout";
-import {
-  Button,
-  IconButton,
-  Menu,
-  SearchBar,
-  TextField,
-  Toggle,
-  Select,
-  Slider,
-  RatingControl,
-  ProgressBar,
-  Pagination,
-} from "./controls";
-import { HeroBanner, EpisodeRow, DetailHeader, SeasonSelector, RelatedRail, PlaybackBar, GenreTag } from "./media";
+import { Menu, SearchBar, TextField, Toggle, Select, Slider, RatingControl, ProgressBar, Pagination } from "./controls";
+import { SeasonSelector, RelatedRail } from "./media";
 import { Skeleton, ErrorState } from "./feedback";
 import { PLATFORM_DEFINITIONS } from "./definitions";
 
@@ -64,9 +52,8 @@ export function installComponents(): void {
     Tabs,
     Divider,
 
-    // 2. native — interactive controls
-    Button,
-    IconButton,
+    // 2. native — interactive controls (state). Button/IconButton are now
+    // definitions.
     Menu,
     SearchBar,
     TextField,
@@ -77,21 +64,14 @@ export function installComponents(): void {
     ProgressBar,
     Pagination,
 
-    // 2. native — media. HeroBanner stays native (needs gradient/bg-image, a
-    // vocab gap); EpisodeRow/DetailHeader use image thumbs + grid layout;
-    // SeasonSelector is interactive. PosterCard/PersonChip/SourcePicker moved
-    // to definitions.
-    HeroBanner,
-    EpisodeRow,
-    DetailHeader,
+    // 2. native — media. SeasonSelector holds selection state; RelatedRail
+    // branches on child count. Everything else presentational moved to
+    // definitions.
     SeasonSelector,
     RelatedRail,
-    PlaybackBar,
-    GenreTag,
 
     // 2. native — feedback. Skeleton (keyframe animation) and ErrorState
-    // (category→tone mapping) stay native; Badge/Banner/StatusIndicator/
-    // EmptyState moved to definitions.
+    // (category→tone mapping) stay native.
     Skeleton,
     ErrorState,
   });

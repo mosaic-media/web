@@ -53,6 +53,7 @@ export type ColorToken =
 export type Align = "start" | "center" | "end" | "stretch" | "baseline";
 export type Justify = "start" | "center" | "end" | "between" | "around";
 export type Dimension = number | "full" | "auto" | `${number}%`;
+export type GradientStop = ColorToken | "transparent";
 
 /** Layout + box styling for the Box primitive. All values are tokens/enums. */
 export interface BoxStyle {
@@ -71,6 +72,8 @@ export interface BoxStyle {
   pl?: SpaceToken;
 
   bg?: ColorToken;
+  /** Linear gradient background (Flutter-portable). Overrides `bg` if both set. */
+  bgGradient?: { from: GradientStop; to: GradientStop; angle?: number };
   color?: ColorToken;
   radius?: RadiusToken;
   border?: boolean;
@@ -80,6 +83,7 @@ export interface BoxStyle {
   height?: Dimension;
   minWidth?: Dimension;
   maxWidth?: Dimension;
+  minHeight?: Dimension;
   aspectRatio?: string;
 
   flex?: number;
@@ -160,6 +164,10 @@ export function boxToCss(s: BoxStyle): CSSProperties {
   if (s.pl !== undefined) css.paddingLeft = space(s.pl);
 
   if (s.bg) css.background = color(s.bg);
+  if (s.bgGradient) {
+    const stop = (c: GradientStop) => (c === "transparent" ? "transparent" : `var(--color-${c})`);
+    css.background = `linear-gradient(${s.bgGradient.angle ?? 180}deg, ${stop(s.bgGradient.from)}, ${stop(s.bgGradient.to)})`;
+  }
   if (s.color) css.color = color(s.color);
   if (s.radius) css.borderRadius = `var(--radius-${s.radius})`;
   if (s.border) css.border = `1px solid ${color(s.borderColor ?? "border")}`;
@@ -168,6 +176,7 @@ export function boxToCss(s: BoxStyle): CSSProperties {
   if (s.height !== undefined) css.height = dim(s.height);
   if (s.minWidth !== undefined) css.minWidth = dim(s.minWidth);
   if (s.maxWidth !== undefined) css.maxWidth = dim(s.maxWidth);
+  if (s.minHeight !== undefined) css.minHeight = dim(s.minHeight);
   if (s.aspectRatio) css.aspectRatio = s.aspectRatio;
 
   if (s.flex !== undefined) css.flex = s.flex;

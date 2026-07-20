@@ -232,6 +232,239 @@ const emptyState: ComponentDefinition = {
   },
 };
 
+/** Button — variant selects a full style object via $match; icon is optional. */
+const buttonBase = { direction: "row", align: "center", justify: "center", gap: 2, px: 4, py: 3, radius: "md" };
+const button: ComponentDefinition = {
+  name: "Button",
+  params: { variant: "primary", label: "Button" },
+  template: {
+    type: "Pressable",
+    props: {
+      action: { $bind: "action" },
+      disabled: { $bind: "disabled" },
+      style: {
+        $match: {
+          on: { $bind: "variant" },
+          cases: {
+            primary: { ...buttonBase, bg: "accent", color: "text-on-accent" },
+            secondary: { ...buttonBase, bg: "surface-raised", color: "text", border: true, borderColor: "border-strong" },
+            ghost: { ...buttonBase, color: "text-muted" },
+            danger: { ...buttonBase, bg: "danger-quiet", color: "danger", border: true, borderColor: "danger" },
+          },
+          default: { ...buttonBase, bg: "accent", color: "text-on-accent" },
+        },
+      },
+    },
+    children: [
+      { type: "Icon", props: { $if: { $bind: "icon" }, name: { $bind: "icon" }, size: "1em" } },
+      { type: "Text", props: { text: { $bind: "label" }, style: { weight: "medium" } } },
+    ],
+  },
+};
+
+/** IconButton — icon-only Pressable; label becomes the accessible name. */
+const iconButton: ComponentDefinition = {
+  name: "IconButton",
+  params: { icon: "dots", label: "Action", variant: "ghost" },
+  template: {
+    type: "Pressable",
+    props: {
+      action: { $bind: "action" },
+      label: { $bind: "label" },
+      style: {
+        $match: {
+          on: { $bind: "variant" },
+          cases: {
+            solid: { width: 38, height: 38, radius: "md", align: "center", justify: "center", bg: "accent", color: "text-on-accent" },
+            ghost: { width: 38, height: 38, radius: "md", align: "center", justify: "center", color: "text-muted" },
+          },
+          default: { width: 38, height: 38, radius: "md", align: "center", justify: "center", color: "text-muted" },
+        },
+      },
+    },
+    children: [{ type: "Icon", props: { name: { $bind: "icon" } } }],
+  },
+};
+
+const tagStyle = { direction: "row", align: "center", bg: "surface-raised", border: true, radius: "pill", px: 3 };
+/** GenreTag — a Pressable when it carries an action, a plain Box otherwise. */
+const genreTag: ComponentDefinition = {
+  name: "GenreTag",
+  template: {
+    type: "Fragment",
+    children: [
+      {
+        type: "Pressable",
+        props: { $if: { $bind: "action" }, action: { $bind: "action" }, style: tagStyle },
+        children: [{ type: "Text", props: { text: { $bind: "label" }, style: { variant: "xs", color: "text-muted" } } }],
+      },
+      {
+        type: "Box",
+        props: { $ifNot: { $bind: "action" }, style: tagStyle },
+        children: [{ type: "Text", props: { text: { $bind: "label" }, style: { variant: "xs", color: "text-muted" } } }],
+      },
+    ],
+  },
+};
+
+/** EpisodeRow — a Part under a series: thumb + title/runtime/overview. */
+const episodeRow: ComponentDefinition = {
+  name: "EpisodeRow",
+  template: {
+    type: "Pressable",
+    props: { action: { $bind: "action" }, style: { direction: "row", align: "start", gap: 4, p: 3, radius: "md" } },
+    children: [
+      {
+        type: "Box",
+        props: { style: { width: 148, aspectRatio: "16 / 9", radius: "sm", overflow: "hidden", bg: "surface-raised" } },
+        children: [{ type: "Image", props: { src: { $bind: "thumbnail" }, placeholder: " ", style: { width: "full", height: "full" } } }],
+      },
+      {
+        type: "Box",
+        props: { style: { grow: true, gap: 1 } },
+        children: [
+          {
+            type: "Box",
+            props: { style: { direction: "row", justify: "between", align: "baseline", gap: 3 } },
+            children: [
+              {
+                type: "Box",
+                props: { style: { direction: "row", align: "baseline", gap: 2 } },
+                children: [
+                  { type: "Text", props: { $if: { $bind: "index" }, text: { $bind: "index" }, style: { color: "text-faint", tabular: true } } },
+                  { type: "Text", props: { text: { $bind: "title" }, style: { weight: "medium" } } },
+                ],
+              },
+              { type: "Text", props: { $if: { $bind: "runtime" }, text: { $bind: "runtime" }, style: { variant: "sm", color: "text-faint" } } },
+            ],
+          },
+          { type: "Text", props: { $if: { $bind: "overview" }, text: { $bind: "overview" }, style: { variant: "sm", color: "text-muted", lineClamp: 2 } } },
+        ],
+      },
+      { type: "Icon", props: { $if: { $bind: "watched" }, name: "check", color: "success" } },
+    ],
+  },
+};
+
+/** DetailHeader — poster + metadata. Flex-wrap approximates the 2→1 column
+ *  collapse; a true responsive breakpoint is a later vocab addition. */
+const detailHeader: ComponentDefinition = {
+  name: "DetailHeader",
+  template: {
+    type: "Box",
+    props: { style: { direction: "row", gap: 6, wrap: true } },
+    children: [
+      {
+        type: "Box",
+        props: { style: { width: 220, aspectRatio: "2 / 3", radius: "md", overflow: "hidden", bg: "surface-raised", shadow: "2" } },
+        children: [{ type: "Image", props: { src: { $bind: "poster" }, placeholder: { $bind: "mediaType" }, style: { width: "full", height: "full" } } }],
+      },
+      {
+        type: "Box",
+        props: { style: { grow: true, gap: 4, minWidth: "50%" } },
+        children: [
+          { type: "Text", props: { text: { $bind: "title" }, style: { variant: "2xl", weight: "bold" } } },
+          {
+            type: "Box",
+            props: { style: { direction: "row", align: "center", gap: 3, wrap: true } },
+            children: [
+              { type: "Text", props: { $if: { $bind: "year" }, text: { $bind: "year" }, style: { variant: "sm", color: "text-muted" } } },
+              { type: "Text", props: { $if: { $bind: "mediaType" }, text: { $bind: "mediaType" }, style: { variant: "sm", color: "text-muted", transform: "capitalize" } } },
+              {
+                type: "Box",
+                props: { $if: { $bind: "rating" }, style: { direction: "row", align: "center", gap: 1, color: "rating" } },
+                children: [
+                  { type: "Icon", props: { name: "star", size: "0.95em" } },
+                  { type: "Text", props: { text: { $bind: "rating" }, style: { variant: "sm" } } },
+                ],
+              },
+            ],
+          },
+          {
+            type: "Box",
+            props: { style: { direction: "row", gap: 2, wrap: true } },
+            children: [
+              {
+                type: "Box",
+                props: { $each: { $bind: "genres" }, $as: "g", style: { bg: "surface-raised", border: true, radius: "pill", px: 3 } },
+                children: [{ type: "Text", props: { text: { $bind: "g" }, style: { variant: "xs", color: "text-muted" } } }],
+              },
+            ],
+          },
+          { type: "Text", props: { $if: { $bind: "overview" }, text: { $bind: "overview" }, style: { color: "text-muted", maxWidth: "68%" } } },
+          {
+            type: "Box",
+            props: { style: { direction: "row", gap: 3, wrap: true } },
+            children: [{ type: "Outlet", props: { name: "actions" } }],
+          },
+        ],
+      },
+    ],
+  },
+};
+
+/** PlaybackBar — resume control + titles + progress. */
+const playbackBar: ComponentDefinition = {
+  name: "PlaybackBar",
+  template: {
+    type: "Box",
+    props: { style: { direction: "row", align: "center", gap: 4, px: 4, py: 3, radius: "lg", bg: "surface-raised", border: true } },
+    children: [
+      {
+        type: "Pressable",
+        props: { action: { $bind: "action" }, label: "Resume", style: { width: 44, height: 44, radius: "pill", align: "center", justify: "center", bg: "accent", color: "text-on-accent" } },
+        children: [{ type: "Icon", props: { name: "play" } }],
+      },
+      {
+        type: "Box",
+        props: { style: { grow: true, gap: 2 } },
+        children: [
+          {
+            type: "Box",
+            props: { style: { direction: "row", align: "baseline", gap: 3 } },
+            children: [
+              { type: "Text", props: { text: { $bind: "title" }, style: { weight: "medium" } } },
+              { type: "Text", props: { $if: { $bind: "subtitle" }, text: { $bind: "subtitle" }, style: { variant: "sm", color: "text-muted" } } },
+            ],
+          },
+          { type: "ProgressBar", props: { value: { $bind: "progress" } } },
+        ],
+      },
+    ],
+  },
+};
+
+/** HeroBanner — backdrop layer + gradient scrim + content, from primitives. */
+const heroBanner: ComponentDefinition = {
+  name: "HeroBanner",
+  template: {
+    type: "Box",
+    props: { style: { position: "relative", radius: "lg", overflow: "hidden", minHeight: 340, justify: "end" } },
+    children: [
+      { type: "Image", props: { src: { $bind: "backdrop" }, placeholder: " ", style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "full", height: "full" } } },
+      { type: "Box", props: { style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, bgGradient: { from: "bg", to: "transparent", angle: 70 } } } },
+      {
+        type: "Box",
+        props: { style: { position: "relative", p: 6, gap: 3, maxWidth: "620px" } },
+        children: [
+          { type: "Text", props: { text: { $bind: "title" }, style: { variant: "3xl", weight: "bold" } } },
+          {
+            type: "Box",
+            props: { $if: { $bind: "meta" }, style: { direction: "row", gap: 3, wrap: true } },
+            children: [{ type: "Text", props: { $each: { $bind: "meta" }, $as: "m", text: { $bind: "m" }, style: { variant: "sm", color: "text-muted" } } }],
+          },
+          { type: "Text", props: { $if: { $bind: "overview" }, text: { $bind: "overview" }, style: { color: "text-muted" } } },
+          {
+            type: "Box",
+            props: { style: { direction: "row", gap: 3, wrap: true } },
+            children: [{ type: "Outlet", props: { name: "actions" } }],
+          },
+        ],
+      },
+    ],
+  },
+};
+
 export const PLATFORM_DEFINITIONS: ComponentDefinition[] = [
   posterCard,
   badge,
@@ -240,4 +473,11 @@ export const PLATFORM_DEFINITIONS: ComponentDefinition[] = [
   personChip,
   sourcePicker,
   emptyState,
+  button,
+  iconButton,
+  genreTag,
+  episodeRow,
+  detailHeader,
+  playbackBar,
+  heroBanner,
 ];

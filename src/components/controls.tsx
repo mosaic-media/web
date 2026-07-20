@@ -2,9 +2,11 @@
 // SPDX-FileCopyrightText: 2026 the Mosaic authors
 
 /*
- * Interactive controls. Buttons carry an Action; form controls (needed for
- * module settings — ADR 0021 — and admin config) are lightly stateful and can
- * emit an Action on change. All read tokens, none hardcode colour.
+ * Interactive controls — the native leaves. Form controls (needed for module
+ * settings — ADR 0021 — and admin config) are stateful and emit an Action on
+ * change; Menu/Pagination carry local state too. Button and IconButton, being
+ * stateless, are now primitive definitions (components/definitions.ts). All read
+ * tokens, none hardcode colour.
  */
 
 import { useId, useState } from "react";
@@ -12,46 +14,6 @@ import type { Action, UINode } from "@/sdui/types";
 import { prop } from "@/sdui/registry";
 import { useRuntime } from "@/sdui/context";
 import { cx, Icon, type IconName } from "./shared";
-
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-
-export function Button({ node }: { node: UINode }) {
-  const { emit } = useRuntime();
-  const label = prop<string>(node, "label", "Button");
-  const variant = prop<ButtonVariant>(node, "variant", "primary");
-  const icon = prop<IconName | undefined>(node, "icon", undefined);
-  const action = prop<Action | undefined>(node, "action", undefined);
-  const disabled = prop<boolean>(node, "disabled", false);
-  const block = prop<boolean>(node, "block", false);
-  return (
-    <button
-      className={cx("msc-btn", `msc-btn--${variant}`, block && "msc-btn--block")}
-      disabled={disabled}
-      onClick={() => emit(action)}
-    >
-      {icon && <Icon name={icon} />}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-export function IconButton({ node }: { node: UINode }) {
-  const { emit } = useRuntime();
-  const icon = prop<IconName>(node, "icon", "dots");
-  const label = prop<string>(node, "label", "Action");
-  const action = prop<Action | undefined>(node, "action", undefined);
-  const variant = prop<"solid" | "ghost">(node, "variant", "ghost");
-  return (
-    <button
-      className={cx("msc-iconbtn", `msc-iconbtn--${variant}`)}
-      aria-label={label}
-      title={label}
-      onClick={() => emit(action)}
-    >
-      <Icon name={icon} />
-    </button>
-  );
-}
 
 /** Menu — a click-to-open list of actionable items. */
 export function Menu({ node }: { node: UINode }) {

@@ -100,14 +100,13 @@ function expandNode(tmpl: UINode, args: Args, host: UINode): UINode[] {
     return arr.flatMap((item, i) => expandNode(bare, { ...args, [as]: item, [`${as}Index`]: i }, host));
   }
 
-  // $if guard — drop the node (and its subtree) when the condition is falsy.
-  if ("$if" in rawProps && !resolveValue(rawProps.$if, args)) {
-    return [];
-  }
+  // $if / $ifNot guards — drop the node (and its subtree) conditionally.
+  if ("$if" in rawProps && !resolveValue(rawProps.$if, args)) return [];
+  if ("$ifNot" in rawProps && resolveValue(rawProps.$ifNot, args)) return [];
 
   const props: Record<string, unknown> = {};
   for (const [k, val] of Object.entries(rawProps)) {
-    if (k === "$if") continue;
+    if (k === "$if" || k === "$ifNot") continue;
     props[k] = resolveValue(val, args);
   }
 

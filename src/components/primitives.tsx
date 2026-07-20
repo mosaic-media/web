@@ -77,11 +77,14 @@ export function Pressable({ node }: { node: UINode }) {
   const action = prop<Action | undefined>(node, "action", undefined);
   const disabled = prop<boolean>(node, "disabled", false);
   const lift = prop<boolean>(node, "lift", false);
+  const label = prop<string | undefined>(node, "label", undefined);
   return (
     <button
       className={cx("msc-pressable", lift && "msc-pressable--lift")}
       style={boxToCss(style)}
       disabled={disabled}
+      aria-label={label}
+      title={label}
       onClick={() => emit(action)}
     >
       <Children nodes={node.children} />
