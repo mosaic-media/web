@@ -19,7 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShellProvider, RenderNode, OverlayHost, ToastHost, refreshArtLight } from "@mosaic-media/sdui-react";
 import type { UINode } from "@mosaic-media/sdui-react";
 import { devSignIn } from "@/lib/session";
-import { useLive } from "@/lib/live";
+import { useLive, type Intent } from "@/lib/live";
 import { routeFromLocation, routeToUrl, sameRoute, type Route } from "@/lib/history";
 
 export function App() {
@@ -51,14 +51,14 @@ export function App() {
     };
   }, []);
 
-  // On every (re)connect, re-declare the current route so the server re-renders
+  // On every (re)connect, re-Attach the current route so the server re-renders
   // exactly what was showing (resume). Stable identity — reads the ref.
-  const declareRoute = useCallback((send: (intent: Record<string, unknown>) => void) => {
+  const declareRoute = useCallback((send: (intent: Intent) => void) => {
     const r = routeRef.current;
-    send({ kind: "navigate", screen: r.screen, params: r.params });
+    send({ kind: "attach", screen: r.screen, params: r.params });
   }, []);
 
-  const { status, shell, content, toasts, send, dismissToast } = useLive(session, { onOpen: declareRoute });
+  const { status, shell, regions, toasts, send, dismissToast } = useLive(session, { onOpen: declareRoute });
 
   // A real navigation: record the route, push a history entry, tell the server.
   // pushState lives outside setRoute — a state updater must stay pure (React
@@ -75,7 +75,7 @@ export function App() {
   );
 
   const onInvoke = useCallback(
-    (mutation: string, input?: Record<string, unknown>) => send({ kind: "invoke", mutation, input }),
+    (mutation: string, input?: Record<string, unknown>) => send({ kind: "invoke", action: mutation, input }),
     [send],
   );
 
@@ -102,12 +102,16 @@ export function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, [send]);
 
-  // Put the pushed content into the shell's content region.
+  // Fill the shell's regions with what the server pushed. The primary region is
+  // "content"; keep an empty Fragment there until the first content push arrives
+  // so the shell's content Outlet always has something to render.
   const composed = useMemo<UINode | null>(() => {
     if (!shell) return null;
-    const inner: UINode = content ?? { type: "Fragment" };
-    return { ...shell, slots: { ...(shell.slots ?? {}), content: [inner] } };
-  }, [shell, content]);
+    const slots: Record<string, UINode | UINode[]> = { ...(shell.slots ?? {}) };
+    for (const [region, nodes] of Object.entries(regions)) slots[region] = nodes;
+    if (!slots.content) slots.content = [{ type: "Fragment" }];
+    return { ...shell, slots };
+  }, [shell, regions]);
 
   if (authError) return <Standby title="Can’t reach the Platform" message={authError} />;
   if (status !== "open" || !composed) {

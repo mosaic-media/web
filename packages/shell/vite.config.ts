@@ -20,12 +20,15 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      // Dev sign-in still uses GraphQL to mint a session (no Connect SignIn RPC).
       "/graphql": { target: platform, changeOrigin: true },
       // Artwork the Platform proxies (ADR 0030) — same-origin so the artlight
       // canvas is readable without any CORS.
       "/artwork": { target: platform, changeOrigin: true },
-      // The live session WebSocket (ADR 0032).
-      "/live": { target: platform, changeOrigin: true, ws: true },
+      // The live session: the two-lane Connect SessionService (ADR 0041). Unary
+      // intents and the long-lived Subscribe stream both POST here; http-proxy
+      // streams the server-stream response back.
+      "/mosaic.session.v1.SessionService": { target: platform, changeOrigin: true },
     },
   },
 });

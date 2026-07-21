@@ -3,9 +3,10 @@
 
 /*
  * Thin GraphQL client for the Mosaic Platform (default :8081/graphql, proxied
- * through Vite in dev). This is intentionally minimal — the Shell skeleton
- * runs entirely on mock SDUI screens today, and live wiring lands once the
- * Platform's SDUI/query surface stabilises.
+ * through Vite in dev). The live Shell runs on the two-lane Connect
+ * SessionService (ADR 0041); this client remains for the request/response path —
+ * dev sign-in (minting a session), and the one-shot invoke/query fallback the
+ * runtime uses when it is NOT driven by a live session (e.g. the storybook).
  *
  * Errors are normalised into the Platform's fixed categories so the Shell's
  * feedback components render uniformly regardless of transport detail.
