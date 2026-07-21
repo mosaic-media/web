@@ -36,7 +36,7 @@ every component live at the
 
 ### The component model
 
-The renderer's model (implemented in `@mosaic-media/sdui-react`, [ADR 0024](https://github.com/mosaic-media/mosaic-architecture/blob/main/docs/adr/0024-primitives-and-definitions.md)):
+The renderer's model (implemented in `@mosaic-media/sdui-react`, [ADR 0024](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0024-primitives-and-definitions.md)):
 
 The key idea for a multi-client, module-extensible UI: **there are no hand-coded
 component "holdouts."** If it composes primitives, it is data. The only native
@@ -139,7 +139,7 @@ compatibility by construction.
 ## Licensing
 
 **AGPL-3.0-only** (see [`LICENSE`](LICENSE)); every source file carries an SPDX
-header. This applies [ADR 0022](https://github.com/mosaic-media/mosaic-architecture/blob/main/docs/adr/0022-licensing.md):
+header. This applies [ADR 0022](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0022-licensing.md):
 the shell is a **first-party client**, part of the protected product, so it
 matches the Platform's copyleft — as Jellyfin, Nextcloud and Immich all license
 their official clients. It carries **no** Module Linking Exception (that frees
