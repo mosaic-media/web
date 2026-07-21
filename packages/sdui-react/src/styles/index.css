@@ -1,0 +1,5 @@
+/* The full skin, in order: tokens → reset/base → component styles.
+   Consumers import this once: `import "@mosaic-media/sdui-react/styles.css"`. */
+@import "./tokens.css";
+@import "./global.css";
+@import "./components.css";
