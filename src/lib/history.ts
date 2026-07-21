@@ -29,9 +29,9 @@ export function routeToUrl(route: Route): string {
 }
 
 /** routeFromLocation parses the current URL back into a Route, the inverse of
- *  routeToUrl. An empty path is the default `search` screen. */
+ *  routeToUrl. An empty path is the default `home` screen. */
 export function routeFromLocation(): Route {
-  const screen = decodeURIComponent(location.pathname.replace(/^\/+/, "")) || "search";
+  const screen = decodeURIComponent(location.pathname.replace(/^\/+/, "")) || "home";
   const params: Record<string, unknown> = {};
   new URLSearchParams(location.search).forEach((val, key) => {
     params[key] = parseParam(val);

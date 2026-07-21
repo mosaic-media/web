@@ -79,14 +79,12 @@ export function App() {
     [send],
   );
 
-  // Search-as-you-type: stream the value up, and keep the URL in step *without*
-  // pushing a history entry per keystroke (replaceState). The route carries the
-  // text so a reconnect restores the same results.
+  // Search-as-you-type from the always-present top-bar search: stream the value
+  // up. Search is a transient take-over of the content region, not a route — the
+  // Platform renders results while typing and returns to the current screen when
+  // the field clears, so the URL stays on whatever screen you were on.
   const onInput = useCallback(
     (value: string) => {
-      const next: Route = value ? { screen: "search", params: { text: value } } : { screen: "search" };
-      setRoute(next);
-      history.replaceState(next, "", routeToUrl(next));
       send({ kind: "input", value });
     },
     [send],
