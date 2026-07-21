@@ -6,7 +6,7 @@ A live, **bespoke** storybook for the [Mosaic](https://github.com/mosaic-media) 
 
 ## Why bespoke (not Storybook.js)
 
-Mosaic's "components" aren't React components with prop APIs — they're **definitions expressed as data** ([ADR 0024](https://github.com/mosaic-media/mosaic-architecture/blob/main/docs/adr/0024-primitives-and-definitions.md)). So the useful documentation isn't args/controls; it's the **`UINode` JSON** a producer sends. This storybook shows exactly that: the rendered result and the payload, side by side. It's the real renderer (`@mosaic-media/sdui-react`) over real contract data — not a mock.
+Mosaic's "components" aren't React components with prop APIs — they're **definitions expressed as data** ([ADR 0024](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0024-primitives-and-definitions.md)). So the useful documentation isn't args/controls; it's the **`UINode` JSON** a producer sends. This storybook shows exactly that: the rendered result and the payload, side by side. It's the real renderer (`@mosaic-media/sdui-react`) over real contract data — not a mock.
 
 ## What it shows
 
@@ -15,7 +15,7 @@ Primitives, layout, media, controls, feedback, and **module-defined** components
 ## Stack
 
 - [`@mosaic-media/sdui-react`](https://github.com/mosaic-media/mosaic-sdui-react) — the renderer (primitives, registry, expander, token skin).
-- [`@mosaic-media/sdui`](https://github.com/mosaic-media/mosaic-sdui) — the contract (types, definitions, tokens).
+- [`@mosaic-media/sdui`](https://github.com/mosaic-media/sdui) — the contract (types, definitions, tokens).
 - React + TypeScript + Vite, deployed to GitHub Pages by `.github/workflows/deploy-pages.yml`.
 
 ## Run it
