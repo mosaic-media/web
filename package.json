@@ -1,6 +1,6 @@
 {
   "name": "@mosaic-media/sdui-react",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "React runtime for the Mosaic SDUI contract: primitives, registry, renderer, definition expander, and the token-driven skin.",
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -11,7 +11,9 @@
     },
     "./styles.css": "./dist/styles/index.css"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node copy-styles.mjs",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
@@ -33,5 +35,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "sideEffects": ["*.css"]
+  "sideEffects": [
+    "*.css"
+  ]
 }

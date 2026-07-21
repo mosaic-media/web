@@ -150,6 +150,70 @@ export function SearchBar({ node }: { node: UINode }) {
   );
 }
 
+/** substituteValue deep-clones an action, replacing every string exactly equal
+ *  to "$value" with the supplied field value — the binding that lets a typed
+ *  value flow into an Action (e.g. a manifest URL into an Invoke). */
+function substituteValue<T>(node: T, value: string): T {
+  if (typeof node === "string") return (node === "$value" ? value : node) as T;
+  if (Array.isArray(node)) return node.map((n) => substituteValue(n, value)) as T;
+  if (node && typeof node === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(node)) out[k] = substituteValue(v, value);
+    return out as T;
+  }
+  return node;
+}
+
+/** SubmitField — a labelled text input with a submit button whose Action carries
+ *  the typed value: on submit it substitutes the value for "$value" anywhere in
+ *  the action and emits it. This is how a module's settings form (ADR 0038) turns
+ *  a typed manifest URL into a configureModule invoke. Owns its input state, and
+ *  clears on submit. */
+export function SubmitField({ node }: { node: UINode }) {
+  const { emit } = useRuntime();
+  const placeholder = prop<string>(node, "placeholder", "");
+  const submitLabel = prop<string>(node, "submitLabel", "Add");
+  const action = prop<Action | undefined>(node, "action", undefined);
+  const [value, setValue] = useState("");
+  return (
+    <form
+      style={{ display: "flex", gap: "0.5rem", alignItems: "stretch" }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const v = value.trim();
+        if (!v || !action) return;
+        emit(substituteValue(action, v));
+        setValue("");
+      }}
+    >
+      <input
+        className="msc-field__input"
+        style={{ flex: 1 }}
+        type="text"
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => setValue(e.target.value)}
+      />
+      <button
+        type="submit"
+        disabled={!value.trim()}
+        style={{
+          padding: "0 1rem",
+          borderRadius: "var(--radius-md, 8px)",
+          border: "none",
+          fontWeight: 600,
+          cursor: value.trim() ? "pointer" : "not-allowed",
+          color: "var(--color-text-on-accent, #fff)",
+          background: "var(--color-accent, #6c8cff)",
+          opacity: value.trim() ? 1 : 0.5,
+        }}
+      >
+        {submitLabel}
+      </button>
+    </form>
+  );
+}
+
 /** Slider — shows its own live value, so output couples to internal state. */
 export function Slider({ node }: { node: UINode }) {
   const label = prop<string | undefined>(node, "label", undefined);
