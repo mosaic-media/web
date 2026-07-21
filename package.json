@@ -1,0 +1,10 @@
+{
+  "name": "mosaic-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Mosaic's web client workspace: the React SDUI runtime, the Shell app, and the component storybook.",
+  "license": "AGPL-3.0-only",
+  "workspaces": [
+    "packages/*"
+  ]
+}
