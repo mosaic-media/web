@@ -1,0 +1,205 @@
+/* Storybook chrome only. The reset, base typography and the body background
+   (including the ambient artwork-light wash) all come from the SDUI skin
+   loaded via @mosaic-media/sdui-react/styles.css — this file must not redeclare
+   or override them, only add the storybook-specific `.sb-*` layout. */
+
+.sb {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.sb-side {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+}
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.sb-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: conic-gradient(from 210deg, var(--color-accent), #8b5cf6, #22d3ee, var(--color-accent));
+  box-shadow: var(--shadow-1);
+  flex: none;
+}
+.sb-brand__name {
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.02em;
+}
+.sb-brand__sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+}
+.sb-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sb-nav__link {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.sb-nav__link:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+.sb-side__foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.sb-theme {
+  align-self: flex-start;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.sb-count {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+}
+
+.sb-main {
+  min-width: 0;
+  padding: var(--space-6) clamp(var(--space-4), 4vw, var(--space-7)) var(--space-8);
+  max-width: 1200px;
+}
+.sb-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-7);
+}
+.sb-hero h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+}
+.sb-hero p {
+  margin: 0;
+  color: var(--color-text-muted);
+  max-width: 70ch;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--color-accent);
+}
+
+.sb-group {
+  margin-bottom: var(--space-8);
+  scroll-margin-top: var(--space-4);
+}
+.sb-group__head {
+  margin-bottom: var(--space-4);
+}
+.sb-group__head h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+}
+.sb-group__head p {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  max-width: 80ch;
+}
+
+.sb-demo {
+  margin: 0 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.sb-demo__name {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.sb-demo__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.sb-stage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  min-width: 0;
+}
+.sb-json {
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--color-bg);
+  border-left: 1px solid var(--color-border);
+  overflow: auto;
+  max-height: 420px;
+}
+.sb-json code {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+  white-space: pre;
+}
+
+.sb-footer {
+  color: var(--color-text-faint);
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+@media (max-width: 900px) {
+  .sb {
+    grid-template-columns: 1fr;
+  }
+  .sb-side {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .sb-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .sb-side__foot {
+    margin-top: 0;
+    margin-left: auto;
+    flex-direction: row;
+    align-items: center;
+  }
+  .sb-demo__body {
+    grid-template-columns: 1fr;
+  }
+  .sb-json {
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+  }
+}
