@@ -1,5 +1,7 @@
 name: verify
 
+# Builds every workspace package on push to main and on PRs, so a change to the
+# runtime, the Shell or the storybook cannot merge broken.
 on:
   push:
     branches: [main]
@@ -14,4 +16,4 @@ jobs:
         with:
           node-version: "20"
       - run: npm install
-      - run: npm run build
+      - run: npm run build --workspaces --if-present

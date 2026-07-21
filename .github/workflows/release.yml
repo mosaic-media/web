@@ -1,0 +1,33 @@
+name: release
+
+# Publishes @mosaic-media/sdui-react (the one published package in this
+# workspace) to npm on a version tag, e.g. v0.1.6. Requires an NPM_TOKEN
+# repository (or org) secret — an npm automation token for the @mosaic-media
+# scope.
+#
+# NOTE: the tag names the sdui-react version. If a second workspace package ever
+# becomes publishable, move to a scoped tag (e.g. sdui-react-v*) so a tag is
+# unambiguous about which package it releases.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - name: Guard — sdui-react version matches the tag
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./packages/sdui-react/package.json').version")"
+          if [ "$tag" != "$pkg" ]; then echo "tag v$tag != packages/sdui-react $pkg" >&2; exit 1; fi
+      - run: npm install
+      - run: npm run build --workspace @mosaic-media/sdui-react
+      - run: npm publish --workspace @mosaic-media/sdui-react
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

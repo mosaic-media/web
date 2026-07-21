@@ -1,11 +1,18 @@
 name: deploy-pages
 
-# Builds the storybook and publishes it to GitHub Pages
-# (mosaic-media.github.io/mosaic-storybook). Requires the repo's Pages source to
-# be set to "GitHub Actions" (Settings → Pages).
+# Builds the storybook workspace and publishes it to GitHub Pages
+# (mosaic-media.github.io/web). Requires the web repo's Pages source to be set to
+# "GitHub Actions" (Settings → Pages). Runs only when the storybook or the
+# runtime it renders changes.
 on:
   push:
     branches: [main]
+    paths:
+      - "packages/storybook/**"
+      - "packages/sdui-react/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -26,11 +33,11 @@ jobs:
         with:
           node-version: "20"
       - run: npm install
-      - run: npm run build
+      - run: npm run build --workspace mosaic-storybook
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: packages/storybook/dist
 
   deploy:
     needs: build
