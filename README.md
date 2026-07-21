@@ -2,7 +2,7 @@
 
 The **React runtime** for the [Mosaic](https://github.com/mosaic-media) Server-Driven-UI contract — the web binding that turns an SDUI payload into rendered UI. Consumed by the Shell ([`mosaic-shell`](https://github.com/mosaic-media/mosaic-shell)), the component storybook ([`mosaic-storybook`](https://github.com/mosaic-media/mosaic-storybook)), and any other web surface — all as peers.
 
-It is a **client implementation**, not the contract. The technology-agnostic contract (schema, standard definitions, tokens) lives in [`@mosaic-media/sdui`](https://github.com/mosaic-media/mosaic-sdui); this is one specific way to render it, in React. That's why it's **AGPL-3.0-only** (first-party client code) while the contract is Apache-2.0.
+It is a **client implementation**, not the contract. The technology-agnostic contract (schema, standard definitions, tokens) lives in [`@mosaic-media/sdui`](https://github.com/mosaic-media/sdui); this is one specific way to render it, in React. That's why it's **AGPL-3.0-only** (first-party client code) while the contract is Apache-2.0.
 
 ## What's in it
 
@@ -125,4 +125,4 @@ Pure `tsc` build (source ships nothing; consumers get `dist` JS + `.d.ts`). Reac
 
 ## Licence
 
-**AGPL-3.0-only** (see [`LICENSE`](LICENSE)). See [ADR 0022–0024](https://github.com/mosaic-media/mosaic-architecture/tree/main/docs/adr) for the first-party-client licensing rationale.
+**AGPL-3.0-only** (see [`LICENSE`](LICENSE)). See [ADR 0022–0024](https://github.com/mosaic-media/architecture/tree/main/docs/adr) for the first-party-client licensing rationale.
