@@ -25,7 +25,7 @@ import { initAcrylic } from "../sdui/acrylic";
 
 import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives";
 import { NavItem } from "./shell";
-import { Tabs, NavBar } from "./layout";
+import { Tabs, NavBar, Rotator } from "./layout";
 import { TextInput, Switch, SelectInput, Menu, SearchBar, SubmitField, Slider, RatingControl, ProgressBar, ProgressRing } from "./controls";
 import { SeasonSelector } from "./media";
 import { Skeleton } from "./feedback";
@@ -59,6 +59,8 @@ export function installComponents(): void {
     Tabs,
     // 1. primitive — the responsive nav group (inline top / bottom tab bar)
     NavBar,
+    // 1. primitive — the home's auto-advancing cinematic hero carousel
+    Rotator,
     Menu,
     SearchBar,
     SubmitField,

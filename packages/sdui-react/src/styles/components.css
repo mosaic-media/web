@@ -342,6 +342,64 @@
   margin: 0 auto;
 }
 
+/* ── Rotator — the home's cinematic hero carousel ─────────────────────────────
+   A sticky, viewport-tall stage that cross-fades through hero slides. It owns the
+   `sticky` behaviour the single hero used to have, so the content sheet still
+   scrolls UP over it (and the acrylic edge-light tracks the active slide's art).
+   Slides stack absolutely and cross-fade on opacity; dots sit low over the art. */
+.msc-rotator {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  flex-shrink: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+.msc-rotator__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1000ms ease;
+}
+.msc-rotator__slide > * {
+  height: 100%;
+}
+.msc-rotator__slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.msc-rotator__dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1.75rem;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.msc-rotator__dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: width 220ms ease, background 220ms ease;
+}
+.msc-rotator__dot.is-active {
+  width: 22px;
+  background: rgba(var(--accent-rgb), 0.95);
+}
+@media (max-width: 720px) {
+  .msc-rotator__dots {
+    bottom: 1.25rem;
+  }
+}
+
 /* ── NavBar — the app frame's responsive navigation ───────────────────────────
    Desktop: an inline row of nav items in the top bar. Mobile (≤720px): a fixed
    bottom tab bar of icon-over-label tabs (the native-app pattern); the top bar is
@@ -353,36 +411,45 @@
 }
 @media (max-width: 720px) {
   /* These override boxToCss's inline display/flex/max-width, hence !important. */
-  /* The desktop account cluster (Collections + avatar) hides on mobile — the
-     bottom tab bar carries navigation, and Settings lives in it too. */
-  [data-kind="account"] {
+  /* The desktop account cluster and the top-bar search hide on mobile — the
+     bottom tab pill carries navigation (Settings included) and search is a tab. */
+  [data-kind="account"],
+  [data-kind="top-search"] {
     display: none !important;
   }
+  /* A floating glass tab pill, centred above the bottom edge (native app). */
   .msc-navbar {
     display: flex;
-    align-items: stretch;
-    justify-content: space-around;
-    gap: 0;
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    position: absolute;
+    left: 50%;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    justify-content: center;
+    gap: var(--space-1);
+    padding: 6px;
+    border-radius: var(--radius-pill);
     background: var(--color-surface-overlay);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    border-top: 1px solid var(--color-border);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    border: 1px solid var(--color-border);
+    /* box-shadow comes from .msc-acrylic (caustic + depth), not a flat shadow. */
+    z-index: var(--z-overlay);
   }
   .msc-navbar .msc-navitem {
-    flex: 1;
     flex-direction: column;
-    gap: 3px;
-    padding: 4px 2px;
-    font-size: var(--text-xs);
-    text-align: center;
-    border-radius: var(--radius-md);
+    gap: 0;
+    padding: 10px 15px;
+    border-radius: var(--radius-pill);
   }
   .msc-navbar .msc-navitem .msc-icon {
-    font-size: 1.4em;
+    font-size: 1.45em;
+  }
+  /* Icon-only tabs in the pill — labels are redundant at this size. */
+  .msc-navbar .msc-navitem span:not(.msc-icon) {
+    display: none;
   }
   .msc-navbar .msc-navitem.is-active {
-    background: transparent;
+    background: var(--color-accent-quiet);
     color: var(--color-accent);
     box-shadow: none;
   }
@@ -394,6 +461,12 @@
   [data-kind="detail-panels"] > * {
     max-width: none !important;
     width: 100% !important;
+  }
+}
+/* Desktop: the search SCREEN's own field is hidden — the top bar holds search. */
+@media (min-width: 721px) {
+  [data-kind="screen-search"] {
+    display: none !important;
   }
 }
 
@@ -489,16 +562,40 @@
 }
 
 .msc-search {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  background: var(--color-surface-raised);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  width: 100%;
+  max-width: 620px;
+  background: var(--acrylic-tint);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.3);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.3);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   padding: var(--space-3) var(--space-4);
-  max-width: 560px;
+}
+/* Edge-light only — the skin's art-coloured rim on the light-facing edge,
+   without the full acrylic pigment/caustic. Uses the global light angle. */
+.msc-search::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  opacity: 0.7;
+  background: linear-gradient(
+    var(--light-angle),
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(var(--acrylic-edge), 0.18) 55%,
+    color-mix(in srgb, rgb(var(--acrylic-edge)) 55%, #ffffff) 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
 }
 .msc-search:focus-within {
   border-color: var(--color-accent);

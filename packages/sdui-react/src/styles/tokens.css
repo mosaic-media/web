@@ -170,6 +170,7 @@
   --space-6: 32px;
   --space-7: 48px;
   --space-8: 64px;
+  --space-9: 80px; /* clears the floating nav on non-hero screens */
   /* Fluid page gutter — tight on a phone, generous on a desktop. Used by the
      Screen body, the app frame's top bar, and the hero so the whole page shares
      one responsive margin (referenced as the "gutter" space token). */

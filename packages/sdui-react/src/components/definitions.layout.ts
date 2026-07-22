@@ -29,8 +29,13 @@ const screen: ComponentDefinition = {
       { type: "Outlet", props: { name: "header" } },
       { type: "Outlet", props: { name: "bleed" } },
       {
+        // pt clears the floating top nav; pb clears the mobile floating tab pill.
+        // gap:8 gives generous breathing room between rows (less crowded).
+        // $if $childCount: a screen that puts everything in `bleed` (e.g. the home
+        // hero + its content sheet) collapses this padded body instead of leaving
+        // an empty gutter block below.
         type: "Box",
-        props: { style: { direction: "column", gap: 6, px: "gutter", pt: 6, pb: 8 } },
+        props: { $if: { $bind: "$childCount" }, style: { direction: "column", gap: 8, px: "gutter", pt: 9, pb: 9 } },
         children: [
           {
             type: "Box",
@@ -59,19 +64,25 @@ const appShell: ComponentDefinition = {
   params: { title: "Mosaic" },
   template: {
     type: "Box",
-    props: { style: { direction: "column", height: "screen" } },
+    props: { style: { position: "relative", direction: "column", height: "screen" } },
     children: [
       {
-        // slothui-style bar: clickable brand (= Home), a centred search that
-        // owns the middle, and a right account cluster (Collections link +
-        // avatar menu) that's desktop-only. On a phone the search drops to its
-        // own row (its minWidth) and the cluster hides — the bottom tab bar below
-        // carries navigation instead.
+        // The content fills the frame and scrolls — edge to edge, corner to
+        // corner. There is NO nav band; the artwork is never boxed in. The nav
+        // (below) floats over this.
         type: "Box",
-        props: { style: { direction: "row", align: "center", gap: 4, px: "gutter", py: 3, wrap: true, bg: "surface", glass: true } },
+        props: { style: { direction: "column", grow: true, overflowY: "auto" } },
+        children: [{ type: "Outlet", props: { name: "content" } }],
+      },
+      {
+        // Floating nav — no background of its own. The brand (= Home), the
+        // centred search and the avatar sit directly over the artwork as
+        // individual controls (each with its own edge-light). Absolute + z so it
+        // overlays the content instead of claiming a strip of the screen.
+        type: "Box",
+        props: { style: { position: "absolute", top: 0, left: 0, right: 0, z: "overlay", direction: "row", align: "center", gap: 4, px: "gutter", py: 3 } },
         children: [
           {
-            // Brand = Home (clicking the wordmark navigates home).
             type: "Pressable",
             props: { action: { kind: "navigate", screen: "home" }, label: "Home", style: { direction: "row", align: "center", gap: 3 } },
             children: [
@@ -80,15 +91,15 @@ const appShell: ComponentDefinition = {
             ],
           },
           {
-            // Central search — grows to own the middle; justify:center keeps the
-            // field centred; minWidth forces it onto its own row on a phone.
+            // Centred search — the star of the desktop bar. On mobile search is
+            // a bottom-tab screen instead, so this hides (data-kind="top-search").
             type: "Box",
-            props: { style: { direction: "row", align: "center", justify: "center", grow: true, minWidth: 280 } },
+            props: { style: { direction: "row", align: "center", justify: "center", grow: true, minWidth: 180, kind: "top-search" } },
             children: [{ type: "Outlet", props: { name: "topbar" } }],
           },
           {
-            // Right account cluster — Collections link + avatar menu (Settings).
-            // Desktop only (data-kind="account"); mobile uses the bottom tab bar.
+            // Avatar menu (Collections + Settings) — desktop only; mobile uses the
+            // bottom tab bar (data-kind="account").
             type: "Box",
             props: { style: { direction: "row", align: "center", gap: 3, kind: "account" } },
             children: [{ type: "Outlet", props: { name: "account" } }],
@@ -96,15 +107,8 @@ const appShell: ComponentDefinition = {
         ],
       },
       {
-        type: "Box",
-        props: { style: { direction: "column", grow: true, overflowY: "auto" } },
-        children: [{ type: "Outlet", props: { name: "content" } }],
-      },
-      {
         // Mobile bottom tab bar — a normal flex child at the foot of the
-        // viewport-tall column (NOT position:fixed, which the glass top bar's
-        // backdrop-filter would trap). The scrolling content sits between the two
-        // bars. Hidden on desktop (components.css). Same nav slot as the top bar.
+        // viewport-tall column. Hidden on desktop (components.css).
         type: "NavBar",
         children: [{ type: "Outlet", props: { name: "nav" } }],
       },
@@ -117,7 +121,7 @@ const section: ComponentDefinition = {
   params: { actionLabel: "See all" },
   template: {
     type: "Box",
-    props: { style: { gap: 4 } },
+    props: { style: { gap: 5 } },
     children: [
       {
         type: "Box",
@@ -169,10 +173,10 @@ const grid: ComponentDefinition = {
 
 const carousel: ComponentDefinition = {
   name: "Carousel",
-  params: { itemWidth: 182 },
+  params: { itemWidth: 210 },
   template: {
     type: "Box",
-    props: { style: { layout: "grid", gridFlow: "column", gridAutoColumns: { $bind: "itemWidth" }, gap: 5, overflowX: "auto", snap: "x", py: 2 } },
+    props: { style: { layout: "grid", gridFlow: "column", gridAutoColumns: { $bind: "itemWidth" }, gap: 6, overflowX: "auto", snap: "x", py: 2 } },
     children: [{ type: "Outlet" }],
   },
 };

@@ -22,7 +22,7 @@ import type { CSSProperties } from "react";
 
 // Discrete 4px steps, plus "gutter" — the fluid page margin (clamps with the
 // viewport) so padding can be responsive without a breakpoint.
-export type SpaceToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | "gutter";
+export type SpaceToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | "gutter";
 export type RadiusToken = "sm" | "md" | "lg" | "xl" | "pill";
 export type ShadowToken = "1" | "2" | "3";
 export type TextVariant = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";

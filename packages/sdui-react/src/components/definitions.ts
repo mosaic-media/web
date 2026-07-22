@@ -457,6 +457,8 @@ const heroBanner: ComponentDefinition = {
     type: "Box",
     props: {
       style: {
+        // On the home a Rotator wraps several of these and owns the sticky
+        // behaviour + crossfade; each banner just fills its slide.
         position: "relative",
         overflow: "hidden",
         justify: "end",
