@@ -29,6 +29,10 @@ export default defineConfig({
       // intents and the long-lived Subscribe stream both POST here; http-proxy
       // streams the server-stream response back.
       "/mosaic.session.v1.SessionService": { target: platform, changeOrigin: true },
+      // The media origin (ADR 0045). A Player's src is a Platform-relative
+      // ticket URL, so without this the SPA's history fallback answers it with
+      // index.html and the video element is handed HTML instead of a stream.
+      "/playback": { target: platform, changeOrigin: true },
     },
   },
 });
