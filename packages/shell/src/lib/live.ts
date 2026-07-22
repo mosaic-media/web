@@ -50,6 +50,14 @@ export interface Live {
   regions: Record<string, UINode[]>;
   toasts: ToastItem[];
   send: (intent: Intent) => void;
+  /** True between sending an intent and the server pushing its result.
+   *
+   * The transport is deliberately asymmetric (ADR 0041): an intent is a unary
+   * call that Acks immediately, and its *visible* effect arrives later on the
+   * push lane. That leaves a gap in which the UI has been told nothing, and a
+   * two-second gap with no feedback is indistinguishable from a click that did
+   * not register — which is why it gets clicked again, or the page refreshed. */
+  pending: boolean;
   dismissToast: (id: string) => void;
 }
 
@@ -101,6 +109,10 @@ function toStructural(n: WireNode): UINode {
  *  resume. */
 export function useLive(session: string | null, options: LiveOptions = {}): Live {
   const [status, setStatus] = useState<LiveStatus>("connecting");
+  // Counted rather than boolean: two intents can be in flight at once (a
+  // navigate while a search is still resolving), and a flag would clear on the
+  // first reply and hide the second.
+  const [inFlight, setInFlight] = useState(0);
   const [shell, setShell] = useState<UINode | null>(null);
   const [regions, setRegions] = useState<Record<string, UINode[]>>({});
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -112,7 +124,12 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
 
   // send is stable; it forwards to the current connection's dispatcher.
   const sendRef = useRef<(intent: Intent) => void>(() => {});
-  const send = useCallback((intent: Intent) => sendRef.current(intent), []);
+  const send = useCallback((intent: Intent) => {
+    // Attach is bookkeeping rather than a user action — counting it would show a
+    // spinner on every reconnect, including ones nobody asked for.
+    if (intent.kind !== "attach") setInFlight((n) => n + 1);
+    sendRef.current(intent);
+  }, []);
 
   const pushToast = useCallback((message: string, tone: Tone) => {
     const id = `toast-${++toastSeq}`;
@@ -165,6 +182,17 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
     };
 
     const apply = (msg: ServerMessage) => {
+      // A bodyless message is the server's keepalive: it exists to stop an idle
+      // connection being reaped by a proxy, and carries nothing to render.
+      if (!msg.body.case) return;
+
+      // Anything the server pushes is the visible result of something, so it
+      // ends the pending state. Clamped at zero because a push can arrive
+      // without a matching intent — the connect burst, or a server-initiated
+      // update — and a counter that went negative would swallow the next real
+      // one.
+      setInFlight((n) => (n > 0 ? n - 1 : 0));
+
       switch (msg.body.case) {
         case "shell":
           setShell(msg.body.value.uiNode ? toStructural(msg.body.value.uiNode) : null);
@@ -239,7 +267,7 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
     };
   }, [session, pushToast, send]);
 
-  return { status, shell, regions, toasts, send, dismissToast };
+  return { status, shell, regions, toasts, send, dismissToast, pending: inFlight > 0 };
 }
 
 // runIntent maps a Shell intent onto the matching unary RPC. Params/input ride as

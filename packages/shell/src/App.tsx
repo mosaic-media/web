@@ -58,7 +58,7 @@ export function App() {
     send({ kind: "attach", screen: r.screen, params: r.params });
   }, []);
 
-  const { status, shell, regions, toasts, send, dismissToast } = useLive(session, { onOpen: declareRoute });
+  const { status, shell, regions, toasts, send, dismissToast, pending } = useLive(session, { onOpen: declareRoute });
 
   // A real navigation: record the route, push a history entry, tell the server.
   // pushState lives outside setRoute — a state updater must stay pure (React
@@ -154,6 +154,7 @@ export function App() {
       onInput={onInput}
       render={({ overlays, dismissOverlay }) => (
         <>
+          {pending && <PendingBar />}
           {showPlayer && (
             <PlayerHost
               nodes={playerNodes}
@@ -241,4 +242,19 @@ function PlayerHost({
       </div>
     </div>
   );
+}
+
+/** PendingBar — an indeterminate progress line while an intent is in flight.
+ *
+ * The transport Acks an intent immediately and pushes its visible result later
+ * (ADR 0041), so there is a real gap where the client knows something is
+ * happening and the screen does not say so. On a fast render nobody notices it;
+ * on a search that waits seconds for an upstream source, it is the difference
+ * between "working" and "my click did nothing".
+ *
+ * Deliberately not a blocking overlay: the current screen stays usable, because
+ * the previous content is still valid until the replacement arrives.
+ */
+function PendingBar() {
+  return <div className="mos-pending" role="progressbar" aria-label="Loading" aria-busy="true" />;
 }
