@@ -153,6 +153,7 @@
   --color-progress-track: rgba(90, 60, 130, 0.16);
 
   --glass-blur: 20px;
+  --acrylic-tint: rgba(255, 255, 255, 0.28);
 
   --shadow-1: 0 1px 2px rgba(60, 40, 90, 0.1);
   --shadow-2: 0 12px 30px rgba(90, 60, 130, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.5);
@@ -169,6 +170,10 @@
   --space-6: 32px;
   --space-7: 48px;
   --space-8: 64px;
+  /* Fluid page gutter — tight on a phone, generous on a desktop. Used by the
+     Screen body, the app frame's top bar, and the hero so the whole page shares
+     one responsive margin (referenced as the "gutter" space token). */
+  --space-gutter: clamp(16px, 5vw, 60px);
 
   /* Radii — generous, to match the soft acrylic panels of the language. */
   --radius-sm: 8px;
@@ -183,20 +188,31 @@
   --font-mono: "SFMono-Regular", ui-monospace, "JetBrains Mono", Menlo,
     Consolas, monospace;
 
-  --text-xs: 0.75rem;
-  --text-sm: 0.85rem;
-  --text-md: 0.95rem;
-  --text-lg: 1.15rem;
-  --text-xl: 1.45rem;
-  --text-2xl: 1.9rem;
-  --text-3xl: 2.6rem;
+  /* Type scale is FLUID: each size interpolates with the viewport (clamp), so
+     the same tree reads big and confident on a desktop and calm on a phone
+     without any breakpoint. Min/max cap it at both ends; the vw term drives the
+     middle. Body sizes barely move; display sizes move a lot. */
+  --text-xs: clamp(0.72rem, 0.70rem + 0.10vw, 0.78rem);
+  --text-sm: clamp(0.82rem, 0.79rem + 0.15vw, 0.9rem);
+  --text-md: clamp(0.92rem, 0.88rem + 0.2vw, 1rem);
+  --text-lg: clamp(1.05rem, 0.98rem + 0.4vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.05rem + 1.0vw, 1.7rem);
+  --text-2xl: clamp(1.55rem, 1.20rem + 1.8vw, 2.3rem);
+  --text-3xl: clamp(2.0rem, 1.35rem + 3.2vw, 3.4rem);
+  /* Hero display — the oversized title treatment on a full-bleed banner. */
+  --text-4xl: clamp(2.6rem, 1.4rem + 6.0vw, 5.6rem);
 
   --weight-regular: 400;
   --weight-medium: 550;
   --weight-bold: 700;
 
-  --leading-tight: 1.18;
+  --leading-tight: 1.05;
   --leading-normal: 1.5;
+
+  /* Letter-spacing for display (tight) and eyebrow/overline text (wide). */
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.16em;
 
   /* Motion */
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -209,6 +225,36 @@
   --shell-gutter: clamp(var(--space-4), 4vw, var(--space-7));
   --z-overlay: 100;
   --z-toast: 200;
+
+  /* ── Acrylic "Optical Parallax" material ──────────────────────────────────
+     The artwork is the light source (MDS four-layer model). Layer 1 is the
+     glass backdrop-filter; layers 2–4 + the caustic ride on .msc-acrylic
+     (components.css). Surfaces are pigmented by --accent-rgb — already
+     art-driven via artlight.ts, so the pigment follows the focused artwork and
+     falls back to the brand accent when nothing is sampled (graceful default).
+
+     Light DIRECTION is a global vector here (matching the fixed ambient wash);
+     acrylic.ts refines --lx/--ly/--edge-angle/--acrylic-intensity per surface
+     from its DOM position — the parallax. The CSS reads var(--lx, var(--light-x))
+     so a surface the JS hasn't measured still lights correctly. */
+  /* Three DIFFERENT sampled hues drive the three coloured layers, so a surface
+     reads as multi-coloured refraction (fill blooms at the lit edge, the rim
+     glows a second hue, the caustic spills a third) — not one dominant tint.
+     Each falls back down the chain to the brand accent when unsampled. */
+  --acrylic-fill: var(--art-1-rgb, var(--accent-rgb));
+  --acrylic-edge: var(--art-2-rgb, var(--accent-2-rgb, var(--accent-rgb)));
+  --acrylic-caustic: var(--art-3-rgb, var(--art-1-rgb, var(--accent-rgb)));
+  --light-x: -0.4;        /* global light unit vector, x (points toward source) */
+  --light-y: -0.9;        /* up + slightly left, matching the wash origin */
+  --light-angle: -24deg;  /* atan2(lx,-ly): the bright rim faces up-left */
+  --acrylic-fill-a: 0.5;        /* layer 2 — bloom peak at the lit edge */
+  --acrylic-edge-strength: 0.95; /* layer 3 — facing-edge rim brightness */
+  --acrylic-caustic-a: 0.42;    /* caustic colour spill beneath */
+  /* Translucent body fill for glass surfaces — light enough to see the
+     refracted artwork bend through it, dark enough to keep text legible.
+     Replaces the heavy solid `surface` token on glass (style.ts). */
+  --acrylic-tint: rgba(13, 15, 24, 0.34);
+  --acrylic-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
 }
 
 /*

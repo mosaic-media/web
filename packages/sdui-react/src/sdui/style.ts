@@ -20,10 +20,12 @@
 
 import type { CSSProperties } from "react";
 
-export type SpaceToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+// Discrete 4px steps, plus "gutter" — the fluid page margin (clamps with the
+// viewport) so padding can be responsive without a breakpoint.
+export type SpaceToken = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | "gutter";
 export type RadiusToken = "sm" | "md" | "lg" | "xl" | "pill";
 export type ShadowToken = "1" | "2" | "3";
-export type TextVariant = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
+export type TextVariant = "xs" | "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
 export type Weight = "regular" | "medium" | "bold";
 
 export type ColorToken =
@@ -52,7 +54,10 @@ export type ColorToken =
 
 export type Align = "start" | "center" | "end" | "stretch" | "baseline";
 export type Justify = "start" | "center" | "end" | "between" | "around";
-export type Dimension = number | "full" | "auto" | `${number}%`;
+/** `"screen"` is the viewport in the relevant axis (100dvh tall / 100vw wide) —
+ *  the one non-parent-relative size, for full-bleed heroes and the app frame. It
+ *  is portable: Flutter reads it as MediaQuery.size in that axis. */
+export type Dimension = number | "full" | "screen" | "auto" | `${number}%`;
 export type GradientStop = ColorToken | "transparent";
 
 /** Layout + box styling for the Box primitive. All values are tokens/enums. */
@@ -74,6 +79,8 @@ export interface BoxStyle {
 
   /** Horizontal scroll + snap, for carousels. */
   overflowX?: "auto" | "hidden" | "visible";
+  /** Vertical scroll, for a framed scroll region (the app frame's content). */
+  overflowY?: "auto" | "hidden" | "visible";
   snap?: "x" | "y";
   snapAlign?: "start" | "center";
 
@@ -106,15 +113,25 @@ export interface BoxStyle {
   flex?: number;
   grow?: boolean;
 
-  position?: "relative" | "absolute";
+  position?: "relative" | "absolute" | "sticky" | "fixed";
   top?: SpaceToken;
   right?: SpaceToken;
   bottom?: SpaceToken;
   left?: SpaceToken;
+  /** Stacking order for chrome that overlays content (a sticky/fixed bar, an
+   *  overlay). Token-named, not an arbitrary integer — this is portable stack
+   *  order (Flutter: paint order in a Stack), not a z-index escape hatch. */
+  z?: "raised" | "overlay" | "toast";
 
   overflow?: "hidden" | "auto" | "visible";
   shadow?: ShadowToken;
   opacity?: number;
+
+  /** A named hook the primitive emits as `data-kind`, for the few responsive
+   *  behaviours the token system can't express inline (e.g. panels that sit
+   *  side-by-side on desktop but stack full-width on mobile). Not a CSS value —
+   *  a targeting handle for a matching rule in components.css. */
+  kind?: string;
 }
 
 export interface TextStyle {
@@ -123,6 +140,8 @@ export interface TextStyle {
   color?: ColorToken;
   align?: "start" | "center" | "end";
   transform?: "uppercase" | "capitalize" | "none";
+  /** Letter-spacing: "tight" for display headings, "wide" for eyebrow/overline. */
+  tracking?: "tight" | "normal" | "wide";
   italic?: boolean;
   mono?: boolean;
   tabular?: boolean;
@@ -153,6 +172,13 @@ const dim = (d?: Dimension): string | undefined => {
   if (typeof d === "number") return `${d}px`;
   return d; // "auto" | "NN%"
 };
+// Axis-aware dimension: "screen" resolves to the viewport unit for its axis
+// (dvh so mobile browser chrome doesn't clip a full-height frame); everything
+// else defers to dim().
+const vdim = (d: Dimension | undefined, axis: "w" | "h"): string | undefined =>
+  d === "screen" ? (axis === "h" ? "100dvh" : "100vw") : dim(d);
+
+const Z: Record<NonNullable<BoxStyle["z"]>, number> = { raised: 1, overlay: 100, toast: 200 };
 
 /** Translate a token-based BoxStyle into concrete web CSS. */
 export function boxToCss(s: BoxStyle): CSSProperties {
@@ -171,6 +197,7 @@ export function boxToCss(s: BoxStyle): CSSProperties {
   }
   if (s.gap !== undefined) css.gap = space(s.gap);
   if (s.overflowX) css.overflowX = s.overflowX;
+  if (s.overflowY) css.overflowY = s.overflowY;
   if (s.snap) css.scrollSnapType = `${s.snap} proximity`;
   if (s.snapAlign) css.scrollSnapAlign = s.snapAlign;
 
@@ -194,18 +221,30 @@ export function boxToCss(s: BoxStyle): CSSProperties {
     css.background = `linear-gradient(${s.bgGradient.angle ?? 180}deg, ${stop(s.bgGradient.from)}, ${stop(s.bgGradient.to)})`;
   }
   if (s.glass) {
-    css.backdropFilter = "blur(var(--glass-blur))";
-    css.WebkitBackdropFilter = "blur(var(--glass-blur))";
+    // Layer 1 of the acrylic model (MDS): background DISTORTION — the material
+    // bends what is behind it, not merely frosts it. url(#msc-refract) is an SVG
+    // feDisplacementMap (injected by acrylic.ts) that ripples the backdrop like
+    // real acrylic; the light blur + saturate soften and pigment it. The heavy
+    // solid `bg` token is replaced with a translucent tint so the bent artwork
+    // shows THROUGH the surface. Layers 2–4 ride the .msc-acrylic class.
+    css.backdropFilter = "url(#msc-refract) blur(1.5px) saturate(1.5) brightness(1.04)";
+    // Safari lacks reliable url() backdrop filters — degrade to blur there.
+    css.WebkitBackdropFilter = "blur(10px) saturate(1.5)";
+    // Replace an opaque neutral fill with the translucent tint so the refracted
+    // art shows through — but preserve an accent/tinted fill (e.g. an acrylic
+    // accent button) so its colour survives.
+    const neutralBg = s.bg === "surface" || s.bg === "surface-raised" || s.bg === "surface-overlay";
+    if ((neutralBg || !s.bg) && !s.bgGradient) css.background = "var(--acrylic-tint)";
   }
   if (s.color) css.color = color(s.color);
   if (s.radius) css.borderRadius = `var(--radius-${s.radius})`;
   if (s.border) css.border = `1px solid ${color(s.borderColor ?? "border")}`;
 
-  if (s.width !== undefined) css.width = dim(s.width);
-  if (s.height !== undefined) css.height = dim(s.height);
-  if (s.minWidth !== undefined) css.minWidth = dim(s.minWidth);
-  if (s.maxWidth !== undefined) css.maxWidth = dim(s.maxWidth);
-  if (s.minHeight !== undefined) css.minHeight = dim(s.minHeight);
+  if (s.width !== undefined) css.width = vdim(s.width, "w");
+  if (s.height !== undefined) css.height = vdim(s.height, "h");
+  if (s.minWidth !== undefined) css.minWidth = vdim(s.minWidth, "w");
+  if (s.maxWidth !== undefined) css.maxWidth = vdim(s.maxWidth, "w");
+  if (s.minHeight !== undefined) css.minHeight = vdim(s.minHeight, "h");
   if (s.aspectRatio) css.aspectRatio = s.aspectRatio;
 
   if (s.flex !== undefined) css.flex = s.flex;
@@ -216,6 +255,7 @@ export function boxToCss(s: BoxStyle): CSSProperties {
   if (s.right !== undefined) css.right = space(s.right);
   if (s.bottom !== undefined) css.bottom = space(s.bottom);
   if (s.left !== undefined) css.left = space(s.left);
+  if (s.z) css.zIndex = Z[s.z];
 
   if (s.overflow) css.overflow = s.overflow;
   if (s.shadow) css.boxShadow = `var(--shadow-${s.shadow})`;
@@ -225,9 +265,17 @@ export function boxToCss(s: BoxStyle): CSSProperties {
 }
 
 /** Translate a token-based TextStyle into concrete web CSS. */
+const DISPLAY_VARIANTS = new Set<TextVariant>(["2xl", "3xl", "4xl"]);
+
 export function textToCss(s: TextStyle): CSSProperties {
   const css: CSSProperties = {};
-  if (s.variant) css.fontSize = `var(--text-${s.variant})`;
+  if (s.variant) {
+    css.fontSize = `var(--text-${s.variant})`;
+    // Display sizes get tight leading so multi-line headings don't gap open;
+    // body sizes inherit the comfortable body line-height.
+    if (DISPLAY_VARIANTS.has(s.variant)) css.lineHeight = "var(--leading-tight)";
+  }
+  if (s.tracking) css.letterSpacing = `var(--tracking-${s.tracking})`;
   if (s.weight) css.fontWeight = `var(--weight-${s.weight})` as unknown as number;
   if (s.color) css.color = color(s.color);
   if (s.align) css.textAlign = s.align === "start" ? "left" : s.align === "end" ? "right" : "center";

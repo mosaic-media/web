@@ -51,6 +51,69 @@
   background: linear-gradient(140deg, var(--color-surface-raised), var(--color-surface-overlay));
 }
 
+/* ── Acrylic "Optical Parallax" material ──────────────────────────────────────
+   Applied to every glass surface (the Box primitive adds .msc-acrylic when
+   style.glass is set). Layer 1 (background distortion) is the element's own
+   backdrop-filter; the rest layer here, back-to-front:
+     · ::before  — layer 2 pigment (hotspot pushed toward the light) + layer 4
+                   noise film, behind content (z-index:-1, inside isolation).
+     · box-shadow — caustic colour spill: a pigment glow thrown to the shadow
+                   side (away from the light), read as light pooling beneath.
+     · ::after   — layer 3 directional edge light: a masked gradient border,
+                   bright + pigmented on the edge facing the light, dim opposite.
+   --lx/--ly/--edge-angle/--acrylic-intensity come from acrylic.ts per surface,
+   each falling back to the global light vector so an unmeasured surface is still
+   correctly lit. Reads as internally-lit pigmented acrylic, not frosted glass. */
+.msc-acrylic {
+  position: relative;
+  isolation: isolate;
+  /* Caustic colour spill (art-3): a coloured glow thrown to the shadow side —
+     light pooling beneath the panel — over a dark depth shadow. */
+  box-shadow:
+    calc(var(--lx, var(--light-x)) * -14px) calc(var(--ly, var(--light-y)) * -18px) 44px
+      rgba(var(--acrylic-caustic), calc(var(--acrylic-caustic-a) * var(--acrylic-intensity, 1))),
+    calc(var(--lx, var(--light-x)) * -6px) calc(var(--ly, var(--light-y)) * -9px) 18px rgba(2, 3, 8, 0.45);
+}
+.msc-acrylic::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  /* Layer 2 — the edge facing the light catches colour (art-1) that blooms
+     inward and fades across the body, so the panel stays a dark, refractive
+     translucency rather than a flat colour wash. */
+  background: radial-gradient(
+    125% 95% at calc(50% + var(--lx, var(--light-x)) * 72%) calc(50% + var(--ly, var(--light-y)) * 72%),
+    rgba(var(--acrylic-fill), calc(var(--acrylic-fill-a) * var(--acrylic-intensity, 1))) 0%,
+    rgba(var(--acrylic-fill), calc(var(--acrylic-fill-a) * 0.28 * var(--acrylic-intensity, 1))) 30%,
+    transparent 66%
+  );
+}
+.msc-acrylic::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  /* Layer 3 — directional edge light: a bright, art-2-coloured rim on the edge
+     facing the light, dim on the far edge. */
+  opacity: calc(var(--acrylic-edge-strength) * var(--acrylic-intensity, 1));
+  background: linear-gradient(
+    var(--edge-angle, var(--light-angle)),
+    rgba(255, 255, 255, 0.015) 0%,
+    rgba(var(--acrylic-edge), 0.2) 46%,
+    color-mix(in srgb, rgb(var(--acrylic-edge)) 62%, #ffffff) 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
 /* ─────────────────────── app chrome ─────────────────────── */
 /* Concept layout: the sidebar is a floating rounded glass panel beside the
    content, not a full-bleed column — everything sits on the ambient wash. */
@@ -259,12 +322,79 @@
   font-weight: var(--weight-bold);
   font-size: var(--text-sm);
 }
+/* Avatar trigger for the account Menu — a bare button around the avatar circle. */
+.msc-avatar-btn {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+.msc-avatar-btn:hover .msc-avatar {
+  box-shadow: var(--glow-accent);
+}
 .msc-content {
   flex: 1;
   padding: var(--space-6) var(--shell-gutter) var(--space-8);
   max-width: var(--shell-max);
   width: 100%;
   margin: 0 auto;
+}
+
+/* ── NavBar — the app frame's responsive navigation ───────────────────────────
+   Desktop: an inline row of nav items in the top bar. Mobile (≤720px): a fixed
+   bottom tab bar of icon-over-label tabs (the native-app pattern); the top bar is
+   left with brand + search. The content already reserves bottom padding via the
+   Screen body's pb, so the fixed bar doesn't hide the last row. */
+/* The bottom bar is desktop-hidden; it appears only at the mobile breakpoint. */
+.msc-navbar {
+  display: none;
+}
+@media (max-width: 720px) {
+  /* These override boxToCss's inline display/flex/max-width, hence !important. */
+  /* The desktop account cluster (Collections + avatar) hides on mobile — the
+     bottom tab bar carries navigation, and Settings lives in it too. */
+  [data-kind="account"] {
+    display: none !important;
+  }
+  .msc-navbar {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    gap: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: var(--color-surface-overlay);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-top: 1px solid var(--color-border);
+  }
+  .msc-navbar .msc-navitem {
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    padding: 4px 2px;
+    font-size: var(--text-xs);
+    text-align: center;
+    border-radius: var(--radius-md);
+  }
+  .msc-navbar .msc-navitem .msc-icon {
+    font-size: 1.4em;
+  }
+  .msc-navbar .msc-navitem.is-active {
+    background: transparent;
+    color: var(--color-accent);
+    box-shadow: none;
+  }
+  /* Detail panels: side-by-side on desktop, stacked full-width (equal) here. */
+  [data-kind="detail-panels"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  [data-kind="detail-panels"] > * {
+    max-width: none !important;
+    width: 100% !important;
+  }
 }
 
 /* ──────────── interactive primitives (native elements) ──────────── */
@@ -862,49 +992,3 @@
   min-width: 0;
 }
 
-/* ──────────────────────── responsive ──────────────────────── */
-@media (max-width: 860px) {
-  .msc-app {
-    grid-template-columns: 1fr;
-  }
-  .msc-sidebar {
-    position: fixed;
-    bottom: var(--space-2);
-    top: auto;
-    left: var(--space-2);
-    right: var(--space-2);
-    height: auto;
-    margin-top: 0;
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-2);
-    border-radius: var(--radius-lg);
-    padding: var(--space-2);
-    z-index: 50;
-    overflow-x: auto;
-  }
-  .msc-sidebar__brand,
-  .msc-sidebar__foot,
-  .msc-sidebar__sep,
-  .msc-sidebar__label,
-  .msc-sidebar__recent {
-    display: none;
-  }
-  .msc-topbar {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-  .msc-topbar__crumb {
-    display: none;
-  }
-  .msc-sidebar__nav {
-    flex-direction: row;
-    width: 100%;
-    justify-content: space-around;
-  }
-  .msc-navitem span:not(.msc-icon) {
-    display: none;
-  }
-  .msc-content {
-    padding-bottom: var(--space-8);
-  }
-}

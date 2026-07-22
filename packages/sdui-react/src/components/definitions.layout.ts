@@ -15,22 +15,99 @@
 
 import type { ComponentDefinition } from "../sdui/template";
 
+/* Screen — the root of a page. The app frame's content region is now a bare
+ * full-width scroll box (no gutter), so the Screen owns its own layout: an
+ * optional full-width `bleed` slot (a cinematic hero that spans edge to edge),
+ * then a gutter-padded body for the titled content. Screens that pass only
+ * children get exactly the old padded column; `bleed` is additive. */
 const screen: ComponentDefinition = {
   name: "Screen",
   template: {
     type: "Box",
-    props: { style: { gap: 6 } },
+    props: { style: { direction: "column", gap: 0 } },
     children: [
       { type: "Outlet", props: { name: "header" } },
+      { type: "Outlet", props: { name: "bleed" } },
       {
         type: "Box",
-        props: { $if: { $bind: "title" }, style: { gap: 1 } },
+        props: { style: { direction: "column", gap: 6, px: "gutter", pt: 6, pb: 8 } },
         children: [
-          { type: "Text", props: { text: { $bind: "title" }, style: { variant: "2xl", weight: "bold" } } },
-          { type: "Text", props: { $if: { $bind: "subtitle" }, text: { $bind: "subtitle" }, style: { color: "text-muted" } } },
+          {
+            type: "Box",
+            props: { $if: { $bind: "title" }, style: { gap: 1 } },
+            children: [
+              { type: "Text", props: { text: { $bind: "title" }, style: { variant: "2xl", weight: "bold" } } },
+              { type: "Text", props: { $if: { $bind: "subtitle" }, text: { $bind: "subtitle" }, style: { color: "text-muted" } } },
+            ],
+          },
+          { type: "Box", props: { style: { direction: "column", gap: 6 } }, children: [{ type: "Outlet" }] },
         ],
       },
-      { type: "Box", props: { style: { gap: 6 } }, children: [{ type: "Outlet" }] },
+    ],
+  },
+};
+
+/* AppShell — the application frame, now a primitive-tree DEFINITION rather than
+ * bespoke React (ADR 0031, ADR 0024's model): a top navigation bar (brand +
+ * horizontal `nav` slot + a `topbar` slot for search/account) over a
+ * viewport-tall, vertically scrolling `content` region. Because it is data, the
+ * frame's shape is server-owned — changing it is a definition edit, not a client
+ * release. NavItem stays a primitive (it owns active-route state). The content
+ * region carries no gutter, so a Screen's `bleed` hero can span edge to edge. */
+const appShell: ComponentDefinition = {
+  name: "AppShell",
+  params: { title: "Mosaic" },
+  template: {
+    type: "Box",
+    props: { style: { direction: "column", height: "screen" } },
+    children: [
+      {
+        // slothui-style bar: clickable brand (= Home), a centred search that
+        // owns the middle, and a right account cluster (Collections link +
+        // avatar menu) that's desktop-only. On a phone the search drops to its
+        // own row (its minWidth) and the cluster hides — the bottom tab bar below
+        // carries navigation instead.
+        type: "Box",
+        props: { style: { direction: "row", align: "center", gap: 4, px: "gutter", py: 3, wrap: true, bg: "surface", glass: true } },
+        children: [
+          {
+            // Brand = Home (clicking the wordmark navigates home).
+            type: "Pressable",
+            props: { action: { kind: "navigate", screen: "home" }, label: "Home", style: { direction: "row", align: "center", gap: 3 } },
+            children: [
+              { type: "Box", props: { style: { width: 26, height: 26, radius: "sm", bgGradient: { from: "accent", to: "info", angle: 135 }, shadow: "1" } } },
+              { type: "Text", props: { text: { $bind: "title" }, style: { variant: "lg", weight: "bold", transform: "uppercase", tracking: "wide" } } },
+            ],
+          },
+          {
+            // Central search — grows to own the middle; justify:center keeps the
+            // field centred; minWidth forces it onto its own row on a phone.
+            type: "Box",
+            props: { style: { direction: "row", align: "center", justify: "center", grow: true, minWidth: 280 } },
+            children: [{ type: "Outlet", props: { name: "topbar" } }],
+          },
+          {
+            // Right account cluster — Collections link + avatar menu (Settings).
+            // Desktop only (data-kind="account"); mobile uses the bottom tab bar.
+            type: "Box",
+            props: { style: { direction: "row", align: "center", gap: 3, kind: "account" } },
+            children: [{ type: "Outlet", props: { name: "account" } }],
+          },
+        ],
+      },
+      {
+        type: "Box",
+        props: { style: { direction: "column", grow: true, overflowY: "auto" } },
+        children: [{ type: "Outlet", props: { name: "content" } }],
+      },
+      {
+        // Mobile bottom tab bar — a normal flex child at the foot of the
+        // viewport-tall column (NOT position:fixed, which the glass top bar's
+        // backdrop-filter would trap). The scrolling content sits between the two
+        // bars. Hidden on desktop (components.css). Same nav slot as the top bar.
+        type: "NavBar",
+        children: [{ type: "Outlet", props: { name: "nav" } }],
+      },
     ],
   },
 };
@@ -46,7 +123,7 @@ const section: ComponentDefinition = {
         type: "Box",
         props: { $if: { $bind: "title" }, style: { direction: "row", align: "center", justify: "between", gap: 4 } },
         children: [
-          { type: "Text", props: { text: { $bind: "title" }, style: { variant: "xl", weight: "bold" } } },
+          { type: "Text", props: { text: { $bind: "title" }, style: { variant: "xl", weight: "bold", tracking: "tight" } } },
           {
             type: "Pressable",
             props: { $if: { $bind: "action" }, action: { $bind: "action" }, style: { direction: "row", align: "center", gap: 1, color: "text-muted" } },
@@ -92,10 +169,10 @@ const grid: ComponentDefinition = {
 
 const carousel: ComponentDefinition = {
   name: "Carousel",
-  params: { itemWidth: 168 },
+  params: { itemWidth: 182 },
   template: {
     type: "Box",
-    props: { style: { layout: "grid", gridFlow: "column", gridAutoColumns: { $bind: "itemWidth" }, gap: 4, overflowX: "auto", snap: "x", py: 2 } },
+    props: { style: { layout: "grid", gridFlow: "column", gridAutoColumns: { $bind: "itemWidth" }, gap: 5, overflowX: "auto", snap: "x", py: 2 } },
     children: [{ type: "Outlet" }],
   },
 };
@@ -211,6 +288,7 @@ const relatedRail: ComponentDefinition = {
 
 export const LAYOUT_DEFINITIONS: ComponentDefinition[] = [
   screen,
+  appShell,
   section,
   stack,
   grid,

@@ -21,6 +21,10 @@ export type Rgb = [number, number, number];
 
 const GLOW_VARS = ["--art-glow-1", "--art-glow-2", "--art-glow-3"] as const;
 const ACCENT_VARS = ["--accent-rgb", "--accent-2-rgb"] as const;
+// The raw, vivid sampled palette as bare `r, g, b` triplets — the acrylic
+// material alphas these itself (fill / edge / caustic get DIFFERENT hues), so a
+// surface reads as multi-coloured refraction, not one dominant tint.
+const ART_RGB_VARS = ["--art-1-rgb", "--art-2-rgb", "--art-3-rgb"] as const;
 
 /* Per-theme alpha for each ambient (background) glow layer — mirrors the token
    defaults so a sampled palette sits at the same intensity as the fallback duo. */
@@ -57,13 +61,19 @@ function paint(colors: Rgb[] | null): void {
   const el = root();
   if (!el) return;
   if (!colors || colors.length === 0) {
-    [...GLOW_VARS, ...ACCENT_VARS].forEach((v) => el.style.removeProperty(v));
+    [...GLOW_VARS, ...ACCENT_VARS, ...ART_RGB_VARS].forEach((v) => el.style.removeProperty(v));
     return;
   }
   const a = alphas();
   GLOW_VARS.forEach((v, i) => {
     const c = colors[Math.min(i, colors.length - 1)];
     el.style.setProperty(v, `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a[i]})`);
+  });
+  // Raw triplets for the acrylic material; missing hues (fewer than 3 sampled)
+  // are cleared so the CSS fallback chain (edge → fill → accent) fills the gap.
+  ART_RGB_VARS.forEach((v, i) => {
+    if (i < colors.length) el.style.setProperty(v, `${colors[i][0]}, ${colors[i][1]}, ${colors[i][2]}`);
+    else el.style.removeProperty(v);
   });
 
   const tone = isLight() ? TONE_LIGHT : TONE_DARK;
@@ -188,10 +198,16 @@ function vivify(r: number, g: number, b: number): Rgb {
 
 // ── public controls ─────────────────────────────────────────────────────────
 
+/** Notify the acrylic parallax pass that the standing light source changed. */
+function signalRelight(): void {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("mosaic:artlight"));
+}
+
 /** Make `colors` the standing ambient light (the screen's focused artwork). */
 export function setAmbientArt(colors: Rgb[] | null): void {
   ambient = colors && colors.length ? colors : null;
   paint(ambient);
+  signalRelight();
 }
 
 /** Temporarily override the wash — e.g. while a poster is hovered. */
@@ -208,6 +224,7 @@ export function releaseArt(): void {
 export function clearAmbientArt(): void {
   ambient = null;
   paint(null);
+  signalRelight();
 }
 
 /** Repaint the standing ambient — call after a theme change so alpha follows. */

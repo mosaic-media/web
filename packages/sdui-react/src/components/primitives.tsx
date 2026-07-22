@@ -22,11 +22,14 @@ import { boxToCss, textToCss, type BoxStyle, type ColorToken, type SpaceToken, t
 import { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, type Rgb } from "../sdui/artlight";
 import { cx, Icon, type IconName } from "./shared";
 
-/** Box — the workhorse container: flex layout + token box styling. */
+/** Box — the workhorse container: flex layout + token box styling. A glass Box
+ *  also carries the acrylic material class, whose pseudo-element layers (pigment,
+ *  caustic, edge light — components.css) are driven by the same custom
+ *  properties, refined per surface by acrylic.ts (Optical Parallax). */
 export function Box({ node }: { node: UINode }) {
   const style = prop<BoxStyle>(node, "style", {});
   return (
-    <div style={boxToCss(style)}>
+    <div className={style.glass ? "msc-acrylic" : undefined} data-kind={style.kind} style={boxToCss(style)}>
       <Children nodes={node.children} />
     </div>
   );
@@ -146,6 +149,9 @@ export function Image({ node }: { node: UINode }) {
       src={src}
       alt={alt}
       loading={artLight === "ambient" ? "eager" : "lazy"}
+      // Marks this image as the acrylic light source (acrylic.ts anchors surface
+      // lighting to the "ambient" artwork).
+      data-artlight={artLight}
       style={{ ...css, display: "block", objectFit: fit }}
       onError={onError}
       {...artProps}
@@ -172,7 +178,7 @@ export function Pressable({ node }: { node: UINode }) {
   const label = prop<string | undefined>(node, "label", undefined);
   return (
     <button
-      className={cx("msc-pressable", lift && "msc-pressable--lift")}
+      className={cx("msc-pressable", lift && "msc-pressable--lift", style.glass && "msc-acrylic")}
       style={boxToCss(style)}
       disabled={disabled}
       aria-label={label}

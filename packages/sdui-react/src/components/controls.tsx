@@ -83,11 +83,20 @@ export function Menu({ node }: { node: UINode }) {
   const { emit } = useRuntime();
   const [open, setOpen] = useState(false);
   const label = prop<string>(node, "label", "Menu");
+  // An `initial` renders an avatar-circle trigger (the account menu); otherwise
+  // the trigger is the default dots icon (a generic overflow menu).
+  const initial = prop<string | undefined>(node, "initial", undefined);
   const items = prop<Array<{ label: string; icon?: IconName; action?: Action; tone?: string }>>(node, "items", []);
   return (
     <div className={cx("msc-menu", open && "is-open")} onMouseLeave={() => setOpen(false)}>
-      <button className="msc-iconbtn msc-iconbtn--ghost" aria-label={label} onClick={() => setOpen((o) => !o)}>
-        <Icon name="dots" />
+      <button
+        className={initial ? "msc-avatar-btn" : "msc-iconbtn msc-iconbtn--ghost"}
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {initial ? <span className="msc-avatar">{initial}</span> : <Icon name="dots" />}
       </button>
       {open && (
         <div className="msc-menu__list" role="menu">

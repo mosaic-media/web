@@ -32,7 +32,8 @@ const posterCard: ComponentDefinition = {
             overflow: "hidden",
             aspectRatio: "2 / 3",
             bg: "surface-raised",
-            shadow: "1",
+            border: true,
+            shadow: "2",
           },
         },
         children: [
@@ -247,12 +248,14 @@ const button: ComponentDefinition = {
         $match: {
           on: { $bind: "variant" },
           cases: {
-            primary: { ...buttonBase, bgGradient: { from: "accent", to: "info", angle: 122 }, color: "text-on-accent" },
-            secondary: { ...buttonBase, bg: "surface-raised", color: "text", border: true, borderColor: "border-strong" },
+            // Acrylic pills (glass → the material class): primary is an
+            // accent-tinted, edge-lit pill; secondary a neutral translucent one.
+            primary: { ...buttonBase, glass: true, bg: "accent-quiet", color: "text", border: true, borderColor: "accent" },
+            secondary: { ...buttonBase, glass: true, bg: "surface-raised", color: "text", border: true, borderColor: "border-strong" },
             ghost: { ...buttonBase, color: "text-muted" },
-            danger: { ...buttonBase, bg: "danger-quiet", color: "danger", border: true, borderColor: "danger" },
+            danger: { ...buttonBase, glass: true, bg: "danger-quiet", color: "danger", border: true, borderColor: "danger" },
           },
-          default: { ...buttonBase, bg: "accent", color: "text-on-accent" },
+          default: { ...buttonBase, glass: true, bg: "accent-quiet", color: "text", border: true, borderColor: "accent" },
         },
       },
     },
@@ -436,14 +439,32 @@ const playbackBar: ComponentDefinition = {
 };
 
 /** HeroBanner — backdrop layer + gradient scrim + content, from primitives.
- *  Concept-shaped: an optional `kicker` pill ("Continue watching"), an optional
- *  `nativeTitle`, meta rendered as bordered pills, and an `aside` slot for a
- *  ratings/info panel docked to the right edge of the card. */
+ *  Concept-shaped: an optional `kicker` pill, an optional `nativeTitle`, meta as
+ *  bordered pills, an optional resume `progress` (0..1) + `progressLabel`, a
+ *  `tags` slot (genre pills, shown when `showTags`), an optional `credits` line,
+ *  an `aside` slot for a docked panel, and a `rail` slot for a floor filmstrip.
+ *
+ *  `variant` picks the composition:
+ *   - "card"    (default) — a framed 380px rounded banner, content bottom-anchored.
+ *   - "feature" — cinematic, viewport-tall, frameless, content lifted to the
+ *                 lower third. The home landing hero; place it in a `bleed` slot.
+ *   - "detail"  — cinematic, ~tall, frameless, content anchored near the top.
+ *                 The detail screen hero; also a `bleed` slot. */
 const heroBanner: ComponentDefinition = {
   name: "HeroBanner",
+  params: { variant: "card" },
   template: {
     type: "Box",
-    props: { style: { position: "relative", radius: "xl", overflow: "hidden", minHeight: 380, justify: "end", border: true } },
+    props: {
+      style: {
+        position: "relative",
+        overflow: "hidden",
+        justify: "end",
+        minHeight: { $match: { on: { $bind: "variant" }, cases: { feature: "screen", detail: 620 }, default: 380 } },
+        radius: { $match: { on: { $bind: "variant" }, cases: { feature: "", detail: "" }, default: "xl" } },
+        border: { $match: { on: { $bind: "variant" }, cases: { feature: false, detail: false }, default: true } },
+      },
+    },
     children: [
       { type: "Image", props: { src: { $bind: "backdrop" }, placeholder: " ", artLight: "ambient", style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "full", height: "full" } } },
       /* Two scrim layers: a side wash toward the text column and a bottom-up
@@ -451,12 +472,137 @@ const heroBanner: ComponentDefinition = {
       { type: "Box", props: { style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, bgGradient: { from: "bg", to: "transparent", angle: 70 } } } },
       { type: "Box", props: { style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, bgGradient: { from: "bg", to: "transparent", angle: 0 } } } },
       {
+        // Content column: the main row (text + aside) sits above a full-width
+        // rail, both anchored to the floor of the banner.
         type: "Box",
-        props: { style: { position: "relative", direction: "row", align: "end", gap: 6, p: 6, grow: true, wrap: true } },
+        props: {
+          style: {
+            position: "relative",
+            direction: "column",
+            gap: 5,
+            px: "gutter",
+            pt: { $match: { on: { $bind: "variant" }, cases: { detail: 8 }, default: 6 } },
+            pb: 7,
+            grow: true,
+            // detail anchors content near the top; card/feature toward the floor
+            // (feature then lifts it back up with the flex spacers below).
+            justify: { $match: { on: { $bind: "variant" }, cases: { detail: "start" }, default: "end" } },
+          },
+        },
         children: [
+          // "feature" only: flex spacers lift the text block into the lower third
+          // (≈3:2). Other variants get flex:0 (collapsed) so justify governs.
+          { type: "Box", props: { style: { flex: { $match: { on: { $bind: "variant" }, cases: { feature: 3 }, default: 0 } } } } },
           {
             type: "Box",
-            props: { style: { gap: 3, grow: true, maxWidth: 620, justify: "end" } },
+            props: { style: { direction: "row", align: "end", gap: 6, wrap: true } },
+            children: [
+              {
+                type: "Box",
+                props: { style: { gap: 4, grow: true, maxWidth: 720, justify: "end" } },
+                children: [
+                  {
+                    type: "Box",
+                    props: { $if: { $bind: "kicker" }, style: { direction: "row" } },
+                    children: [
+                      {
+                        type: "Box",
+                        props: { style: { direction: "row", align: "center", gap: 2, px: 3, py: 1, radius: "pill", bg: "surface-overlay", glass: true, border: true } },
+                        children: [
+                          { type: "Box", props: { style: { width: 6, height: 6, radius: "pill", bg: "accent" } } },
+                          { type: "Text", props: { text: { $bind: "kicker" }, style: { variant: "xs", weight: "medium", transform: "uppercase", tracking: "wide" } } },
+                        ],
+                      },
+                    ],
+                  },
+                  /* Title treatment: the clearlogo when the source has one (ADR
+                     0034), else the title set as text. Full-bleed uses the
+                     oversized display size; framed uses 3xl. */
+                  {
+                    type: "Box",
+                    props: { $if: { $bind: "logo" }, style: { height: 96, maxWidth: 460 } },
+                    children: [{ type: "Image", props: { src: { $bind: "logo" }, fit: "contain", placeholder: " ", style: { width: "full", height: "full" } } }],
+                  },
+                  {
+                    type: "Text",
+                    props: {
+                      $ifNot: { $bind: "logo" },
+                      text: { $bind: "title" },
+                      style: { variant: { $match: { on: { $bind: "variant" }, cases: { feature: "4xl", detail: "4xl" }, default: "3xl" } }, weight: "bold", tracking: "tight" },
+                    },
+                  },
+                  { type: "Text", props: { $if: { $bind: "nativeTitle" }, text: { $bind: "nativeTitle" }, style: { variant: "lg", color: "text-muted" } } },
+                  {
+                    type: "Box",
+                    props: { $if: { $bind: "meta" }, style: { direction: "row", gap: 2, wrap: true, align: "center" } },
+                    children: [
+                      {
+                        type: "Box",
+                        props: { $each: { $bind: "meta" }, $as: "m", style: { bg: "surface-overlay", glass: true, border: true, radius: "pill", px: 3, py: 1 } },
+                        children: [{ type: "Text", props: { text: { $bind: "m" }, style: { variant: "xs", color: "text-muted" } } }],
+                      },
+                    ],
+                  },
+                  /* Resume progress: a slim bar + a "58 min left" label, shown
+                     only when the caller supplies a 0..1 `progress`. */
+                  {
+                    type: "Box",
+                    props: { $if: { $bind: "progress" }, style: { direction: "row", align: "center", gap: 3, maxWidth: 420, pt: 1 } },
+                    children: [
+                      { type: "Box", props: { style: { grow: true }, }, children: [{ type: "ProgressBar", props: { value: { $bind: "progress" } } }] },
+                      { type: "Text", props: { $if: { $bind: "progressLabel" }, text: { $bind: "progressLabel" }, style: { variant: "xs", color: "text-muted" } } },
+                    ],
+                  },
+                  // Genre pills (detail): a horizontal wrap of GenreTags filled
+                  // from the "tags" slot, shown only when the caller sets showTags.
+                  {
+                    type: "Box",
+                    props: { $if: { $bind: "showTags" }, style: { direction: "row", wrap: true, gap: 2 } },
+                    children: [{ type: "Outlet", props: { name: "tags" } }],
+                  },
+                  { type: "Text", props: { $if: { $bind: "overview" }, text: { $bind: "overview" }, style: { color: "text-muted", maxWidth: 640 } } },
+                  { type: "Text", props: { $if: { $bind: "credits" }, text: { $bind: "credits" }, style: { variant: "sm", color: "text-faint" } } },
+                  {
+                    type: "Box",
+                    props: { style: { direction: "row", gap: 3, wrap: true, pt: 2 } },
+                    children: [{ type: "Outlet", props: { name: "actions" } }],
+                  },
+                ],
+              },
+              { type: "Outlet", props: { name: "aside" } },
+            ],
+          },
+          { type: "Box", props: { style: { flex: { $match: { on: { $bind: "variant" }, cases: { feature: 2 }, default: 0 } } } } },
+          { type: "Outlet", props: { name: "rail" } },
+        ],
+      },
+    ],
+  },
+};
+
+/** DetailHero — the paneled detail composition: a full-bleed backdrop (the
+ *  light source) with the title/meta/genres/overview/actions inside a floating
+ *  GLASS acrylic panel, and an `aside` slot for a second glass info panel. The
+ *  panels are large glass surfaces, so the acrylic material (pigment, edge light,
+ *  caustic, refraction) reads properly. The content row wraps → the panels stack
+ *  on a phone. */
+const detailHero: ComponentDefinition = {
+  name: "DetailHero",
+  template: {
+    type: "Box",
+    props: { style: { position: "relative", overflow: "hidden", minHeight: 660, justify: "end" } },
+    children: [
+      { type: "Image", props: { src: { $bind: "backdrop" }, placeholder: " ", artLight: "ambient", style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, width: "full", height: "full" } } },
+      { type: "Box", props: { style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, bgGradient: { from: "bg", to: "transparent", angle: 70 } } } },
+      { type: "Box", props: { style: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, bgGradient: { from: "bg", to: "transparent", angle: 0 } } } },
+      {
+        type: "Box",
+        props: { style: { position: "relative", direction: "row", align: "end", gap: 5, px: "gutter", pt: 8, pb: 7, wrap: true, kind: "detail-panels" } },
+        children: [
+          {
+            // The main content PANEL — a large glass acrylic surface.
+            type: "Box",
+            props: { style: { glass: true, radius: "xl", border: true, p: 6, gap: 4, grow: true, maxWidth: 640, minWidth: 280, justify: "end" } },
             children: [
               {
                 type: "Box",
@@ -467,20 +613,17 @@ const heroBanner: ComponentDefinition = {
                     props: { style: { direction: "row", align: "center", gap: 2, px: 3, py: 1, radius: "pill", bg: "surface-overlay", glass: true, border: true } },
                     children: [
                       { type: "Box", props: { style: { width: 6, height: 6, radius: "pill", bg: "accent" } } },
-                      { type: "Text", props: { text: { $bind: "kicker" }, style: { variant: "xs", weight: "medium", transform: "uppercase" } } },
+                      { type: "Text", props: { text: { $bind: "kicker" }, style: { variant: "xs", weight: "medium", transform: "uppercase", tracking: "wide" } } },
                     ],
                   },
                 ],
               },
-              /* Title treatment: the clearlogo when the source has one (ADR
-                 0034), else the title set as text. */
               {
                 type: "Box",
-                props: { $if: { $bind: "logo" }, style: { height: 96, maxWidth: 460 } },
+                props: { $if: { $bind: "logo" }, style: { height: 84, maxWidth: 400 } },
                 children: [{ type: "Image", props: { src: { $bind: "logo" }, fit: "contain", placeholder: " ", style: { width: "full", height: "full" } } }],
               },
-              { type: "Text", props: { $ifNot: { $bind: "logo" }, text: { $bind: "title" }, style: { variant: "3xl", weight: "bold" } } },
-              { type: "Text", props: { $if: { $bind: "nativeTitle" }, text: { $bind: "nativeTitle" }, style: { variant: "lg", color: "text-muted" } } },
+              { type: "Text", props: { $ifNot: { $bind: "logo" }, text: { $bind: "title" }, style: { variant: "4xl", weight: "bold", tracking: "tight" } } },
               {
                 type: "Box",
                 props: { $if: { $bind: "meta" }, style: { direction: "row", gap: 2, wrap: true, align: "center" } },
@@ -492,7 +635,12 @@ const heroBanner: ComponentDefinition = {
                   },
                 ],
               },
-              { type: "Text", props: { $if: { $bind: "overview" }, text: { $bind: "overview" }, style: { color: "text-muted" } } },
+              {
+                type: "Box",
+                props: { $if: { $bind: "showTags" }, style: { direction: "row", wrap: true, gap: 2 } },
+                children: [{ type: "Outlet", props: { name: "tags" } }],
+              },
+              { type: "Text", props: { $if: { $bind: "overview" }, text: { $bind: "overview" }, style: { color: "text-muted", lineClamp: 4 } } },
               {
                 type: "Box",
                 props: { style: { direction: "row", gap: 3, wrap: true, pt: 2 } },
@@ -501,6 +649,77 @@ const heroBanner: ComponentDefinition = {
             ],
           },
           { type: "Outlet", props: { name: "aside" } },
+        ],
+      },
+    ],
+  },
+};
+
+/** MediaTile — a glass-framed media card (the slothui-style showcase tile): a
+ *  poster inset in a translucent acrylic frame with a title/subtitle below and an
+ *  optional corner badge. Because the whole card is glass, a rail of them lets the
+ *  edge light + caustic sweep across the row as they track the hero artwork — the
+ *  parallax made visible. Distinct from PosterCard (a plain, opaque poster). */
+const mediaTile: ComponentDefinition = {
+  name: "MediaTile",
+  params: { title: "Untitled" },
+  template: {
+    type: "Pressable",
+    props: { action: { $bind: "action" }, lift: true, style: { glass: true, radius: "lg", border: true, p: 2, gap: 2 } },
+    children: [
+      {
+        type: "Box",
+        props: { style: { position: "relative", radius: "md", overflow: "hidden", aspectRatio: "2 / 3", bg: "surface-raised" } },
+        children: [
+          { type: "Image", props: { src: { $bind: "poster" }, alt: { $bind: "title" }, placeholder: { $bind: "mediaType" }, artLight: "focus", style: { width: "full", height: "full" } } },
+          {
+            type: "Box",
+            props: { $if: { $bind: "badge" }, style: { position: "absolute", top: 1, left: 1, glass: true, bg: "surface-overlay", border: true, radius: "pill", px: 2, py: 1 } },
+            children: [{ type: "Text", props: { text: { $bind: "badge" }, style: { variant: "xs", weight: "medium" } } }],
+          },
+        ],
+      },
+      {
+        type: "Box",
+        props: { style: { px: 1, gap: 0 } },
+        children: [
+          { type: "Text", props: { text: { $bind: "title" }, style: { variant: "sm", weight: "medium", lineClamp: 1 } } },
+          { type: "Text", props: { $if: { $bind: "subtitle" }, text: { $bind: "subtitle" }, style: { variant: "xs", color: "text-muted" } } },
+        ],
+      },
+    ],
+  },
+};
+
+/** InfoPanel — a glass acrylic side panel: a big rating, then label/value rows.
+ *  Rows come from the `rows` param ([{label,value}]); the rating is optional. */
+const infoPanel: ComponentDefinition = {
+  name: "InfoPanel",
+  template: {
+    type: "Box",
+    props: { style: { glass: true, radius: "xl", border: true, p: 5, gap: 4, minWidth: 232, maxWidth: 320, grow: true } },
+    children: [
+      {
+        type: "Box",
+        props: { $if: { $bind: "rating" }, style: { direction: "row", align: "center", gap: 2 } },
+        children: [
+          { type: "Icon", props: { name: "star", color: "rating", size: "1.4em" } },
+          { type: "Text", props: { text: { $bind: "rating" }, style: { variant: "2xl", weight: "bold" } } },
+          { type: "Text", props: { $if: { $bind: "ratingLabel" }, text: { $bind: "ratingLabel" }, style: { variant: "xs", color: "text-faint" } } },
+        ],
+      },
+      {
+        type: "Box",
+        props: { style: { gap: 3 } },
+        children: [
+          {
+            type: "Box",
+            props: { $each: { $bind: "rows" }, $as: "r", style: { direction: "row", justify: "between", align: "baseline", gap: 4 } },
+            children: [
+              { type: "Text", props: { text: { $bind: "r.label" }, style: { variant: "sm", color: "text-faint" } } },
+              { type: "Text", props: { text: { $bind: "r.value" }, style: { variant: "sm", weight: "medium", align: "end" } } },
+            ],
+          },
         ],
       },
     ],
@@ -562,6 +781,9 @@ export const PLATFORM_DEFINITIONS: ComponentDefinition[] = [
   detailHeader,
   playbackBar,
   heroBanner,
+  detailHero,
+  infoPanel,
+  mediaTile,
   textField,
   toggle,
   select,

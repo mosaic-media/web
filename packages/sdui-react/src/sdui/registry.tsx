@@ -24,9 +24,10 @@ export type NodeComponent = ComponentType<NodeComponentProps>;
 const registry = new Map<string, NodeComponent>();
 
 export function register(type: string, component: NodeComponent): void {
-  if (registry.has(type)) {
-    console.warn(`[sdui] re-registering component type "${type}"`);
-  }
+  // Re-registration is expected: a client boots with the bundled fallback
+  // definitions, then the Platform pushes the authoritative library on connect
+  // (ADR 0024) and each definition re-registers over its fallback. So this is a
+  // silent overwrite — the last writer (the Platform) wins.
   registry.set(type, component);
 }
 

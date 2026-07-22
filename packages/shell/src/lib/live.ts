@@ -22,7 +22,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ToastItem, Tone, UINode } from "@mosaic-media/sdui-react";
+import { defineComponents, type ToastItem, type Tone, type UINode } from "@mosaic-media/sdui-react";
 import { createClient, type Client } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import {
@@ -175,10 +175,25 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
         case "toast":
           pushToast(msg.body.value.message, (msg.body.value.tone || "neutral") as Tone);
           break;
-        case "event":
-          // Unsolicited domain events (import finished, cross-device edit) —
-          // reserved; no client reaction yet.
+        case "event": {
+          const ev = msg.body.value;
+          // The Platform pushes the SDUI component-definition library (ADR 0024)
+          // on connect, before the shell, as a JSON array of ComponentDefinition.
+          // Registering it here makes the design system server-owned: the client
+          // ships only primitives + the expander and renders whatever the
+          // Platform defines. It arrives before any screen that references it, so
+          // registration lands before the first render. Other event types
+          // (import finished, cross-device edit) are reserved.
+          if (ev.type === "sdui.definitions") {
+            try {
+              defineComponents(JSON.parse(new TextDecoder().decode(ev.payload)));
+            } catch {
+              // A malformed library leaves the bundled fallback definitions in
+              // place rather than breaking the render.
+            }
+          }
           break;
+        }
       }
     };
 

@@ -11,7 +11,7 @@
 import { useState } from "react";
 import type { UINode } from "../sdui/types";
 import { prop } from "../sdui/registry";
-import { Slot } from "../sdui/Renderer";
+import { Slot, Children } from "../sdui/Renderer";
 import { cx } from "./shared";
 
 /**
@@ -40,5 +40,19 @@ export function Tabs({ node }: { node: UINode }) {
         {active && <Slot node={node} name={active} />}
       </div>
     </div>
+  );
+}
+
+/**
+ * NavBar — the app frame's navigation group. On desktop CSS lays it out inline
+ * in the top bar; on mobile it becomes a fixed bottom tab bar (icon-over-label
+ * tabs), the native-app pattern (components.css). Stateless — it just wraps the
+ * nav items; the breakpoint styling does the rest.
+ */
+export function NavBar({ node }: { node: UINode }) {
+  return (
+    <nav className="msc-navbar">
+      <Children nodes={node.children} />
+    </nav>
   );
 }
