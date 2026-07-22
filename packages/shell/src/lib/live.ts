@@ -25,6 +25,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { defineComponents, type ToastItem, type Tone, type UINode } from "@mosaic-media/sdui-react";
 import { createClient, type Client } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
+import { traceInterceptor, currentTraceId } from "./trace";
 import {
   SessionService,
   RegionUpdate_Op,
@@ -78,6 +79,11 @@ let toastSeq = 0;
 // override with VITE_PLATFORM_URL to point at a Platform directly.
 const transport = createConnectTransport({
   baseUrl: import.meta.env.VITE_PLATFORM_URL ?? window.location.origin,
+  // Every call carries a freshly minted W3C traceparent (ADR 0054). The
+  // Platform continues that trace rather than starting its own, so a click
+  // here and the database write it causes share one id — which is what makes a
+  // failure that crosses repositories a lookup instead of an investigation.
+  interceptors: [traceInterceptor],
 });
 
 const encoder = new TextEncoder();
@@ -302,9 +308,17 @@ async function runIntent(
         await client.submitInput({ session, value: intent.value }, { signal });
         break;
     }
-  } catch {
+  } catch (err) {
     // An intent either succeeds (Ack) or fails; its visible effect arrives on the
     // push lane. A failed/aborted intent is swallowed here — the stream is the
     // source of truth, so we do not throw into React.
+    //
+    // Swallowed is not the same as unrecorded, though. The trace id is written
+    // to the console so a failure a user can see but not describe becomes one
+    // string they can quote, and that string joins this click to the Platform's
+    // own records of what it did with it (ADR 0054).
+    if (!signal.aborted) {
+      console.warn(`mosaic: intent "${intent.kind}" failed (trace ${currentTraceId()})`, err);
+    }
   }
 }
