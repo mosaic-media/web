@@ -12,8 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Tags are what the version check compares against, and a shallow
+          # clone has none — the check would pass by finding nothing.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      # The published package's version and the git tag must agree. Only
+      # sdui-react is published here; the Shell and the workspace root are
+      # private, so their versions are bookkeeping and exempt.
+      - name: Published package version matches the tag
+        run: node scripts/check-versions.mjs
+
       - run: npm install
       - run: npm run build --workspaces --if-present
