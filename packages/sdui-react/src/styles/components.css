@@ -1089,3 +1089,59 @@
   min-width: 0;
 }
 
+
+/* The player surface (ADR 0047). It sits over the current context rather than
+   replacing it, so it is a fixed layer above the shell — the screen underneath
+   is never unmounted and is still there when the player closes. */
+.mos-player {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+}
+.mos-player__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.82);
+  backdrop-filter: blur(8px);
+}
+.mos-player__frame {
+  position: relative;
+  width: min(100vw, 1600px);
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.mos-player__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  color: var(--color-text, #fff);
+}
+.mos-player__title {
+  font-weight: 600;
+  font-size: var(--font-size-lg, 1.125rem);
+}
+.mos-player__close {
+  border: 0;
+  background: rgb(255 255 255 / 0.12);
+  color: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  width: 2rem;
+  height: 2rem;
+  line-height: 1;
+  font-size: 1rem;
+}
+.mos-player__close:hover {
+  background: rgb(255 255 255 / 0.22);
+}
+.mos-player__video {
+  width: 100%;
+  max-height: calc(100vh - 4rem);
+  background: #000;
+  display: block;
+}

@@ -28,6 +28,7 @@ import { NavItem } from "./shell";
 import { Tabs, NavBar, Rotator } from "./layout";
 import { TextInput, Switch, SelectInput, Menu, SearchBar, SubmitField, Slider, RatingControl, ProgressBar, ProgressRing } from "./controls";
 import { SeasonSelector } from "./media";
+import { Player } from "./player";
 import { Skeleton } from "./feedback";
 import { PLATFORM_DEFINITIONS } from "./definitions";
 import { LAYOUT_DEFINITIONS } from "./definitions.layout";
@@ -70,6 +71,10 @@ export function installComponents(): void {
     Slider,
     RatingControl,
     SeasonSelector,
+
+    // 1. primitive — the playback surface (ADR 0047). The server issues a
+    // ticket; the client owns the decoding pipeline and the transport controls.
+    Player,
 
     // 1. primitives — computed / animated
     ProgressBar,

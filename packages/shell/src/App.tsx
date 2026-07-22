@@ -108,10 +108,27 @@ export function App() {
   const composed = useMemo<UINode | null>(() => {
     if (!shell) return null;
     const slots: Record<string, UINode | UINode[]> = { ...(shell.slots ?? {}) };
-    for (const [region, nodes] of Object.entries(regions)) slots[region] = nodes;
+    for (const [region, nodes] of Object.entries(regions)) {
+      // The player is not a shell slot: it sits *over* the current context and
+      // the screen beneath it must survive (ADR 0047). It is hosted separately,
+      // below, rather than injected into a frame outlet.
+      if (region === "player") continue;
+      slots[region] = nodes;
+    }
     if (!slots.content) slots.content = [{ type: "Fragment" }];
     return { ...shell, slots };
   }, [shell, regions]);
+
+  // Dismissal is client-side: the server pushed a player, and closing it is a
+  // local act rather than a state change worth a round trip. A newly pushed
+  // player clears the flag, so playing something else re-opens the surface.
+  const playerNodes = regions.player ?? [];
+  const playerKey = playerNodes.length > 0 ? JSON.stringify(playerNodes[0]?.props ?? {}) : "";
+  const [dismissedPlayer, setDismissedPlayer] = useState("");
+  useEffect(() => {
+    if (playerKey) setDismissedPlayer("");
+  }, [playerKey]);
+  const showPlayer = playerKey !== "" && dismissedPlayer !== playerKey;
 
   if (authError) return <Standby title="Can’t reach the Platform" message={authError} />;
   if (status !== "open" || !composed) {
@@ -137,6 +154,13 @@ export function App() {
       onInput={onInput}
       render={({ overlays, dismissOverlay }) => (
         <>
+          {showPlayer && (
+            <PlayerHost
+              nodes={playerNodes}
+              title={String(playerNodes[0]?.props?.title ?? "")}
+              onDismiss={() => setDismissedPlayer(playerKey)}
+            />
+          )}
           <OverlayHost overlays={overlays} onDismiss={dismissOverlay} />
           <ToastHost toasts={toasts} onDismiss={dismissToast} />
         </>
@@ -173,6 +197,48 @@ function Standby({ title, message }: { title: string; message: string }) {
       />
       <h1 style={{ fontSize: "1.1rem", fontWeight: 600, margin: 0 }}>{title}</h1>
       <p style={{ opacity: 0.6, margin: 0, fontSize: "0.9rem" }}>{message}</p>
+    </div>
+  );
+}
+
+/** PlayerHost — the surface a pushed Player sits in (ADR 0047).
+ *
+ * The frame, the title bar and dismissal live here rather than in the Player
+ * component, which renders only the mechanism the server named. Escape and a
+ * backdrop click close it; the screen underneath was never torn down, so it is
+ * still exactly where it was.
+ */
+function PlayerHost({
+  nodes,
+  title,
+  onDismiss,
+}: {
+  nodes: UINode[];
+  title: string;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onDismiss();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onDismiss]);
+
+  return (
+    <div className="mos-player" role="dialog" aria-modal="true" aria-label={title || "Player"}>
+      <div className="mos-player__backdrop" onClick={onDismiss} />
+      <div className="mos-player__frame">
+        <div className="mos-player__bar">
+          <span className="mos-player__title">{title}</span>
+          <button type="button" className="mos-player__close" onClick={onDismiss} aria-label="Close player">
+            ✕
+          </button>
+        </div>
+        {nodes.map((n, i) => (
+          <RenderNode key={i} node={n} />
+        ))}
+      </div>
     </div>
   );
 }
