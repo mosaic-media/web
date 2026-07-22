@@ -41,7 +41,3 @@ export { installComponents } from "./components";
 export { OverlayHost, ToastHost } from "./components/host";
 export { Icon, cx } from "./components/shared";
 export type { IconName } from "./components/shared";
-
-// GraphQL client used by ShellProvider to run invoke/query actions.
-export { gql, PlatformError, setAuthToken } from "./lib/platform";
-export type { GraphQLError } from "./lib/platform";

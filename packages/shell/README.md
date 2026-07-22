@@ -2,7 +2,7 @@
 
 A **server-driven-UI (SDUI) web client** for the [Mosaic](https://github.com/mosaic-media) self-hosted media platform. The Platform sends a tree of UI nodes; the Shell renders them. This repo is the **skeleton**: the SDUI runtime, the full component vocabulary, and a neutral, token-driven skin. The Mosaic Design Language will land on top of the tokens later — no component rewrites required.
 
-> Status: `v0.0.1` — skeleton. Runs entirely on mock SDUI payloads; live GraphQL wiring is stubbed and lands once the Platform's SDUI/query surface stabilises.
+> Status: `v0.0.1` — skeleton, now running live. It signs in over the Platform's `AuthService` and renders what the two-lane `SessionService` pushes (ADR 0041/0061); the mock SDUI payloads remain in-tree but are off the boot path.
 
 ## Why SDUI
 
@@ -83,7 +83,7 @@ interface UINode {
 
 type Action =
   | { kind: "navigate"; screen: string; params?: object }
-  | { kind: "invoke"; mutation: string; input?: object }   // GraphQL mutation
+  | { kind: "invoke"; mutation: string; input?: object }   // a Platform action
   | { kind: "query"; query: string; variables?: object; into?: string }
   | { kind: "openOverlay"; surface?: "modal" | "sheet" | "drawer"; node: UINode }
   | { kind: "playPart"; partId: string }
@@ -106,9 +106,12 @@ The **Components** item in the sidebar opens the gallery — every registered
 component rendered live through the real registry. The dark/light toggle in the
 top bar proves the token contract in both themes.
 
-In dev, `/graphql` is proxied to the Platform (default `http://localhost:8081`,
-override with `MOSAIC_PLATFORM_URL`). Nothing in the skeleton needs it running —
-it renders the mock screens in `src/mock/screens.ts`.
+In dev, the Platform's paths are proxied to it (default `http://localhost:8081`,
+override with `MOSAIC_PLATFORM_URL`): the two Connect services — `AuthService`
+to sign in and `SessionService` for the live session — plus `/artwork` and
+`/playback`. Without a Platform running the Shell cannot sign in, so it shows
+its disconnected state; the mock screens in `src/mock/screens.ts` are no longer
+on the boot path.
 
 ```bash
 npm run build      # type-check + production bundle to dist/

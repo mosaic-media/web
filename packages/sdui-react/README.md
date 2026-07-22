@@ -9,7 +9,7 @@ It is a **client implementation**, not the contract. The technology-agnostic con
 - **Primitives** — `Box`, `Text`, `Image`, `Icon`, `Pressable`, the form inputs, `Tabs`, `Menu`, `ProgressBar`, `ProgressRing`, … the irreducible, client-implemented vocabulary, styled from tokens.
 - **Registry + renderer** — `register`/`resolve`, `RenderNode` (recursive tree walk), and the `Unknown` fallback for open-vocabulary forward-compat.
 - **Definition expander** — `defineComponent` + the `$bind`/`$match`/`$each`/`$if`/`Outlet` template engine, so components delivered as data render like native ones.
-- **Runtime** — `ShellProvider` (interprets `Action` envelopes, owns overlays + toasts), `useRuntime`, `OverlayHost`/`ToastHost`, and a GraphQL client.
+- **Runtime** — `ShellProvider` (interprets `Action` envelopes, owns overlays + toasts), `useRuntime`, `OverlayHost`/`ToastHost`. It holds no transport of its own: an `invoke` action is handed to the host app's live session (ADR 0041/0061).
 - **Art-light** — the artwork-driven ambient "refraction" wash. An `Image` marked `artLight="ambient"|"focus"` samples its palette (canvas) and feeds it into the `--art-glow-*` tokens behind `--ambient`; the focused artwork colours the UI, falling back to the accent duo when nothing is in focus. Web-only enhancement; the fallback is always valid.
 - **The token-driven skin** — shipped as `@mosaic-media/sdui-react/styles.css`.
 

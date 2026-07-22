@@ -24,8 +24,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { defineComponents, type ToastItem, type Tone, type UINode } from "@mosaic-media/sdui-react";
 import { createClient, type Client } from "@connectrpc/connect";
-import { createConnectTransport } from "@connectrpc/connect-web";
-import { traceInterceptor, currentTraceId } from "./trace";
+import { currentTraceId } from "./trace";
+import { transport } from "./transport";
 import {
   SessionService,
   RegionUpdate_Op,
@@ -74,17 +74,6 @@ const BACKOFF_BASE = 300;
 const BACKOFF_CEIL = 10_000;
 
 let toastSeq = 0;
-
-// Same-origin in dev (Vite proxies the SessionService path to the Platform);
-// override with VITE_PLATFORM_URL to point at a Platform directly.
-const transport = createConnectTransport({
-  baseUrl: import.meta.env.VITE_PLATFORM_URL ?? window.location.origin,
-  // Every call carries a freshly minted W3C traceparent (ADR 0054). The
-  // Platform continues that trace rather than starting its own, so a click
-  // here and the database write it causes share one id — which is what makes a
-  // failure that crosses repositories a lookup instead of an investigation.
-  interceptors: [traceInterceptor],
-});
 
 const encoder = new TextEncoder();
 const jsonBytes = (v: Record<string, unknown> | undefined): Uint8Array =>

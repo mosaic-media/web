@@ -10,7 +10,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import type { Action, ActionResult, Tone, UINode } from "./types";
 import { ShellRuntimeContext, type OverlayHandle } from "./context";
-import { gql, PlatformError } from "../lib/platform";
 
 export interface ToastItem {
   id: string;
@@ -25,9 +24,14 @@ interface ShellProviderProps {
   children: ReactNode;
   /** Render prop for overlays/toasts so the host controls where they mount. */
   render: (ui: { overlays: OverlayHandle[]; toasts: ToastItem[]; dismissOverlay: () => void; dismissToast: (id: string) => void }) => ReactNode;
-  /** Live session (ADR 0032): when present, an Invoke action is sent up the
-   *  socket instead of run as a one-shot GraphQL mutation, and onInput streams a
-   *  field value for search-as-you-type. Absent → the request/response path. */
+  /** The live session (ADR 0041). An Invoke action is sent up the session
+   *  transport, and onInput streams a field value for search-as-you-type.
+   *
+   *  Both are optional because this runtime is also consumed outside a session —
+   *  the storybook renders the same trees with nothing behind them. There is no
+   *  longer a request/response fallback: since ADR 0061 the session transport is
+   *  the only way a client reaches the Platform, so an invoke with no session is
+   *  reported as such rather than quietly attempted over a second transport. */
   onInvoke?: (mutation: string, input?: Record<string, unknown>) => void;
   onInput?: (value: string) => void;
 }
@@ -105,38 +109,17 @@ export function ShellProvider({ screen, onNavigate, onBack, children, render, on
           return { ok: true };
 
         case "invoke": {
-          // In a live session, hand the mutation to the socket; the server runs
-          // it and pushes the result (a toast, a re-render).
-          if (onInvoke) {
-            onInvoke(action.mutation, action.input);
-            return { ok: true };
+          // Hand the action to the session transport; the server runs it and
+          // pushes what it produced (a toast, a re-render, a player) on the push
+          // lane. Nothing comes back through this return value by design — the
+          // Ack carries no payload (ADR 0041).
+          if (!onInvoke) {
+            const message = "Not connected to a Platform session.";
+            pushToast(message, "danger");
+            return { ok: false, error: { category: "Unavailable", message } };
           }
-          const document = `mutation Shell($input: JSON) { ${action.mutation}(input: $input) }`;
-          try {
-            const data = await gql(document, { input: action.input });
-            return { ok: true, data };
-          } catch (e) {
-            const err =
-              e instanceof PlatformError
-                ? { category: e.category, message: e.message }
-                : ({ category: "Internal", message: "Unexpected error" } as const);
-            pushToast(err.message, "danger");
-            return { ok: false, error: err };
-          }
-        }
-
-        case "query": {
-          try {
-            const data = await gql(action.query, action.variables);
-            return { ok: true, data };
-          } catch (e) {
-            const err =
-              e instanceof PlatformError
-                ? { category: e.category, message: e.message }
-                : ({ category: "Internal", message: "Unexpected error" } as const);
-            pushToast(err.message, "danger");
-            return { ok: false, error: err };
-          }
+          onInvoke(action.mutation, action.input);
+          return { ok: true };
         }
 
         case "sequence": {

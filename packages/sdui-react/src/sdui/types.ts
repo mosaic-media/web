@@ -46,13 +46,13 @@ export type Action =
   /** Open an external URL in a new tab (validated by the Shell). */
   | { kind: "openUrl"; url: string }
   /**
-   * Invoke a Platform GraphQL mutation by name with an input map, e.g.
-   * "importContent". The Shell resolves the caller/session; the server
-   * re-authorises (ADR 0017).
+   * Invoke a Platform action by name with an input map, e.g. "importContent".
+   * It travels up the session transport (ADR 0041) and the server re-authorises
+   * it as the session's user (ADR 0017). The field is still called `mutation`
+   * because that is what the SDUI contract calls it: it names a Platform write,
+   * whatever the transport carrying it is called.
    */
   | { kind: "invoke"; mutation: string; input?: Record<string, unknown> }
-  /** Run a Platform query and (optionally) refresh a region with the result. */
-  | { kind: "query"; query: string; variables?: Record<string, unknown>; into?: string }
   /** Present a node as an overlay (modal / sheet / drawer). */
   | { kind: "openOverlay"; surface?: "modal" | "sheet" | "drawer"; node: UINode }
   /** Dismiss the topmost overlay. */
