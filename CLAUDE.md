@@ -50,10 +50,17 @@ a local build. That check exists because the package once ran for weeks as an
 unpublished local build in the Shell's `node_modules`, where a fresh
 `npm install` would have reverted it.
 
-The lockfile links `@mosaic-media/sdui` to the sibling `../sdui` checkout for
-local work. If that sibling is not mounted, npm falls back to a stale hoisted
-version and Vite fails with a missing-specifier error that does not name the
-cause — check this first when the dev stack will not boot.
+**`@mosaic-media/sdui` is a published npm dependency, not a link to the sibling
+checkout.** Mounting `../sdui` into the dev container does nothing for the
+Shell; only the version in `packages/shell/package.json` decides what the client
+is compiled against. **A stale one fails silently and is very hard to see.**
+Connect-ES serialises only the fields in the schema it was built with, so when
+the Shell was pinned to `0.9.0` and the Platform had already shipped
+`ClientProfile` in `0.10.0`, the client sent the field, the wire dropped it, the
+call returned `200`, and the server saw `nil`. Nothing errored anywhere. If a
+new contract field appears not to arrive, check the installed version before
+suspecting the code — and bump the dependency in the same change that starts
+using the field.
 
 ## Workflow
 

@@ -15,7 +15,7 @@
     "@bufbuild/protobuf": "^2.13.0",
     "@connectrpc/connect": "^2.0.0",
     "@connectrpc/connect-web": "^2.0.0",
-    "@mosaic-media/sdui": "^0.9.0",
+    "@mosaic-media/sdui": "^0.10.0",
     "@mosaic-media/sdui-react": "^0.1.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
