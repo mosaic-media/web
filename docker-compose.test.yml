@@ -1,0 +1,79 @@
+# The web workspace's test container.
+#
+#   docker compose -f docker-compose.test.yml run --rm test
+#
+# This is the sanctioned way to build and typecheck this repository. Nothing is
+# installed, built or run on the host — and here that rule buys something
+# concrete beyond toolchain parity: **`npm install` writes tens of thousands of
+# files and native binaries into node_modules**, and a host install leaves
+# Linux-vs-macOS artefacts that the dev stack then mounts over, or doesn't.
+# Keeping installs inside a container keeps the two from ever meeting.
+#
+# The failure this repository actually suffers from is a *silent* one, and no
+# container prevents it: Connect-ES serialises only the fields in the schema it
+# was built with, so a stale `@mosaic-media/sdui` drops a field on the wire, the
+# call returns 200, and the server sees nil. If a new contract field appears not
+# to arrive, check the installed version before suspecting the code. A green run
+# here does not speak to that.
+#
+# For a shell in the same environment:
+#
+#   docker compose -f docker-compose.test.yml run --rm test bash
+name: mosaic-web-test
+
+services:
+  test:
+    # The full image, not -slim, and the reason is git. check-versions.mjs
+    # shells out to `git tag` and *catches the failure*, reporting "no tags yet
+    # — nothing to check against" and exiting 0. On a slim image, which ships
+    # no git, the check would pass by never running — the precise failure it
+    # was written to prevent.
+    #
+    # 22 matches the Shell's service in the Platform's docker-compose.dev.yml,
+    # so a developer does not change Node between running the app and testing
+    # it. Note that .github/workflows/verify.yml pins 20 — if the two ever
+    # disagree about a build, CI's number is the one that decides a push.
+    image: node:22-bookworm
+    working_dir: /src/web
+    environment:
+      # git refuses a bind-mounted repository owned by a different uid than the
+      # one running it — "dubious ownership", exit non-zero — which
+      # check-versions would swallow exactly as it swallows a missing git. Set
+      # through the environment rather than a Dockerfile so this repository
+      # needs no image of its own.
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: "*"
+    volumes:
+      - .:/src/web
+      # node_modules are volumes rather than part of the bind mount, for the
+      # reason in the header: an npm install is the worst possible shape for a
+      # cross-OS mount, and the container's Linux binaries must not collide
+      # with a host-side install.
+      - mosaic-web-npm:/root/.npm
+      - mosaic-web-node-root:/src/web/node_modules
+      - mosaic-web-node-shell:/src/web/packages/shell/node_modules
+      - mosaic-web-node-sdui-react:/src/web/packages/sdui-react/node_modules
+      - mosaic-web-node-storybook:/src/web/packages/storybook/node_modules
+    # The order .github/workflows/verify.yml runs it in, plus the typechecks.
+    # The `git rev-parse` is not ceremony: it turns a broken git into a loud
+    # failure here rather than a quiet pass inside check-versions.
+    command:
+      - bash
+      - -eu
+      - -o
+      - pipefail
+      - -c
+      - |
+        git rev-parse --git-dir > /dev/null
+        node scripts/check-versions.mjs
+        npm install --no-fund --no-audit
+        npm run build --workspaces --if-present
+        npm run typecheck --workspaces --if-present
+
+volumes:
+  mosaic-web-npm:
+  mosaic-web-node-root:
+  mosaic-web-node-shell:
+  mosaic-web-node-sdui-react:
+  mosaic-web-node-storybook:

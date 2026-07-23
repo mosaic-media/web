@@ -62,16 +62,50 @@ new contract field appears not to arrive, check the installed version before
 suspecting the code — and bump the dependency in the same change that starts
 using the field.
 
+## Everything runs in the container, nothing runs on the host
+
+**Do not run `npm install`, `npm run build`, `vite` or `tsc` directly on this
+machine.** This repository's gates run inside its test container:
+
+```bash
+docker compose -f docker-compose.test.yml run --rm test
+```
+
+That runs the version check, `npm install`, and the build and typecheck across
+every workspace package. Append `bash` for a shell in the same environment.
+
+Two reasons, and the second is specific to this repository:
+
+- **`npm install` is the worst thing you can do to a shared checkout.** It
+  writes tens of thousands of files and platform-native binaries into
+  `node_modules`. A host-side install leaves macOS artefacts where the dev
+  stack then mounts Linux ones, or fails to, and the resulting breakage points
+  anywhere but at its cause. The container keeps installs in named volumes, so
+  the two can never meet.
+- **`scripts/check-versions.mjs` catches its own git failure** and reports "no
+  tags yet — nothing to check against", exit 0. A missing or unhappy git makes
+  it pass by finding nothing, so the container uses the full Node image rather
+  than `-slim` (which ships no git) and runs `git rev-parse` first.
+
+**To see the client, run the dev stack** rather than `npm run dev` — it is in
+the Platform repository and brings the Shell, the Platform and its database up
+together, with the Shell on `:5173`:
+
+```bash
+docker compose -f docker-compose.dev.yml up
+```
+
 ## Workflow
 
 - Commit and push this repository **separately** from `platform`.
 - **Commit author identity** must be `AdamNi-7080 <anicholls41@gmail.com>`.
-- Build and typecheck every affected workspace package before pushing; a change
-  to `sdui-react` is a change to both consumers.
+- The test container green before pushing; a change to `sdui-react` is a change
+  to both consumers, and the container builds all of them.
 - **Verify in a browser against the running Platform**, not only against the
   storybook. Every bug that mattered here — the action ABI, the empty home
   screen, the container hidden in a query parameter — was invisible until a real
-  screen rendered real data.
+  screen rendered real data. The container makes the build honest; it says
+  nothing about whether the screen is right.
 
 ## The roadmap and the decision records
 

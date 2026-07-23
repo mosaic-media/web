@@ -10,8 +10,27 @@ The runtime is a peer, not a subordinate — no app is privileged. A consumer of
 
 ## Working locally
 
+**Everything runs in a container; nothing is installed, built or run on the
+host.** The gate — version check, install, build and typecheck across every
+workspace package — is one command:
+
 ```sh
-npm install   # links @mosaic-media/sdui-react into the Shell and storybook via workspaces
+docker compose -f docker-compose.test.yml run --rm test
+```
+
+Append `bash` for a shell in the same environment. The install (`npm install`
+links `@mosaic-media/sdui-react` into the Shell and storybook via workspaces)
+happens inside it, into named volumes, so it never writes a `node_modules` onto
+the host checkout — a host-side install leaves platform-native binaries where
+the dev stack then mounts Linux ones, and the breakage points anywhere but at
+its cause.
+
+**To see the client**, run the dev stack — it lives in the [`platform`](https://github.com/mosaic-media/platform)
+repository and brings the Shell, the Platform and its database up together, with
+the Shell on `:5173`:
+
+```sh
+docker compose -f docker-compose.dev.yml up
 ```
 
 Licensed AGPL-3.0-only.
