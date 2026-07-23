@@ -26,6 +26,17 @@ conveniences rather than by large mistakes.
 - **Actions are echoed, never authored.** A `NavItem`'s `navigate(screen)` comes
   from the server; the client dispatches it back. If you find yourself writing a
   screen name in this repository, that is the bug.
+- **No hand-written controls, no inline styles.** A new user-facing affordance is
+  a *server-emitted SDUI node* — composed with the `sdui/ui` builders on the
+  Platform and rendered here through the component vocabulary and design tokens —
+  not a bespoke `<button style={{…}}>` or hand-rolled markup in the Shell. If you
+  reach for inline CSS or a hand-written control in `packages/shell`, stop and
+  look in `sdui-react` (component definitions, existing classes/tokens) and `sdui`
+  (the `ui` builders and definition library) for the primitive to emit instead.
+  A player-region control (e.g. "Next episode") is a `Button` node the server
+  puts in the region and `PlayerHost` renders via `RenderNode` — the chrome the
+  host owns (frame, title bar, dismissal) is the *only* hand-written exception,
+  and it is not a template for adding more.
 - **The one stated limit is the player** ([ADR 0047](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0047-player-as-client-primitive.md),
   [ADR 0070](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0070-the-web-player-is-the-browser.md)):
   the server owns everything about a playback session except the decoding
