@@ -22,8 +22,19 @@
  * upstream location, which for a debrid link carries a credential (ADR 0045).
  */
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useRuntime } from "../sdui/context";
 import type { UINode } from "../sdui/types";
+
+/**
+ * How often a playing video reports where it has got to (ADR 0046).
+ *
+ * Fifteen seconds, and the number is a trade rather than a tuning: it bounds
+ * what a hard crash can lose, and the Platform coalesces on top of it anyway, so
+ * reporting faster mostly buys writes nobody reads. Every report that actually
+ * matters — a pause, a completed seek, leaving — is sent on its own regardless.
+ */
+const PROGRESS_INTERVAL_MS = 15_000;
 
 export function Player({ node }: { node: UINode }) {
   const props = (node.props ?? {}) as {
@@ -32,6 +43,8 @@ export function Player({ node }: { node: UINode }) {
     poster?: string;
     mimeType?: string;
     resumeAt?: number;
+    nodeId?: string;
+    partId?: string;
   };
   const videoRef = useRef<HTMLVideoElement>(null);
   const src = props.src ?? "";
@@ -54,6 +67,79 @@ export function Player({ node }: { node: UINode }) {
     el.addEventListener("loadedmetadata", apply, { once: true });
     return () => el.removeEventListener("loadedmetadata", apply);
   }, [resumeAt, src]);
+
+  // Reporting position back (ADR 0046). The server owns what this means — the
+  // completion threshold, the coalescing, whether it counts as finished — and
+  // the client's whole part is saying where the element currently is.
+  const { dispatch } = useRuntime();
+  const nodeId = props.nodeId;
+  const partId = props.partId;
+
+  const report = useCallback(
+    (final: boolean) => {
+      const el = videoRef.current;
+      if (!el || !nodeId) return;
+      // A position of zero at the very start is not worth a row; it is what an
+      // item looks like before anyone has watched any of it, and reporting it
+      // would put every item anyone merely opened into continue-watching.
+      if (!final && el.currentTime <= 0) return;
+      void dispatch({
+        kind: "invoke",
+        mutation: "reportProgress",
+        input: {
+          nodeId,
+          partId: partId ?? "",
+          position: el.currentTime,
+          // NaN and Infinity are both ordinary answers from a stream whose
+          // length is not yet known — and a remuxed stream off a pipe never
+          // knows it. Sending either would be sending nonsense the server has
+          // to defend against, so it is sent as "not known" instead.
+          duration: Number.isFinite(el.duration) ? el.duration : 0,
+          final,
+        },
+      });
+    },
+    [dispatch, nodeId, partId],
+  );
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !nodeId) return;
+
+    const timer = window.setInterval(() => {
+      if (!el.paused) report(false);
+    }, PROGRESS_INTERVAL_MS);
+
+    // The boundaries worth a report of their own. A pause is where someone
+    // stops watching without closing anything; a settled seek is a deliberate
+    // move to a place they want remembered; ending is the completion signal the
+    // threshold needs to see.
+    const onPause = () => report(true);
+    const onSeeked = () => report(false);
+    const onEnded = () => report(true);
+    el.addEventListener("pause", onPause);
+    el.addEventListener("seeked", onSeeked);
+    el.addEventListener("ended", onEnded);
+
+    // Leaving is the report most likely to be lost and the one that matters
+    // most, because it is where the viewer actually stopped. `pagehide` rather
+    // than `unload`, which is not fired reliably on mobile and blocks the
+    // back/forward cache where it is.
+    const onPageHide = () => report(true);
+    window.addEventListener("pagehide", onPageHide);
+
+    return () => {
+      window.clearInterval(timer);
+      el.removeEventListener("pause", onPause);
+      el.removeEventListener("seeked", onSeeked);
+      el.removeEventListener("ended", onEnded);
+      window.removeEventListener("pagehide", onPageHide);
+      // Closing the player is leaving it. This is the ordinary path — someone
+      // presses the X — and without it the last position survives only as far
+      // as the previous fifteen-second tick.
+      report(true);
+    };
+  }, [nodeId, report, src]);
 
   if (!src) return null;
 
