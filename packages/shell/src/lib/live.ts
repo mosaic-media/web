@@ -24,6 +24,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { defineComponents, type ToastItem, type Tone, type UINode } from "@mosaic-media/sdui-react";
 import { createClient, type Client } from "@connectrpc/connect";
+import { clientProfile } from "./profile";
 import { currentTraceId } from "./trace";
 import { transport } from "./transport";
 import {
@@ -277,7 +278,17 @@ async function runIntent(
     switch (intent.kind) {
       case "attach":
         await client.attach(
-          { session, screen: intent.screen, params: jsonBytes(intent.params) },
+          {
+            session,
+            screen: intent.screen,
+            params: jsonBytes(intent.params),
+            // What this browser can decode and display (ADR 0047). It rides
+            // every Attach rather than a call of its own because Attach already
+            // happens on every (re)connect, and a reconnect is the only moment
+            // the answer can change hands — the Platform's live-session state is
+            // disposable, so a re-declaration is what puts it back.
+            profile: clientProfile(),
+          },
           { signal },
         );
         break;
