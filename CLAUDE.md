@@ -31,12 +31,47 @@ conveniences rather than by large mistakes.
   Platform and rendered here through the component vocabulary and design tokens —
   not a bespoke `<button style={{…}}>` or hand-rolled markup in the Shell. If you
   reach for inline CSS or a hand-written control in `packages/shell`, stop and
-  look in `sdui-react` (component definitions, existing classes/tokens) and `sdui`
-  (the `ui` builders and definition library) for the primitive to emit instead.
+  look in `sdui-react` (the primitives and their classes/tokens) and `sdui` (the
+  `ui` builders and `definitions/*.json`) for what to emit instead.
   A player-region control (e.g. "Next episode") is a `Button` node the server
   puts in the region and `PlayerHost` renders via `RenderNode` — the chrome the
   host owns (frame, title bar, dismissal) is the *only* hand-written exception,
   and it is not a template for adding more.
+- **This client contains no components, and adding one is the bug. Hard rule.**
+  Every composition — a card, a row, a frame, a screen's chrome — is a
+  **definition**: data, authored in the contract (`mosaic-sdui`
+  `definitions/*.json`) and pushed to this client by the Platform on connect
+  ([ADR 0040](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0040-server-delivered-definitions-and-skin.md)).
+  This package ships the **native vocabulary only**: primitives, the action kinds
+  the dispatcher interprets, the style translation, the registry, the renderer
+  and the definition expander.
+
+  It was not always so, and the damage is the reason for the rule: ~30 components
+  lived here as hand-written TypeScript, the Platform served a *dump of this
+  package*, and the published contract carried a second copy of four of them —
+  three had silently drifted. A component written here renders on the web and
+  nowhere else, so a Flutter client would have had to reimplement all thirty from
+  a source that was not the contract.
+
+  The test is mechanical. **If a change adds a component, it belongs in the
+  contract, not in a `.tsx` file here.** If it needs a new primitive, a new style
+  field, or a new action kind, that is a *vocabulary* change — the one thing that
+  genuinely needs a client release
+  ([ADR 0024](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0024-primitives-and-definitions.md)) —
+  so it is a deliberate decision: spec it in the contract so every client can
+  implement it, bump `@mosaic-media/sdui-react`, and record it in the roadmap.
+  Never a quiet edit riding along with the screen that wanted it.
+
+  *(Worked example, both halves. The settings frame is a definition — data, no
+  client release. Making it work on a phone needed something no client could
+  express: `style.responsive` and `style.hidden`, so one payload can carry a
+  desktop and a phone arrangement. That is a vocabulary change, so it came with
+  `0.1.x → 0.2.0` and a roadmap entry. The screen is data; the capability it
+  needed was a release.)*
+- **No CSS rule for a layout.** `components.css` styles primitives and their
+  interaction states. A `data-kind` hook plus a media query is how a *screen*
+  ends up costing a client release; a layout that changes with the viewport says
+  so in the payload, through `style.responsive`.
 - **The one stated limit is the player** ([ADR 0047](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0047-player-as-client-primitive.md),
   [ADR 0070](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0070-the-web-player-is-the-browser.md)):
   the server owns everything about a playback session except the decoding
@@ -44,7 +79,9 @@ conveniences rather than by large mistakes.
   network at frame rate. The renderer is a bare `<video>` element and stays one
   until the origin serves HLS.
 - **Definitions are server-delivered data** ([ADR 0040](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0040-server-delivered-definitions-and-skin.md));
-  the client bundles only the native vocabulary and a fallback. Growing the
+  the client bundles only the native vocabulary — not even a fallback set, which
+  ADR 0040 allowed and ADR 0082 removed, because a bundled fallback is a second
+  copy of every component and a second copy is what drifted. Growing the
   *primitive* set is the only thing that needs a client release, so it is a
   decision rather than a convenience.
 - **One transport** ([ADR 0061](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0061-one-client-transport.md)):
