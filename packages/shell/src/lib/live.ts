@@ -22,7 +22,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { defineComponents, type ToastItem, type Tone, type UINode } from "@mosaic-media/sdui-react";
+import { applyTokens, defineComponents, type ToastItem, type Tone, type UINode } from "@mosaic-media/sdui-react";
 import { createClient, type Client } from "@connectrpc/connect";
 import { clientProfile } from "./profile";
 import { currentTraceId } from "./trace";
@@ -212,8 +212,22 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
             try {
               defineComponents(JSON.parse(new TextDecoder().decode(ev.payload)));
             } catch {
-              // A malformed library leaves the bundled fallback definitions in
-              // place rather than breaking the render.
+              // A malformed library leaves components unregistered: they render
+              // as the Unknown placeholder, which is visible and diagnosable.
+              // There is no bundled set to fall back to, deliberately (ADR 0082).
+            }
+          }
+          // The design tokens (ADR 0040's skin tier), pushed before the
+          // definitions. Applying them here is the whole of "the skin is
+          // server-owned": the client boots with the contract's tokens compiled
+          // into its stylesheet and then draws with whatever the Platform sends,
+          // so a re-skin needs no client release.
+          if (ev.type === "sdui.tokens") {
+            try {
+              applyTokens(JSON.parse(new TextDecoder().decode(ev.payload)));
+            } catch {
+              // A malformed set leaves the bootstrap skin in place — the app is
+              // styled, just not restyled.
             }
           }
           break;

@@ -1,5 +1,13 @@
-/* The full skin, in order: tokens → reset/base → component styles.
+/* The full skin, in order:
+     1. tokens.gen.css — the contract's design tokens, synced from mosaic-sdui
+        (scripts/sync-tokens.mjs). No value here is authored in this client, and
+        the Platform overrides these at runtime with the set it serves.
+     2. skin.css      — the formulas: derivations over those tokens, and the
+        @property registrations the art-light needs to cross-fade.
+     3. global.css / components.css — the reset, and the styling of the native
+        primitives (a component is a definition, not CSS).
    Consumers import this once: `import "@mosaic-media/sdui-react/styles.css"`. */
-@import "./tokens.css";
+@import "./tokens.gen.css";
+@import "./skin.css";
 @import "./global.css";
 @import "./components.css";

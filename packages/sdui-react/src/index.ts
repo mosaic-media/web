@@ -19,6 +19,9 @@ export { RenderNode, Children, Slot, hasSlot } from "./sdui/Renderer";
 
 // Component definitions (data → components).
 export { defineComponent, defineComponents } from "./sdui/template";
+// The served design tokens (ADR 0040): the Platform pushes them, the client
+// applies them. Values are the contract's; this only writes them down.
+export { applyTokens, type TokenSet } from "./sdui/tokens";
 export type { ComponentDefinition } from "./sdui/template";
 
 // Runtime context + provider.

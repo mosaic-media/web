@@ -1,0 +1,74 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* SPDX-FileCopyrightText: 2026 the Mosaic authors */
+
+/*
+ * The skin's FORMULAS — and nothing else.
+ *
+ * Every literal value the interface is built from is a design token, and tokens
+ * are contract: they live in mosaic-sdui's tokens/tokens.json, the Platform
+ * serves them over the session, and `@mosaic-media/sdui/tokens.css` is the
+ * bootstrap copy this client imports before the session connects (see
+ * styles/index.css). Editing a colour, a size or the material HERE would put a
+ * value back in a client, which is the thing that let the published token set
+ * drift into a stale fiction while the client's copy became the truth.
+ *
+ * What is left is what cannot be a value: derivations over the tokens
+ * (color-mix, gradients composed of two of them, the acrylic material's layers),
+ * and the @property registrations that let the art-light vars cross-fade. A
+ * formula belongs to the client that evaluates it — another client will express
+ * the same relationships in its own terms.
+ */
+
+/* Derived from the dark theme's tokens. */
+:root,
+:root[data-theme="dark"] {
+  --ambient: radial-gradient(1100px 620px at 18% -8%, var(--art-glow-1), transparent 60%), radial-gradient(900px 560px at 88% 6%, var(--art-glow-2), transparent 62%), radial-gradient(1200px 800px at 60% 108%, var(--art-glow-3), transparent 60%);
+  --color-accent: rgb(var(--accent-rgb));
+  --color-accent-hover: color-mix(in srgb, rgb(var(--accent-rgb)) 78%, #ffffff);
+  --color-accent-quiet: rgba(var(--accent-rgb), var(--accent-quiet-a));
+  --gradient-accent: linear-gradient(122deg, rgb(var(--accent-rgb)) 0%, rgb(var(--accent-2-rgb)) 100%);
+  --shadow-3: 0 26px 70px rgba(3, 4, 14, 0.7), 0 0 44px rgba(var(--accent-rgb), 0.16);
+  --glow-accent: 0 0 0 1px rgba(var(--accent-rgb), var(--glow-ring-a)), 0 10px 34px rgba(var(--accent-rgb), var(--glow-spread-a));
+}
+
+/* Derived from the light theme's tokens — only the INPUTS differ. */
+:root[data-theme="light"] {
+  --ambient: radial-gradient(1100px 640px at 16% -10%, var(--art-glow-1), transparent 60%), radial-gradient(1000px 620px at 92% -4%, var(--art-glow-2), transparent 62%), radial-gradient(1200px 820px at 62% 112%, var(--art-glow-3), transparent 60%);
+  --color-accent-hover: color-mix(in srgb, rgb(var(--accent-rgb)) 82%, #000000);
+  --shadow-3: 0 24px 60px rgba(90, 60, 130, 0.2), 0 0 40px rgba(var(--accent-rgb), 0.18);
+}
+
+/* Derived from the base scale, and the acrylic material's pigment chain:
+   each layer takes a sampled artwork hue when there is one and falls back to
+   the brand accent when there is not. */
+:root {
+  --shell-gutter: clamp(var(--space-4), 4vw, var(--space-7));
+  --acrylic-fill: var(--art-1-rgb, var(--accent-rgb));
+  --acrylic-edge: var(--art-2-rgb, var(--accent-2-rgb, var(--accent-rgb)));
+  --acrylic-caustic: var(--art-3-rgb, var(--art-1-rgb, var(--accent-rgb)));
+}
+
+@property support ignore this and the wash simply updates instantly — the
+ * fallback duo and the runtime override both still work. The transition lives
+ * on :root because artlight.ts writes the vars there.
+ */
+@property --art-glow-1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --art-glow-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+@property --art-glow-3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+:root {
+  transition: --art-glow-1 var(--dur-slow) var(--ease),
+    --art-glow-2 var(--dur-slow) var(--ease), --art-glow-3 var(--dur-slow) var(--ease);
+}
