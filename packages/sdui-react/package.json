@@ -1,7 +1,7 @@
 {
   "name": "@mosaic-media/sdui-react",
-  "version": "0.1.6",
-  "description": "React runtime for the Mosaic SDUI contract: primitives, registry, renderer, definition expander, and the token-driven skin.",
+  "version": "0.2.0",
+  "description": "React runtime for the Mosaic SDUI contract: the native primitive vocabulary, the registry, the renderer and the definition expander. It ships no components — those are data, served by the Platform from the contract.",
   "license": "AGPL-3.0-only",
   "type": "module",
   "exports": {
@@ -17,7 +17,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && node copy-styles.mjs",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "sync-tokens": "node scripts/sync-tokens.mjs"
   },
   "peerDependencies": {
     "react": "^18.3.1",

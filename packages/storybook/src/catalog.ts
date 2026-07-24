@@ -75,6 +75,40 @@ export const GROUPS: Group[] = [
         },
       },
       { name: "Divider", node: { type: "Divider", props: { label: "Section break" } } },
+      {
+        // The settings chrome (ADR 0038): the Platform fills `nav`, and the panel
+        // — the frame's children — carries the open section, which for a module's
+        // row is the SDUI that module contributed.
+        name: "SettingsFrame",
+        node: {
+          type: "SettingsFrame",
+          props: { title: "Settings" },
+          slots: {
+            nav: [
+              {
+                type: "SettingsNavGroup",
+                props: { label: "Preferences" },
+                children: [{ type: "SettingsNavItem", props: { label: "Diagnostics", icon: "info", action: { kind: "toast", message: "Diagnostics" } } }],
+              },
+              {
+                type: "SettingsNavGroup",
+                props: { label: "Modules" },
+                children: [
+                  { type: "SettingsNavItem", props: { label: "AIOStreams", active: true, action: { kind: "toast", message: "AIOStreams" } } },
+                  { type: "SettingsNavItem", props: { label: "TMDB", action: { kind: "toast", message: "TMDB" } } },
+                ],
+              },
+            ],
+            // The foot of the nav: a level control that governs how much of the
+            // nav exists, not a section of it.
+            footer: [
+              { type: "Divider" },
+              { type: "Toggle", props: { label: "Expert mode", value: true, action: { kind: "toast", message: "Expert mode off (demo)" } } },
+            ],
+          },
+          children: [{ type: "Section", props: { title: "Instance" }, children: [{ type: "Banner", props: { tone: "info", message: "A module's own settings UI, hosted in the Platform's panel." } }] }],
+        },
+      },
     ],
   },
   {
