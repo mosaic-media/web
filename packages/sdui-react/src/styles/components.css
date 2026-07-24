@@ -69,8 +69,11 @@
   isolation: isolate;
   /* Caustic colour spill (art-3): a coloured glow thrown to the shadow side —
      light pooling beneath the panel — over a dark depth shadow. */
+  /* Offset and blur are deliberately short. A caustic is light pooling just
+     under the panel's shadow edge; spread over 44px it stops being a material
+     property and becomes a halo. */
   box-shadow:
-    calc(var(--lx, var(--light-x)) * -14px) calc(var(--ly, var(--light-y)) * -18px) 44px
+    calc(var(--lx, var(--light-x)) * -7px) calc(var(--ly, var(--light-y)) * -9px) 20px
       rgba(var(--acrylic-caustic), calc(var(--acrylic-caustic-a) * var(--acrylic-intensity, 1))),
     calc(var(--lx, var(--light-x)) * -6px) calc(var(--ly, var(--light-y)) * -9px) 18px rgba(2, 3, 8, 0.45);
 }
@@ -612,6 +615,29 @@
   outline: none;
 }
 
+/* ── Native controls are glass too ─────────────────────────────────────────────
+   Every SURFACE in this app is glass over the concrete; a control that is not is
+   the odd one out, and it looked it — the fields and the select sat as flat
+   slabs of --color-surface-raised beside a search bar that was already frosted.
+
+   These are replaced elements (<input>, <select>) or tiny chrome, so they cannot
+   host the ::before/::after layers .msc-acrylic uses for pigment and caustic.
+   They take the half of the material that IS available to them: the acrylic
+   tint, the same backdrop blur, and a border that catches the light. The
+   decision that a *component* is glass is not made here — that lives in the
+   contract's definitions; this is only how a native control renders it. */
+.msc-field__input,
+.msc-select__el,
+.msc-menu__list,
+.msc-toggle__track,
+.msc-tabs__list,
+.msc-iconbtn {
+  background: var(--acrylic-tint);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+  border-color: var(--color-border);
+}
+
 .msc-field {
   display: flex;
   flex-direction: column;
@@ -624,7 +650,6 @@
 }
 .msc-field__input {
   width: 100%;
-  background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
@@ -643,7 +668,6 @@
 .msc-select__el {
   appearance: none;
   width: 100%;
-  background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-6) var(--space-3) var(--space-4);

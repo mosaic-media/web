@@ -27,18 +27,30 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 
 /** The light-source point in viewport coordinates: the focused ("ambient")
  *  artwork if present, else the upper-left region the fixed wash comes from. */
-function lightPoint(): { x: number; y: number } {
+function lightPoint(): { x: number; y: number; fromArt: boolean } {
   const el = document.querySelector<HTMLElement>('[data-artlight="ambient"]');
   if (el) {
     const r = el.getBoundingClientRect();
     // Bias toward the artwork's upper-left, where the mockup's key light sits.
-    if (r.width > 0 && r.height > 0) return { x: r.left + r.width * 0.35, y: r.top + r.height * 0.28 };
+    if (r.width > 0 && r.height > 0) return { x: r.left + r.width * 0.35, y: r.top + r.height * 0.28, fromArt: true };
   }
-  return { x: window.innerWidth * 0.3, y: 0 };
+  // No artwork: the key light is the BRAND light, up and to the left — the same
+  // studio light the brand mark's glass is lit by, thrown onto the concrete.
+  return { x: window.innerWidth * 0.3, y: 0, fromArt: false };
 }
+
+/* Distance falloff, floored. The floor is the whole difference between the two
+   light sources, and getting it wrong is what made the material look dead:
+   artwork light comes from one place ON the page, so a panel far from it should
+   fall away — but the brand light is a studio light on the whole slab, and
+   flooring it at 0.4 left every surface below the fold with a rim you could not
+   see. Glass lit by the brand stays lit. */
+const FALLOFF_ART = { lo: 0.4, hi: 1 };
+const FALLOFF_BRAND = { lo: 0.82, hi: 1 };
 
 function relight(): void {
   const lp = lightPoint();
+  const falloff = lp.fromArt ? FALLOFF_ART : FALLOFF_BRAND;
   const maxD = Math.hypot(window.innerWidth, window.innerHeight) || 1;
   document.querySelectorAll<HTMLElement>(".msc-acrylic").forEach((el) => {
     const r = el.getBoundingClientRect();
@@ -54,7 +66,7 @@ function relight(): void {
     // linear-gradient(θ), the end direction is (sin θ, -cos θ) in screen space.
     el.style.setProperty("--edge-angle", `${((Math.atan2(ux, -uy) * 180) / Math.PI).toFixed(1)}deg`);
     // Linear proximity falloff — a v1 stand-in for physical intensity.
-    el.style.setProperty("--acrylic-intensity", clamp(1 - d / (maxD * 0.95), 0.4, 1).toFixed(3));
+    el.style.setProperty("--acrylic-intensity", clamp(1 - d / (maxD * 0.95), falloff.lo, falloff.hi).toFixed(3));
   });
 }
 

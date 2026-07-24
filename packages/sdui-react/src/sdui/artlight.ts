@@ -10,11 +10,15 @@
  * tokens.css feeds into --ambient. tokens.css registers those properties as
  * <color> and transitions them, so the wash cross-fades as focus moves. When
  * nothing is in focus the inline values are removed and the tokens fall back to
- * the default accent duo.
+ * transparent — leaving the bare slate-concrete material, which is what the app
+ * looks like when there is no artwork to be lit by. The fallback used to be the
+ * accent duo, so a screen with no art still wore a coloured wash it had no
+ * source for.
  *
  * This is a WEB runtime concern (canvas + CSS vars), deliberately kept out of
  * the portable primitive style vocabulary. Another client would satisfy the
- * same contract its own way, or omit it — the fallback duo is always valid.
+ * same contract its own way, or omit it — the material underneath is always
+ * valid on its own.
  */
 
 export type Rgb = [number, number, number];
@@ -26,8 +30,9 @@ const ACCENT_VARS = ["--accent-rgb", "--accent-2-rgb"] as const;
 // surface reads as multi-coloured refraction, not one dominant tint.
 const ART_RGB_VARS = ["--art-1-rgb", "--art-2-rgb", "--art-3-rgb"] as const;
 
-/* Per-theme alpha for each ambient (background) glow layer — mirrors the token
-   defaults so a sampled palette sits at the same intensity as the fallback duo. */
+/* Per-theme alpha for each ambient (background) glow layer. These are the
+   intensities a SAMPLED palette is painted at; the tokens themselves now default
+   to transparent, so this is the only place the wash gets a value. */
 const ALPHA_DARK = [0.24, 0.16, 0.11];
 const ALPHA_LIGHT = [0.5, 0.42, 0.34];
 
@@ -55,7 +60,8 @@ function alphas(): number[] {
  *  - --art-glow-1/2/3 : the raw vibrant palette, at the ambient background alpha
  *  - --accent-rgb / --accent-2-rgb : the two lead hues re-toned to a legible
  *    accent, which retints every accent-derived surface (buttons, nav, glows…)
- * Clearing removes all of them so the tokens fall back to the brand duo.
+ * Clearing removes all of them: the wash goes transparent and the accent
+ * returns to the brand duo, leaving the concrete unlit.
  */
 function paint(colors: Rgb[] | null): void {
   const el = root();
