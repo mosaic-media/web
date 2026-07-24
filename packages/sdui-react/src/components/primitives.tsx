@@ -18,16 +18,44 @@ import type { Action, UINode } from "../sdui/types";
 import { prop } from "../sdui/registry";
 import { Children } from "../sdui/Renderer";
 import { useRuntime } from "../sdui/context";
-import { boxToCss, textToCss, type BoxStyle, type ColorToken, type SpaceToken, type TextStyle } from "../sdui/style";
+import { boxToCss, mergeStyle, textToCss, type BoxStyle, type ColorToken, type SpaceToken, type TextStyle } from "../sdui/style";
 import { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, type Rgb } from "../sdui/artlight";
 import { cx, Icon, type IconName } from "./shared";
+
+/** useResponsiveStyle — resolves a BoxStyle's one viewport-dependent field
+ *  (`style.responsive`), merging its override in below the stated width.
+ *
+ *  This is the native half of the vocabulary's responsive capability: the DATA
+ *  says "below 720, these stack"; this reads the viewport and says what that
+ *  means now. A Flutter client answers the same data from a LayoutBuilder. The
+ *  hook runs unconditionally whether or not the style declares an override,
+ *  because a hook that ran conditionally would change order between renders. */
+function useResponsiveStyle(style: BoxStyle): BoxStyle {
+  const below = style.responsive?.below;
+  const query = below === undefined ? undefined : `(max-width: ${below}px)`;
+  const [matches, setMatches] = useState(
+    () => query !== undefined && typeof window !== "undefined" && window.matchMedia(query).matches,
+  );
+  useEffect(() => {
+    if (query === undefined || typeof window === "undefined") {
+      setMatches(false);
+      return;
+    }
+    const mq = window.matchMedia(query);
+    const sync = () => setMatches(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, [query]);
+  return matches && style.responsive ? mergeStyle(style, style.responsive.style) : style;
+}
 
 /** Box — the workhorse container: flex layout + token box styling. A glass Box
  *  also carries the acrylic material class, whose pseudo-element layers (pigment,
  *  caustic, edge light — components.css) are driven by the same custom
  *  properties, refined per surface by acrylic.ts (Optical Parallax). */
 export function Box({ node }: { node: UINode }) {
-  const style = prop<BoxStyle>(node, "style", {});
+  const style = useResponsiveStyle(prop<BoxStyle>(node, "style", {}));
   return (
     <div className={style.glass ? "msc-acrylic" : undefined} data-kind={style.kind} style={boxToCss(style)}>
       <Children nodes={node.children} />
@@ -171,7 +199,9 @@ export function IconPrimitive({ node }: { node: UINode }) {
 /** Pressable — the interactive primitive: wraps children, emits an Action. */
 export function Pressable({ node }: { node: UINode }) {
   const { emit } = useRuntime();
-  const style = prop<BoxStyle>(node, "style", {});
+  // Same BoxStyle, same responsive resolution: a control that could not adapt
+  // where the box around it can would push a layout back into a stylesheet.
+  const style = useResponsiveStyle(prop<BoxStyle>(node, "style", {}));
   const action = prop<Action | undefined>(node, "action", undefined);
   const disabled = prop<boolean>(node, "disabled", false);
   const lift = prop<boolean>(node, "lift", false);

@@ -130,8 +130,57 @@ export interface BoxStyle {
   /** A named hook the primitive emits as `data-kind`, for the few responsive
    *  behaviours the token system can't express inline (e.g. panels that sit
    *  side-by-side on desktop but stack full-width on mobile). Not a CSS value —
-   *  a targeting handle for a matching rule in components.css. */
+   *  a targeting handle for a matching rule in components.css.
+   *
+   *  **Prefer `responsive` below for anything new.** A `kind` needs a matching
+   *  rule in this package's stylesheet, which makes a new SCREEN cost a client
+   *  release — the thing definitions exist to avoid. */
   kind?: string;
+
+  /** A style override applied below a viewport width — the vocabulary's one
+   *  responsive capability, and the reason a layout can adapt as DATA.
+   *
+   *  It exists because everything else here is viewport-blind: a `kind` hook
+   *  plus a media query in components.css was the only way to say "these sit
+   *  side by side on a desktop and stack on a phone", and that put a stylesheet
+   *  edit — a client release — in the path of every new screen. This says the
+   *  same thing in the payload, so a server-delivered definition can be
+   *  responsive on its own.
+   *
+   *  Portable by construction: the override is a plain BoxStyle merged over the
+   *  base, so a Flutter client implements it as a LayoutBuilder around the same
+   *  data rather than as a second styling language. One breakpoint, not a
+   *  cascade — enough for phone-vs-desktop, and deliberately not a media-query
+   *  system in a props bag.
+   *
+   *  The merge is shallow: a field the override does not mention keeps its base
+   *  value, and **`null` clears one**. `null` rather than `undefined` because
+   *  these travel as JSON, and `JSON.stringify` drops an undefined member — an
+   *  override written to remove a background would have arrived saying nothing
+   *  at all, and silently. */
+  responsive?: { below: number; style: ResponsiveOverride };
+
+  /** Take the box out of the layout entirely (web: display:none; Flutter: not
+   *  built). Its purpose is `responsive` — one payload carrying both a desktop
+   *  and a phone arrangement, with each viewport dropping the half it does not
+   *  use. A server that instead emitted a different tree per device would have
+   *  to know the viewport, and it does not. */
+  hidden?: boolean;
+}
+
+/** A BoxStyle override: every field optional, and `null` meaning "clear the
+ *  base's value for this field" (see BoxStyle.responsive). */
+export type ResponsiveOverride = { [K in keyof BoxStyle]?: BoxStyle[K] | null };
+
+/** Merge a responsive override over a base style: present fields win, `null`
+ *  clears, absent fields inherit. */
+export function mergeStyle(base: BoxStyle, override: ResponsiveOverride): BoxStyle {
+  const out: Record<string, unknown> = { ...base };
+  for (const [k, v] of Object.entries(override)) {
+    if (v === null) delete out[k];
+    else out[k] = v;
+  }
+  return out as BoxStyle;
 }
 
 export interface TextStyle {
@@ -260,6 +309,8 @@ export function boxToCss(s: BoxStyle): CSSProperties {
   if (s.overflow) css.overflow = s.overflow;
   if (s.shadow) css.boxShadow = `var(--shadow-${s.shadow})`;
   if (s.opacity !== undefined) css.opacity = s.opacity;
+  // Last, so it beats the display the layout mode set above.
+  if (s.hidden) css.display = "none";
 
   return css;
 }
