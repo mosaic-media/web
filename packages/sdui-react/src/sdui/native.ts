@@ -105,3 +105,6 @@ export const ROLES = [
   "main", "navigation", "none", "progressbar", "region", "search", "status",
   "tab", "tablist", "tabpanel",
 ] as const;
+
+/** The closed set of directions a nextFocus override may name (ADR 0092). */
+export const FOCUS_DIRECTIONS = ["up", "down", "left", "right"] as const;

@@ -34,6 +34,11 @@ export { useLifecycle, VISIBILITY_THRESHOLD } from "./sdui/lifecycle";
 
 // Accessibility (ADR 0091): the contract's role/name/level/live props, mapped.
 export { a11yAttrs, ROLES } from "./sdui/a11y";
+
+// Focus and spatial navigation (ADR 0092): the geometry a remote control needs.
+export { nearestInDirection, focusablesIn, applyRoving } from "./sdui/focus";
+export type { FocusDirection } from "./sdui/focus";
+export { useFocusBehaviour } from "./sdui/useFocusable";
 export type { A11yAttrs } from "./sdui/a11y";
 export type { RuleSet, Predicate } from "./sdui/validate";
 export type { Scope, StateVar } from "./sdui/scope";

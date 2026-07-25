@@ -90,6 +90,7 @@ for (const [what, mine, theirs] of [
   ["validator", [...native.VALIDATORS], [...fixture.validators].sort()],
   ["predicate", [...native.PREDICATES], [...fixture.predicates].sort()],
   ["role", [...native.ROLES].sort(), [...fixture.roles].sort()],
+  ["focus direction", [...native.FOCUS_DIRECTIONS].sort(), [...fixture.focusDirections].sort()],
 ]) {
   const missing = theirs.filter((x) => !mine.includes(x));
   const extra = mine.filter((x) => !theirs.includes(x));
@@ -137,7 +138,7 @@ console.error(
   `check-vocabulary: ${nativePrimitives.length}/${contractPrimitives.length} primitives, ` +
     `${NATIVE_ACTION_KINDS.length}/${contractActions.length} action kinds, ` +
     `binding marker ${native.BINDING_MARKER}, ` +
-    `${native.VALIDATORS.length} validators, ${native.PREDICATES.length} predicates, ${native.ROLES.length} roles, ` +
+    `${native.VALIDATORS.length} validators, ${native.PREDICATES.length} predicates, ${native.ROLES.length} roles, ${native.FOCUS_DIRECTIONS.length} focus directions, ` +
     `against vocabulary ${fixture.version}. Declared gap: ` +
     `${EXPECTED_GAP.primitives.join(", ") || "none"} / ${EXPECTED_GAP.actions.join(", ") || "none"}.`,
 );

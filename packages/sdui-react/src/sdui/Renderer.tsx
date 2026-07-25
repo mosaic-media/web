@@ -15,6 +15,7 @@ import { resolveProps, getPath, type BindingScope } from "./binding";
 import { ShellRuntimeContext } from "./context";
 import { ScopeContext, lookup } from "./scope";
 import { useLifecycle } from "./lifecycle";
+import { useFocusBehaviour } from "./useFocusable";
 import type { Action } from "./types";
 import { Unknown } from "../components/feedback/Unknown";
 
@@ -53,8 +54,16 @@ export function RenderNode({ node }: { node: UINode }) {
   // when the node actually declares a trigger, so the common tree is unchanged.
   const onAppear = resolved?.onAppear as Action | undefined;
   const onDisappear = resolved?.onDisappear as Action | undefined;
+  const wantsFocus =
+    resolved?.focusable === true || resolved?.focusGroup === true || resolved?.initialFocus === true;
   const marker = useRef<HTMLSpanElement | null>(null);
   useLifecycle(marker, onAppear, onDisappear, runtime?.emit ?? noop);
+
+  // Focus behaviour is wired onto the same wrapper, for the same reason the
+  // lifecycle observer is: the renderer must not require every component to
+  // forward a ref. A node declaring neither focus nor a trigger gets no wrapper
+  // and no cost.
+  useFocusBehaviour(marker, resolved);
 
   const Component = resolve(node.type);
   if (!Component) {
@@ -64,9 +73,9 @@ export function RenderNode({ node }: { node: UINode }) {
     return <Unknown type={node.type} />;
   }
   const rendered = <Component node={node} />;
-  if (!onAppear && !onDisappear) return rendered;
+  if (!onAppear && !onDisappear && !wantsFocus) return rendered;
   return (
-    <span ref={marker} style={CONTENTS}>
+    <span ref={marker} style={CONTENTS} data-node-id={node.id}>
       {rendered}
     </span>
   );
