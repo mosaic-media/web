@@ -90,6 +90,27 @@ conveniences rather than by large mistakes.
   cannot be missing from half the calls. There is no GraphQL client and no
   second one to add.
 
+## This client is measured against the contract, not trusted
+
+Two checks run in the container after the build, and both exist because a client
+that has drifted from the contract looks exactly like one that has not.
+
+- **`scripts/check-vocabulary.mjs`** compares what this client declares it
+  implements — `sdui/native.ts` — against the contract's published fixture. It
+  refuses a type or kind the contract does not have, refuses a closed-set member
+  missing in either direction, and refuses a change to `EXPECTED_GAP`, which
+  names what the contract declares and this client does not implement. **Being
+  behind the contract is a stated position, not an accident**: close a gap and
+  you remove its entry in the same change.
+- **`scripts/check-conformance.mjs`** runs the contract's corpus — the same
+  golden cases the Go side runs. It covers all four files, including definition
+  expansion, which the contracts repository publishes and cannot execute, having
+  no expander. **So the expansion rules are checked here or nowhere.**
+
+Adding a primitive means registering it *and* declaring it in `native.ts`; the
+two are tied by a compile-time assertion, so forgetting one fails the build
+rather than the screen.
+
 ## Publishing
 
 `@mosaic-media/sdui-react` is published from CI, and **CI checks the published
