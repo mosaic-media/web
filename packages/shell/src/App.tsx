@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShellProvider, RenderNode, OverlayHost, ToastHost, refreshArtLight } from "@mosaic-media/sdui-react";
 import type { UINode } from "@mosaic-media/sdui-react";
-import { devSignIn } from "@/lib/session";
+import { signIn, signInScreen, SIGN_IN_ACTION } from "@/lib/session";
 import { useLive, type Intent } from "@/lib/live";
 import { routeFromLocation, routeToUrl, sameRoute, type Route } from "@/lib/history";
 
@@ -39,17 +39,32 @@ export function App() {
     history.replaceState(routeRef.current, "", routeToUrl(routeRef.current));
   }, []);
 
-  // Sign in once; the socket opens as soon as we have a session.
-  useEffect(() => {
-    let cancelled = false;
-    devSignIn().then(
-      (s) => !cancelled && setSession(s),
-      (e: unknown) => !cancelled && setAuthError(e instanceof Error ? e.message : "Sign-in failed"),
+  // The sign-in tree, fetched before there is a session to fetch anything else
+  // with (ADR 0097). The socket opens as soon as signing in yields one.
+  const [signInTree, setSignInTree] = useState<UINode | null>(null);
+  const loadSignIn = useCallback((error?: string) => {
+    signInScreen(error).then(
+      (n) => setSignInTree(n),
+      // The screen itself failing to load is the Platform being unreachable —
+      // there is nothing to render a refusal *on*.
+      (e: unknown) => setAuthError(e instanceof Error ? e.message : "Could not reach the Platform"),
     );
-    return () => {
-      cancelled = true;
-    };
   }, []);
+  useEffect(() => {
+    if (!session) loadSignIn();
+  }, [session, loadSignIn]);
+
+  // The one action a pre-session tree may carry, interpreted here because there
+  // is no session to dispatch it on.
+  const onSignIn = useCallback(
+    (input: Record<string, unknown>) => {
+      signIn(String(input.username ?? ""), String(input.password ?? "")).then(
+        (s) => setSession(s),
+        (e: unknown) => loadSignIn(e instanceof Error ? e.message : "Sign-in failed"),
+      );
+    },
+    [loadSignIn],
+  );
 
   // On every (re)connect, re-Attach the current route so the server re-renders
   // exactly what was showing (resume). Stable identity — reads the ref.
@@ -145,10 +160,34 @@ export function App() {
   }, [playerKey]);
   const showPlayer = playerKey !== "" && dismissedPlayer !== playerKey;
 
-  // Sign-in failing is the Platform being unreachable before a session ever
-  // existed, so it is the offline state rather than a third variant: there is
-  // nothing to retry into, and reloading is the same way out.
+  // The Platform being unreachable before a session ever existed is the offline
+  // state: there is nothing to retry into, and reloading is the same way out.
+  // A *refused* sign-in is not this — it comes back as a message on the tree.
   if (authError) return <Standby offline title="Can’t reach your server." message={authError} />;
+
+  // No session yet: render what the Platform says a locked door looks like.
+  if (!session) {
+    if (!signInTree) {
+      return <Standby title="Finding your server." message="Asking the Mosaic Platform to sign you in." />;
+    }
+    return (
+      <ShellProvider
+        screen="signIn"
+        params={{}}
+        onNavigate={() => {}}
+        onQuery={() => {}}
+        onBack={() => {}}
+        onInvoke={(mutation, input) => {
+          if (mutation === SIGN_IN_ACTION) onSignIn(input ?? {});
+        }}
+        onInput={() => {}}
+        render={() => null}
+      >
+        <RenderNode node={signInTree} />
+      </ShellProvider>
+    );
+  }
+
   if (status !== "open" || !composed) {
     if (status === "offline") {
       return (
