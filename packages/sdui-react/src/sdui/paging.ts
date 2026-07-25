@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import type { Action } from "./types";
+import type { Action } from "./types.js";
 
 /**
  * How far ahead of the end a page is requested.

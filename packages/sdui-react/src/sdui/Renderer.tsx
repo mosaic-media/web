@@ -9,16 +9,16 @@
  */
 
 import { Fragment, useCallback, useContext, useRef } from "react";
-import type { UINode } from "./types";
-import { resolve, reportUnknownType } from "./registry";
-import { resolveProps, getPath, type BindingScope } from "./binding";
-import { ShellRuntimeContext } from "./context";
-import { ScopeContext, lookup } from "./scope";
-import { useLifecycle } from "./lifecycle";
-import { useFocusBehaviour } from "./useFocusable";
-import { useLazyList } from "./paging";
-import type { Action } from "./types";
-import { Unknown } from "../components/feedback/Unknown";
+import type { UINode } from "./types.js";
+import { resolve, reportUnknownType } from "./registry.js";
+import { resolveProps, getPath, type BindingScope } from "./binding.js";
+import { ShellRuntimeContext } from "./context.js";
+import { ScopeContext, lookup } from "./scope.js";
+import { useLifecycle } from "./lifecycle.js";
+import { useFocusBehaviour } from "./useFocusable.js";
+import { useLazyList } from "./paging.js";
+import type { Action } from "./types.js";
+import { Unknown } from "../components/feedback/Unknown.js";
 
 export function RenderNode({ node }: { node: UINode }) {
   // Bindings resolve here, at render, against the params the current screen was

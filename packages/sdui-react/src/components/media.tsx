@@ -7,11 +7,11 @@
  * a definition (components/definitions.ts, definitions.layout.ts).
  */
 
-import type { Action, UINode } from "../sdui/types";
-import { prop } from "../sdui/registry";
-import { useRuntime } from "../sdui/context";
+import type { Action, UINode } from "../sdui/types.js";
+import { prop } from "../sdui/registry.js";
+import { useRuntime } from "../sdui/context.js";
 import { useState } from "react";
-import { cx } from "./shared";
+import { cx } from "./shared.js";
 
 export function SeasonSelector({ node }: { node: UINode }) {
   const { emit } = useRuntime();

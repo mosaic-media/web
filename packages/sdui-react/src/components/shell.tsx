@@ -9,10 +9,10 @@
  * state a static template can't express.
  */
 
-import { prop } from "../sdui/registry";
-import type { Action, UINode } from "../sdui/types";
-import { useRuntime } from "../sdui/context";
-import { Icon, type IconName } from "./shared";
+import { prop } from "../sdui/registry.js";
+import type { Action, UINode } from "../sdui/types.js";
+import { useRuntime } from "../sdui/context.js";
+import { Icon, type IconName } from "./shared.js";
 
 /** NavItem — a navigation button. It emits its action and highlights
  *  when the runtime's current screen matches its target. */

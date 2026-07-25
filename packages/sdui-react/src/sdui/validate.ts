@@ -35,7 +35,7 @@ const asText = (v: unknown): string => {
 // over "too short".
 const ORDER = ["required", "minLength", "maxLength", "pattern", "matches", "oneOf"] as const;
 
-export { VALIDATORS, PREDICATES } from "./native";
+export { VALIDATORS, PREDICATES } from "./native.js";
 
 /**
  * Apply a field's rules to its value, returning the first failure.

@@ -19,8 +19,8 @@
  */
 
 import { useCallback, useContext, useEffect, useState } from "react";
-import { ScopeContext, lookup, write } from "./scope";
-import { evaluate, type Predicate, type RuleSet } from "./validate";
+import { ScopeContext, lookup, write } from "./scope.js";
+import { evaluate, type Predicate, type RuleSet } from "./validate.js";
 
 /**
  * useField gives an input its value and a setter, from the scope when it is

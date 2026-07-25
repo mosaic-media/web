@@ -9,12 +9,12 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import type { UINode } from "../sdui/types";
-import { prop } from "../sdui/registry";
-import { StateScope, type StateVar } from "../sdui/scope";
-import { Slot, Children, RenderNode } from "../sdui/Renderer";
-import { sampleArtColors, setAmbientArt } from "../sdui/artlight";
-import { cx } from "./shared";
+import type { UINode } from "../sdui/types.js";
+import { prop } from "../sdui/registry.js";
+import { StateScope, type StateVar } from "../sdui/scope.js";
+import { Slot, Children, RenderNode } from "../sdui/Renderer.js";
+import { sampleArtColors, setAmbientArt } from "../sdui/artlight.js";
+import { cx } from "./shared.js";
 
 /**
  * `props.tabs` is [{id,label}]; each tab's content lives in the slot of the

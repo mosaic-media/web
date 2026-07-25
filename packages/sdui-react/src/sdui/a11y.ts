@@ -17,7 +17,7 @@
  * closed set quietly bypassed.
  */
 
-import { ROLES } from "./native";
+import { ROLES } from "./native.js";
 
 export { ROLES };
 

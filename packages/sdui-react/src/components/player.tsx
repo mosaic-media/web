@@ -23,8 +23,8 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import { useRuntime } from "../sdui/context";
-import type { UINode } from "../sdui/types";
+import { useRuntime } from "../sdui/context.js";
+import type { UINode } from "../sdui/types.js";
 
 /**
  * How often a playing video reports where it has got to (ADR 0046).

@@ -19,7 +19,7 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ShellRuntimeContext } from "./context";
+import { ShellRuntimeContext } from "./context.js";
 
 /** One variable as the contract declares it. */
 export interface StateVar {

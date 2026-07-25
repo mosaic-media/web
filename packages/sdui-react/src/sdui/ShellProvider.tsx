@@ -8,8 +8,8 @@
  */
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
-import type { Action, ActionResult, Tone, UINode } from "./types";
-import { ShellRuntimeContext, type OverlayHandle } from "./context";
+import type { Action, ActionResult, Tone, UINode } from "./types.js";
+import { ShellRuntimeContext, type OverlayHandle } from "./context.js";
 
 export interface ToastItem {
   id: string;

@@ -21,7 +21,7 @@
  * this file, so there is one rule for what counts as one.
  */
 
-import { BINDING_MARKER } from "./native";
+import { BINDING_MARKER } from "./native.js";
 
 export { BINDING_MARKER };
 

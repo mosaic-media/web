@@ -22,11 +22,11 @@
  * `@mosaic-media/sdui`, which the Shell depends on and this package does not.
  */
 
-import type { Action } from "./types";
-import { NATIVE_PRIMITIVE_TYPES, NATIVE_ACTION_KINDS } from "./native";
-import { NATIVE_COMPONENTS } from "../components";
+import type { Action } from "./types.js";
+import { NATIVE_PRIMITIVE_TYPES, NATIVE_ACTION_KINDS } from "./native.js";
+import { NATIVE_COMPONENTS } from "../components/index.js";
 
-export { NATIVE_PRIMITIVE_TYPES, NATIVE_ACTION_KINDS } from "./native";
+export { NATIVE_PRIMITIVE_TYPES, NATIVE_ACTION_KINDS } from "./native.js";
 
 export type NativePrimitiveType = (typeof NATIVE_PRIMITIVE_TYPES)[number];
 export type NativeActionKind = (typeof NATIVE_ACTION_KINDS)[number];

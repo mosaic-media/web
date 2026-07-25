@@ -7,10 +7,10 @@
  * the Shell mounts them once, around the routed screen.
  */
 
-import type { OverlayHandle } from "../sdui/context";
-import { RenderNode } from "../sdui/Renderer";
-import type { ToastItem } from "../sdui/ShellProvider";
-import { cx, Icon } from "./shared";
+import type { OverlayHandle } from "../sdui/context.js";
+import { RenderNode } from "../sdui/Renderer.js";
+import type { ToastItem } from "../sdui/ShellProvider.js";
+import { cx, Icon } from "./shared.js";
 
 export function OverlayHost({
   overlays,

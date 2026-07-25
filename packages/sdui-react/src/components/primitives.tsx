@@ -14,14 +14,14 @@
  */
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import type { Action, UINode } from "../sdui/types";
-import { prop } from "../sdui/registry";
-import { Children } from "../sdui/Renderer";
-import { useRuntime } from "../sdui/context";
-import { boxToCss, mergeStyle, textToCss, type BoxStyle, type ColorToken, type SpaceToken, type TextStyle } from "../sdui/style";
-import { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, type Rgb } from "../sdui/artlight";
-import { cx, Icon, type IconName } from "./shared";
-import { a11yAttrs } from "../sdui/a11y";
+import type { Action, UINode } from "../sdui/types.js";
+import { prop } from "../sdui/registry.js";
+import { Children } from "../sdui/Renderer.js";
+import { useRuntime } from "../sdui/context.js";
+import { boxToCss, mergeStyle, textToCss, type BoxStyle, type ColorToken, type SpaceToken, type TextStyle } from "../sdui/style.js";
+import { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, type Rgb } from "../sdui/artlight.js";
+import { cx, Icon, type IconName } from "./shared.js";
+import { a11yAttrs } from "../sdui/a11y.js";
 
 /** useResponsiveStyle — resolves a BoxStyle's one viewport-dependent field
  *  (`style.responsive`), merging its override in below the stated width.

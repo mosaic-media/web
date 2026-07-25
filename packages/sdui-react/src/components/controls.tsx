@@ -18,12 +18,12 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import type { Action, UINode } from "../sdui/types";
-import { prop } from "../sdui/registry";
-import { useRuntime } from "../sdui/context";
-import { useField, useFieldError, useVisible, asString, asNumber, asBoolean } from "../sdui/field";
-import type { Predicate, RuleSet } from "../sdui/validate";
-import { cx, Icon, type IconName } from "./shared";
+import type { Action, UINode } from "../sdui/types.js";
+import { prop } from "../sdui/registry.js";
+import { useRuntime } from "../sdui/context.js";
+import { useField, useFieldError, useVisible, asString, asNumber, asBoolean } from "../sdui/field.js";
+import type { Predicate, RuleSet } from "../sdui/validate.js";
+import { cx, Icon, type IconName } from "./shared.js";
 
 /** TextInput — bare text field owning its value. */
 export function TextInput({ node }: { node: UINode }) {

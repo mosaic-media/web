@@ -75,6 +75,11 @@ services:
         # conformance fixture. A green build says a client compiles; this says
         # whether it implements what it claims to (ADR 0083, ADR 0084).
         node scripts/check-vocabulary.mjs
+        # The contract's conformance corpus, run against this client. The same
+        # goldens the Go side runs — two implementations, one set of expected
+        # answers, and any disagreement is a named failing case rather than a
+        # screen that behaves differently on one platform (ADR 0094).
+        node scripts/check-conformance.mjs
 
 volumes:
   mosaic-web-npm:

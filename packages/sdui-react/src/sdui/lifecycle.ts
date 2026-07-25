@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useRef, type RefObject } from "react";
-import type { Action } from "./types";
+import type { Action } from "./types.js";
 
 /**
  * The fraction of a node that must be on screen before it counts as seen.

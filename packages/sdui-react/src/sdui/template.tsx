@@ -24,10 +24,10 @@
  */
 
 import type { ReactElement } from "react";
-import type { UINode } from "./types";
-import { isBinding, getPath } from "./binding";
-import { register } from "./registry";
-import { RenderNode } from "./Renderer";
+import type { UINode } from "./types.js";
+import { isBinding, getPath } from "./binding.js";
+import { register } from "./registry.js";
+import { RenderNode } from "./Renderer.js";
 
 export interface ComponentDefinition {
   /** The node type this definition provides, e.g. "StatChip". */
@@ -126,17 +126,39 @@ function expandNode(tmpl: UINode, args: Args, host: UINode): UINode[] {
  * but the same `ComponentDefinition` could arrive as JSON in a payload and be
  * registered at runtime.
  */
+/**
+ * Expand a definition against a caller's node, without rendering it.
+ *
+ * Extracted from the registered component so the conformance corpus can run the
+ * expansion rules (ADR 0094). They were previously reachable only by rendering,
+ * which meant the rules the whole definition model rests on were checked by
+ * looking at screens — and the contracts repository, which publishes the corpus,
+ * has no expander to run it with. So these rules are checked here or nowhere.
+ *
+ * Returns the first expanded node: a template with a `$each` at its root expands
+ * to several, which is a shape a *caller* handles and a corpus case does not
+ * need.
+ */
+export function expandOnce(def: ComponentDefinition, node: UINode): UINode | undefined {
+  return expandAll(def, node)[0];
+}
+
+/** Every node a definition expands to, in order. */
+export function expandAll(def: ComponentDefinition, node: UINode): UINode[] {
+  const args: Args = {
+    ...(def.params ?? {}),
+    ...(node.props ?? {}),
+    // Injected: lets a template branch on what the caller handed it, e.g.
+    // $if: { $bind: "$childCount" } for an empty-vs-populated rail.
+    $childCount: node.children?.length ?? 0,
+    $slots: node.slots ? Object.keys(node.slots) : [],
+  };
+  return expandNode(def.template, args, node);
+}
+
 export function defineComponent(def: ComponentDefinition): void {
   register(def.name, ({ node }): ReactElement => {
-    const args: Args = {
-      ...(def.params ?? {}),
-      ...(node.props ?? {}),
-      // Injected: lets a template branch on what the caller handed it, e.g.
-      // $if: { $bind: "$childCount" } for an empty-vs-populated rail.
-      $childCount: node.children?.length ?? 0,
-      $slots: node.slots ? Object.keys(node.slots) : [],
-    };
-    const expanded = expandNode(def.template, args, node);
+    const expanded = expandAll(def, node);
     return (
       <>
         {expanded.map((n, i) => (

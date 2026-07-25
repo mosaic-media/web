@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2026 the Mosaic authors
 
 import { useCallback, useEffect, useRef } from "react";
-import { nearestInDirection, applyRoving, type FocusDirection } from "./focus";
+import { nearestInDirection, applyRoving, type FocusDirection } from "./focus.js";
 
 const KEYS: Record<string, FocusDirection> = {
   ArrowUp: "up",

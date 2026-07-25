@@ -22,16 +22,16 @@
  * A module contributes a component the same way, as data (mock/moduleComponents.ts).
  */
 
-import { registerAll } from "../sdui/registry";
-import { initAcrylic } from "../sdui/acrylic";
+import { registerAll } from "../sdui/registry.js";
+import { initAcrylic } from "../sdui/acrylic.js";
 
-import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives";
-import { NavItem } from "./shell";
-import { Tabs, NavBar, Rotator, State } from "./layout";
-import { TextInput, Switch, SelectInput, Menu, SearchBar, SubmitField, Slider, RatingControl, ProgressBar, ProgressRing } from "./controls";
-import { SeasonSelector } from "./media";
-import { Player } from "./player";
-import { Skeleton } from "./feedback";
+import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives.js";
+import { NavItem } from "./shell.js";
+import { Tabs, NavBar, Rotator, State } from "./layout.js";
+import { TextInput, Switch, SelectInput, Menu, SearchBar, SubmitField, Slider, RatingControl, ProgressBar, ProgressRing } from "./controls.js";
+import { SeasonSelector } from "./media.js";
+import { Player } from "./player.js";
+import { Skeleton } from "./feedback.js";
 
 /**
  * The native vocabulary, as data.

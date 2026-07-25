@@ -9,9 +9,9 @@
  */
 
 import { createContext, useCallback, useContext } from "react";
-import type { Action, ActionResult, UINode } from "./types";
-import { ScopeContext, write, collect, type Scope } from "./scope";
-import { validateField } from "./validate";
+import type { Action, ActionResult, UINode } from "./types.js";
+import { ScopeContext, write, collect, type Scope } from "./scope.js";
+import { validateField } from "./validate.js";
 
 export interface OverlayHandle {
   id: string;

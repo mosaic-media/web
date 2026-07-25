@@ -13,7 +13,7 @@
  */
 
 import type { ComponentType } from "react";
-import type { UINode } from "./types";
+import type { UINode } from "./types.js";
 
 export interface NodeComponentProps {
   node: UINode;
