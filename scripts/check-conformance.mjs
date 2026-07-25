@@ -7,9 +7,12 @@
  * disagreement surfaces as a named failing case rather than as a screen that
  * behaves differently on one platform and identically in every test.
  *
- * This client runs all four files, including definition expansion — which the
- * contracts repository publishes and cannot execute, having no expander of its
- * own. So the expansion rules are checked here or nowhere.
+ * This client runs all five files, including the two the contracts repository
+ * publishes and cannot execute: definition expansion, having no expander of its
+ * own, and the submit merge, having no dispatcher. Those rules are checked here
+ * or nowhere — and the submit corpus exists because "or nowhere" was the actual
+ * state of the merge rule until it silently discarded what a person had typed
+ * (ADR 0096).
  *
  * Run in the container after the workspace build:
  *   node scripts/check-conformance.mjs
@@ -25,6 +28,7 @@ const dist = (p) => pathToFileURL(new URL(`../packages/sdui-react/dist/${p}`, im
 const { validateField, evaluate } = await import(dist("sdui/validate.js"));
 const { resolveProps } = await import(dist("sdui/binding.js"));
 const { expandOnce } = await import(dist("sdui/template.js"));
+const { mergeSubmit } = await import(dist("sdui/submit.js"));
 
 const failures = [];
 let ran = 0;
@@ -88,6 +92,10 @@ for (const c of load("validators").cases) {
 
 for (const c of load("expansion").cases) {
   check("expansion", c.name, expandOnce(c.definition, c.node), c.expect);
+}
+
+for (const c of load("submit").cases) {
+  check("submit", c.name, mergeSubmit(c.action, c.values ?? {}, c.into), c.expect);
 }
 
 if (failures.length > 0) {

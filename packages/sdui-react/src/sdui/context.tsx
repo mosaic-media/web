@@ -11,6 +11,7 @@
 import { createContext, useCallback, useContext } from "react";
 import type { Action, ActionResult, UINode } from "./types.js";
 import { ScopeContext, write, collect, type Scope } from "./scope.js";
+import { mergeSubmit } from "./submit.js";
 import { validateField } from "./validate.js";
 
 export interface OverlayHandle {
@@ -107,23 +108,7 @@ function useScopedRuntime(ctx: ShellRuntime, scope: Scope | null): ShellRuntime 
             return { ok: false, error: { category: "InvalidArgument", message: "Some fields need attention" } };
           }
         }
-        // Merged under whatever the producer set, not over it. A server that
-        // pinned a field in the action's input is stating something the form is
-        // not allowed to overwrite.
-        // Where the values land is the action's business, not this client's.
-        // `field` names a path into the input — "settings" for a module's
-        // configureModule, absent for the top level. Without it the values could
-        // only ever land at the top, which is the whole reason the string
-        // substitution it replaces survived as long as it did.
-        const into = action.field;
-        let merged = inner;
-        if (inner.kind === "invoke") {
-          const input = inner.input ?? {};
-          merged = into
-            ? { ...inner, input: { ...input, [into]: { ...values, ...((input[into] as object) ?? {}) } } }
-            : { ...inner, input: { ...values, ...input } };
-        }
-        return dispatch(merged);
+        return dispatch(mergeSubmit(inner, values, action.field));
       }
       if (action.kind === "sequence") {
         let last: ActionResult = { ok: true };

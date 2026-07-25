@@ -28,6 +28,10 @@ export { useField, useFieldError, useVisible, asString, asNumber, asBoolean } fr
 
 // The six validators and the six predicates (ADR 0089), closed sets both.
 export { validateField, evaluate, VALIDATORS, PREDICATES } from "./sdui/validate.js";
+// The submit merge (ADR 0096): which value wins when a form and the action it
+// carries both name a field. Exported because it is a contract rule a second
+// client must reproduce, and because the conformance corpus runs it.
+export { mergeSubmit } from "./sdui/submit.js";
 
 // Lifecycle triggers (ADR 0090): what a node does when it is actually seen.
 export { useLifecycle, VISIBILITY_THRESHOLD } from "./sdui/lifecycle.js";

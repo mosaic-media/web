@@ -1,6 +1,6 @@
 {
   "name": "@mosaic-media/sdui-react",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "React runtime for the Mosaic SDUI contract: the native primitive vocabulary, the registry, the renderer and the definition expander. It ships no components — those are data, served by the Platform from the contract.",
   "license": "AGPL-3.0-only",
   "type": "module",
