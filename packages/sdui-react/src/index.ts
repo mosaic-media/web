@@ -28,6 +28,9 @@ export { useField, useFieldError, useVisible, asString, asNumber, asBoolean } fr
 
 // The six validators and the six predicates (ADR 0089), closed sets both.
 export { validateField, evaluate, VALIDATORS, PREDICATES } from "./sdui/validate";
+
+// Lifecycle triggers (ADR 0090): what a node does when it is actually seen.
+export { useLifecycle, VISIBILITY_THRESHOLD } from "./sdui/lifecycle";
 export type { RuleSet, Predicate } from "./sdui/validate";
 export type { Scope, StateVar } from "./sdui/scope";
 export type { Binding } from "./sdui/binding";

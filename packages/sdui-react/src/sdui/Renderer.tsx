@@ -8,12 +8,14 @@
  * layout, not the renderer.
  */
 
-import { Fragment, useCallback, useContext } from "react";
+import { Fragment, useCallback, useContext, useRef } from "react";
 import type { UINode } from "./types";
 import { resolve, reportUnknownType } from "./registry";
 import { resolveProps, getPath, type BindingScope } from "./binding";
 import { ShellRuntimeContext } from "./context";
 import { ScopeContext, lookup } from "./scope";
+import { useLifecycle } from "./lifecycle";
+import type { Action } from "./types";
 import { Unknown } from "../components/feedback/Unknown";
 
 export function RenderNode({ node }: { node: UINode }) {
@@ -45,6 +47,15 @@ export function RenderNode({ node }: { node: UINode }) {
   const resolved = resolveProps(node.props, bindingScope);
   if (resolved !== node.props) node = { ...node, props: resolved };
 
+  // Lifecycle triggers are observed on a wrapper rather than on the component,
+  // because a component renders whatever element it likes and the renderer must
+  // not require every one of them to forward a ref. The wrapper is only present
+  // when the node actually declares a trigger, so the common tree is unchanged.
+  const onAppear = resolved?.onAppear as Action | undefined;
+  const onDisappear = resolved?.onDisappear as Action | undefined;
+  const marker = useRef<HTMLSpanElement | null>(null);
+  useLifecycle(marker, onAppear, onDisappear, runtime?.emit ?? noop);
+
   const Component = resolve(node.type);
   if (!Component) {
     // Report before drawing. The placeholder is the graceful half; this is the
@@ -52,8 +63,20 @@ export function RenderNode({ node }: { node: UINode }) {
     reportUnknownType(node.type);
     return <Unknown type={node.type} />;
   }
-  return <Component node={node} />;
+  const rendered = <Component node={node} />;
+  if (!onAppear && !onDisappear) return rendered;
+  return (
+    <span ref={marker} style={CONTENTS}>
+      {rendered}
+    </span>
+  );
 }
+
+// display:contents so the wrapper takes part in no layout — a node that reported
+// its own visibility must not be laid out differently from one that does not.
+const CONTENTS = { display: "contents" } as const;
+
+function noop() {}
 
 /** Render an ordered list of nodes (a component's `children`). */
 export function Children({ nodes }: { nodes?: UINode[] }) {
