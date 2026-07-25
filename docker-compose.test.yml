@@ -70,6 +70,11 @@ services:
         npm install --no-fund --no-audit
         npm run build --workspaces --if-present
         npm run typecheck --workspaces --if-present
+        # After the build, because it imports what the build produced: the
+        # runtime's declared vocabulary measured against the contract's
+        # conformance fixture. A green build says a client compiles; this says
+        # whether it implements what it claims to (ADR 0083, ADR 0084).
+        node scripts/check-vocabulary.mjs
 
 volumes:
   mosaic-web-npm:

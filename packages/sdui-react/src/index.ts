@@ -11,7 +11,7 @@
 export type { UINode, Action, Tone, ActionResult, PlatformErrorCategory } from "./sdui/types";
 
 // Registry.
-export { register, registerAll, resolve, registeredTypes, prop } from "./sdui/registry";
+export { register, registerAll, resolve, registeredTypes, prop, onUnknownType, resetUnknownTypes } from "./sdui/registry";
 export type { NodeComponent, NodeComponentProps } from "./sdui/registry";
 
 // Recursive renderer.
@@ -40,7 +40,13 @@ export { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, 
 export type { Rgb } from "./sdui/artlight";
 
 // The built-in component vocabulary (primitives + definitions).
-export { installComponents } from "./components";
+export { installComponents, NATIVE_COMPONENTS } from "./components";
+
+// What this client declares it can render (mosaic.session.v1.VocabularyProfile).
+// Derived from the registration map and checked against the dispatcher at
+// compile time — see sdui/vocabulary.ts.
+export { nativePrimitives, NATIVE_PRIMITIVE_TYPES, NATIVE_ACTION_KINDS } from "./sdui/vocabulary";
+export type { NativePrimitiveType, NativeActionKind, VocabularyDeclaration } from "./sdui/vocabulary";
 export { OverlayHost, ToastHost } from "./components/host";
 export { Icon, cx } from "./components/shared";
 export type { IconName } from "./components/shared";

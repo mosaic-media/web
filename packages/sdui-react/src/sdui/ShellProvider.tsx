@@ -131,8 +131,19 @@ export function ShellProvider({ screen, onNavigate, onBack, children, render, on
           return last;
         }
 
-        default:
-          return { ok: false, error: { category: "InvalidArgument", message: "Unknown action" } };
+        default: {
+          // Unreachable by construction, and that is the point: `action` is
+          // `never` here because the cases above cover the whole Action union,
+          // so adding a kind to the union without writing its case stops the
+          // build. NATIVE_ACTION_KINDS is tied to the same union in
+          // vocabulary.ts, which is what makes this client's declaration a
+          // checked claim rather than a list somebody keeps in step.
+          const unreachable: never = action;
+          return {
+            ok: false,
+            error: { category: "InvalidArgument", message: `Unhandled action: ${JSON.stringify(unreachable)}` },
+          };
+        }
       }
     },
     [onNavigate, onBack, dismissOverlay, pushToast, onInvoke],

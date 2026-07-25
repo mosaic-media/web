@@ -25,6 +25,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { applyTokens, defineComponents, type ToastItem, type Tone, type UINode } from "@mosaic-media/sdui-react";
 import { createClient, type Client } from "@connectrpc/connect";
 import { clientProfile } from "./profile";
+import { clientVocabulary } from "./vocabulary";
 import { currentTraceId } from "./trace";
 import { transport } from "./transport";
 import {
@@ -302,6 +303,11 @@ async function runIntent(
             // the answer can change hands — the Platform's live-session state is
             // disposable, so a re-declaration is what puts it back.
             profile: clientProfile(),
+            // What this browser can *draw* — the other half of the same
+            // question. The server emits only what is in here and reports what
+            // it had to leave out, instead of sending a node this client turns
+            // into a placeholder nobody hears about.
+            vocabulary: clientVocabulary(),
           },
           { signal },
         );

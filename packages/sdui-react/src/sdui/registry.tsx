@@ -45,6 +45,49 @@ export function registeredTypes(): string[] {
   return [...registry.keys()].sort();
 }
 
+/*
+ * Unknown types are reported, not merely drawn.
+ *
+ * The placeholder is the forward-compatibility guarantee and it stays. What it
+ * was not is *observable*: a screen with a hole in it looked identical to a
+ * screen without one to everybody except the person on that page, so a client
+ * running behind the contract could go a release without anyone noticing. Since
+ * the Platform now knows what this client declared and declines to send what it
+ * cannot draw, a placeholder here means one of three things worth hearing about
+ * — a module's own type, a definition that reached a client it was not filtered
+ * for, or a declaration that is wrong.
+ *
+ * Deduped per type, because an unknown card in a rail of forty is one fact.
+ */
+type UnknownTypeReporter = (type: string) => void;
+
+let reporter: UnknownTypeReporter | undefined;
+const reported = new Set<string>();
+
+/** Register the callback for the first sighting of each unknown type. The Shell
+ *  wires this to whatever it reports through; without one, a warning is written
+ *  to the console so the sighting is never silent. */
+export function onUnknownType(cb: UnknownTypeReporter | undefined): void {
+  reporter = cb;
+}
+
+/** Called by the renderer when a node's type resolves to nothing. */
+export function reportUnknownType(type: string): void {
+  if (reported.has(type)) return;
+  reported.add(type);
+  if (reporter) {
+    reporter(type);
+    return;
+  }
+  console.warn(`[mosaic-sdui] no component for node type "${type}" — this client cannot render it`);
+}
+
+/** Forget what has been reported. For a test, and for a reconnect that may have
+ *  been served a different definition library than the one before it. */
+export function resetUnknownTypes(): void {
+  reported.clear();
+}
+
 /** Read a typed prop off a node with a fallback. Keeps components terse. */
 export function prop<T>(node: UINode, key: string, fallback: T): T {
   const v = node.props?.[key];

@@ -10,12 +10,15 @@
 
 import { Fragment } from "react";
 import type { UINode } from "./types";
-import { resolve } from "./registry";
+import { resolve, reportUnknownType } from "./registry";
 import { Unknown } from "../components/feedback/Unknown";
 
 export function RenderNode({ node }: { node: UINode }) {
   const Component = resolve(node.type);
   if (!Component) {
+    // Report before drawing. The placeholder is the graceful half; this is the
+    // half that stops a hole in a screen being a private fact of that screen.
+    reportUnknownType(node.type);
     return <Unknown type={node.type} />;
   }
   return <Component node={node} />;
