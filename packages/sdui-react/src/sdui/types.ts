@@ -65,6 +65,11 @@ export type Action =
    *  field (ADR 0087). The value is a string on the wire; the scope's declared
    *  type says how to read it. */
   | { kind: "setValue"; field: string; value: string }
+  /** Run the carried action with the enclosing State scope's declared values
+   *  merged into its input (ADR 0088). The values lose to anything the producer
+   *  set explicitly there — a pinned field is a statement the form must not
+   *  overwrite. */
+  | { kind: "submit"; actions: Action[] }
   /** Run several actions in order. */
   | { kind: "sequence"; actions: Action[] };
 

@@ -129,3 +129,28 @@ export function StateScope({ vars, children }: { vars: StateVar[]; children: Rea
 
   return <ScopeContext.Provider value={scope}>{children}</ScopeContext.Provider>;
 }
+
+/**
+ * Every value the scope chain declares, nearest scope winning.
+ *
+ * Nearest wins because that is how the chain resolves everywhere else, and a
+ * submit that collected an outer scope's value for a name an inner one redeclared
+ * would send something no control on the screen was showing.
+ *
+ * Only *declared* names are collected, and only those that hold a value: an
+ * untouched variable with no initial value is absent from the payload rather
+ * than being sent as an empty string, so a server can tell "left blank" from
+ * "cleared".
+ */
+export function collect(scope: Scope | null): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const seen = new Set<string>();
+  for (let s = scope; s; s = s.parent) {
+    for (const name of Object.keys(s.vars)) {
+      if (seen.has(name)) continue;
+      seen.add(name);
+      if (name in s.values) out[name] = s.values[name];
+    }
+  }
+  return out;
+}

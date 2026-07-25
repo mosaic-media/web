@@ -137,6 +137,15 @@ export function ShellProvider({ screen, params, onNavigate, onBack, children, re
             error: { category: "InvalidArgument", message: `No enclosing State scope declares "${action.field}"` },
           };
 
+        case "submit":
+          // Reached only outside any State scope — useRuntime handles it where
+          // the control is, because the values it collects are the ones in scope
+          // at that point. Here there is no scope, so there is nothing to submit.
+          return {
+            ok: false,
+            error: { category: "InvalidArgument", message: "submit outside any State scope" },
+          };
+
         case "sequence": {
           let last: ActionResult = { ok: true };
           for (const a of action.actions) {

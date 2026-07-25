@@ -10,7 +10,7 @@
 
 import { createContext, useCallback, useContext } from "react";
 import type { Action, ActionResult, UINode } from "./types";
-import { ScopeContext, write, type Scope } from "./scope";
+import { ScopeContext, write, collect, type Scope } from "./scope";
 
 export interface OverlayHandle {
   id: string;
@@ -71,6 +71,19 @@ function useScopedRuntime(ctx: ShellRuntime, scope: Scope | null): ShellRuntime 
           };
         }
         return { ok: true };
+      }
+      if (action.kind === "submit") {
+        const inner = action.actions[0];
+        if (!inner) return { ok: false, error: { category: "InvalidArgument", message: "submit carries no action" } };
+        const values = collect(scope);
+        // Merged under whatever the producer set, not over it. A server that
+        // pinned a field in the action's input is stating something the form is
+        // not allowed to overwrite.
+        const merged =
+          inner.kind === "invoke"
+            ? { ...inner, input: { ...values, ...(inner.input ?? {}) } }
+            : inner;
+        return dispatch(merged);
       }
       if (action.kind === "sequence") {
         let last: ActionResult = { ok: true };

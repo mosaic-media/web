@@ -74,6 +74,7 @@ export const NATIVE_ACTION_KINDS = [
   "openOverlay",
   "closeOverlay",
   "setValue",
+  "submit",
   "playPart",
   "toast",
   "sequence",

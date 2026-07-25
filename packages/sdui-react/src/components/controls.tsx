@@ -21,13 +21,15 @@ import { useEffect, useRef, useState } from "react";
 import type { Action, UINode } from "../sdui/types";
 import { prop } from "../sdui/registry";
 import { useRuntime } from "../sdui/context";
+import { useField, asString, asNumber, asBoolean } from "../sdui/field";
 import { cx, Icon, type IconName } from "./shared";
 
 /** TextInput — bare text field owning its value. */
 export function TextInput({ node }: { node: UINode }) {
   const kind = prop<string>(node, "inputType", "text");
   const placeholder = prop<string>(node, "placeholder", "");
-  const [value, setValue] = useState(prop<string>(node, "value", ""));
+  const name = prop<string | undefined>(node, "name", undefined);
+  const [value, setValue] = useField(name, prop<string>(node, "value", ""), String, asString);
   return (
     <input
       className="msc-field__input"
@@ -43,7 +45,8 @@ export function TextInput({ node }: { node: UINode }) {
 export function Switch({ node }: { node: UINode }) {
   const { emit } = useRuntime();
   const action = prop<Action | undefined>(node, "action", undefined);
-  const [on, setOn] = useState(prop<boolean>(node, "value", false));
+  const name = prop<string | undefined>(node, "name", undefined);
+  const [on, setOn] = useField(name, prop<boolean>(node, "value", false), String, asBoolean);
   return (
     <button
       type="button"
@@ -51,7 +54,7 @@ export function Switch({ node }: { node: UINode }) {
       aria-checked={on}
       className={cx("msc-toggle__track", on && "is-on")}
       onClick={() => {
-        setOn((v) => !v);
+        setOn(!on);
         emit(action);
       }}
     >
@@ -63,7 +66,8 @@ export function Switch({ node }: { node: UINode }) {
 /** SelectInput — bare dropdown owning its value. */
 export function SelectInput({ node }: { node: UINode }) {
   const options = prop<Array<{ value: string; label: string }>>(node, "options", []);
-  const [value, setValue] = useState(prop<string>(node, "value", options[0]?.value ?? ""));
+  const name = prop<string | undefined>(node, "name", undefined);
+  const [value, setValue] = useField(name, prop<string>(node, "value", options[0]?.value ?? ""), String, asString);
   return (
     <div className="msc-select">
       <select className="msc-select__el" value={value} onChange={(e) => setValue(e.target.value)}>
@@ -228,7 +232,9 @@ export function Slider({ node }: { node: UINode }) {
   const label = prop<string | undefined>(node, "label", undefined);
   const min = prop<number>(node, "min", 0);
   const max = prop<number>(node, "max", 100);
-  const [value, setValue] = useState(prop<number>(node, "value", 50));
+  const name = prop<string | undefined>(node, "name", undefined);
+  const initialSlider = prop<number>(node, "value", 50);
+  const [value, setValue] = useField(name, initialSlider, String, asNumber(initialSlider));
   return (
     <div className="msc-field">
       {label && (
@@ -247,7 +253,9 @@ export function RatingControl({ node }: { node: UINode }) {
   const { emit } = useRuntime();
   const max = prop<number>(node, "max", 5);
   const action = prop<Action | undefined>(node, "action", undefined);
-  const [value, setValue] = useState(prop<number>(node, "value", 0));
+  const name = prop<string | undefined>(node, "name", undefined);
+  const initialRating = prop<number>(node, "value", 0);
+  const [value, setValue] = useField(name, initialRating, String, asNumber(initialRating));
   return (
     <div className="msc-rating" role="slider" aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}>
       {Array.from({ length: max }, (_, i) => i + 1).map((n) => (

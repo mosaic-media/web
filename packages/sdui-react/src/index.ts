@@ -23,7 +23,8 @@ export { isBinding, bindingPath, resolveProps, BINDING_MARKER } from "./sdui/bin
 export type { BindingScope } from "./sdui/binding";
 
 // State scopes (ADR 0087): named variables a subtree binds to and writes.
-export { StateScope, ScopeContext, lookup, write, coerce } from "./sdui/scope";
+export { StateScope, ScopeContext, lookup, write, collect, coerce } from "./sdui/scope";
+export { useField, asString, asNumber, asBoolean } from "./sdui/field";
 export type { Scope, StateVar } from "./sdui/scope";
 export type { Binding } from "./sdui/binding";
 
