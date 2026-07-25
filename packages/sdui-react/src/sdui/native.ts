@@ -90,3 +90,18 @@ export const NATIVE_ACTION_KINDS = [
  */
 export const VALIDATORS = ["matches", "maxLength", "minLength", "oneOf", "pattern", "required"] as const;
 export const PREDICATES = ["all", "any", "equals", "not", "notEmpty", "oneOf"] as const;
+
+/**
+ * The closed accessible-role set (ADR 0091).
+ *
+ * Here with the rest of the bare vocabulary data so the conformance script can
+ * measure it against the contract's fixture without loading React. A role this
+ * client does not recognise is dropped rather than passed to the DOM, so a set
+ * that had drifted would silently discard roles the server was correctly
+ * sending.
+ */
+export const ROLES = [
+  "alert", "button", "dialog", "group", "heading", "img", "link", "list", "listitem",
+  "main", "navigation", "none", "progressbar", "region", "search", "status",
+  "tab", "tablist", "tabpanel",
+] as const;

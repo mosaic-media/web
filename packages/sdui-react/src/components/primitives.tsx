@@ -21,6 +21,7 @@ import { useRuntime } from "../sdui/context";
 import { boxToCss, mergeStyle, textToCss, type BoxStyle, type ColorToken, type SpaceToken, type TextStyle } from "../sdui/style";
 import { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, type Rgb } from "../sdui/artlight";
 import { cx, Icon, type IconName } from "./shared";
+import { a11yAttrs } from "../sdui/a11y";
 
 /** useResponsiveStyle — resolves a BoxStyle's one viewport-dependent field
  *  (`style.responsive`), merging its override in below the stated width.
@@ -57,7 +58,12 @@ function useResponsiveStyle(style: BoxStyle): BoxStyle {
 export function Box({ node }: { node: UINode }) {
   const style = useResponsiveStyle(prop<BoxStyle>(node, "style", {}));
   return (
-    <div className={style.glass ? "msc-acrylic" : undefined} data-kind={style.kind} style={boxToCss(style)}>
+    <div
+      className={style.glass ? "msc-acrylic" : undefined}
+      data-kind={style.kind}
+      style={boxToCss(style)}
+      {...a11yAttrs(node.props)}
+    >
       <Children nodes={node.children} />
     </div>
   );
@@ -68,7 +74,7 @@ export function Text({ node }: { node: UINode }) {
   const value = prop<string>(node, "text", "");
   const style = prop<TextStyle>(node, "style", {});
   return (
-    <span style={textToCss(style)}>
+    <span style={textToCss(style)} {...a11yAttrs(node.props)}>
       {value}
       {node.children ? <Children nodes={node.children} /> : null}
     </span>
@@ -193,7 +199,11 @@ export function IconPrimitive({ node }: { node: UINode }) {
   const size = prop<number | string>(node, "size", "1.2em");
   const colorToken = prop<ColorToken | undefined>(node, "color", undefined);
   const style: CSSProperties | undefined = colorToken ? { color: `var(--color-${colorToken})` } : undefined;
-  return <Icon name={name} size={size} style={style} />;
+  const a11y = a11yAttrs(node.props);
+  // An icon with no accessible name is decoration, and saying so is the useful
+  // statement: a screen reader that announces "image" for every glyph in a row
+  // of controls is worse than one that announces none of them.
+  return <Icon name={name} size={size} style={style} {...(a11y["aria-label"] ? a11y : { "aria-hidden": true })} />;
 }
 
 /** Pressable — the interactive primitive: wraps children, emits an Action. */

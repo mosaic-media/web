@@ -89,10 +89,11 @@ const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 for (const [what, mine, theirs] of [
   ["validator", [...native.VALIDATORS], [...fixture.validators].sort()],
   ["predicate", [...native.PREDICATES], [...fixture.predicates].sort()],
+  ["role", [...native.ROLES].sort(), [...fixture.roles].sort()],
 ]) {
   const missing = theirs.filter((x) => !mine.includes(x));
   const extra = mine.filter((x) => !theirs.includes(x));
-  if (missing.length) problems.push(`this client implements no ${what} "${missing.join('", "')}" that the contract declares — the server could state it and nothing would enforce it.`);
+  if (missing.length) problems.push(`this client implements no ${what} "${missing.join('", "')}" that the contract declares — the server could state it and this client would silently drop it.`);
   if (extra.length) problems.push(`this client implements the ${what} "${extra.join('", "')}", which the contract does not declare.`);
 }
 
@@ -136,7 +137,7 @@ console.error(
   `check-vocabulary: ${nativePrimitives.length}/${contractPrimitives.length} primitives, ` +
     `${NATIVE_ACTION_KINDS.length}/${contractActions.length} action kinds, ` +
     `binding marker ${native.BINDING_MARKER}, ` +
-    `${native.VALIDATORS.length} validators, ${native.PREDICATES.length} predicates, ` +
+    `${native.VALIDATORS.length} validators, ${native.PREDICATES.length} predicates, ${native.ROLES.length} roles, ` +
     `against vocabulary ${fixture.version}. Declared gap: ` +
     `${EXPECTED_GAP.primitives.join(", ") || "none"} / ${EXPECTED_GAP.actions.join(", ") || "none"}.`,
 );

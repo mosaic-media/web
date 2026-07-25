@@ -31,6 +31,10 @@ export { validateField, evaluate, VALIDATORS, PREDICATES } from "./sdui/validate
 
 // Lifecycle triggers (ADR 0090): what a node does when it is actually seen.
 export { useLifecycle, VISIBILITY_THRESHOLD } from "./sdui/lifecycle";
+
+// Accessibility (ADR 0091): the contract's role/name/level/live props, mapped.
+export { a11yAttrs, ROLES } from "./sdui/a11y";
+export type { A11yAttrs } from "./sdui/a11y";
 export type { RuleSet, Predicate } from "./sdui/validate";
 export type { Scope, StateVar } from "./sdui/scope";
 export type { Binding } from "./sdui/binding";
