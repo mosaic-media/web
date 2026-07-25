@@ -21,7 +21,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Action, UINode } from "../sdui/types";
 import { prop } from "../sdui/registry";
 import { useRuntime } from "../sdui/context";
-import { useField, asString, asNumber, asBoolean } from "../sdui/field";
+import { useField, useFieldError, useVisible, asString, asNumber, asBoolean } from "../sdui/field";
+import type { Predicate, RuleSet } from "../sdui/validate";
 import { cx, Icon, type IconName } from "./shared";
 
 /** TextInput — bare text field owning its value. */
@@ -29,15 +30,23 @@ export function TextInput({ node }: { node: UINode }) {
   const kind = prop<string>(node, "inputType", "text");
   const placeholder = prop<string>(node, "placeholder", "");
   const name = prop<string | undefined>(node, "name", undefined);
-  const [value, setValue] = useField(name, prop<string>(node, "value", ""), String, asString);
+  const rules = prop<RuleSet | undefined>(node, "validators", undefined);
+  const [value, setValue] = useField(name, prop<string>(node, "value", ""), String, asString, rules);
+  const error = useFieldError(name);
+  const visible = useVisible(prop<Predicate | undefined>(node, "visibleWhen", undefined));
+  if (!visible) return null;
   return (
-    <input
-      className="msc-field__input"
-      type={kind}
-      placeholder={placeholder}
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-    />
+    <div className="msc-field">
+      <input
+        className={cx("msc-field__input", error && "is-invalid")}
+        type={kind}
+        placeholder={placeholder}
+        value={value}
+        aria-invalid={error ? true : undefined}
+        onChange={(e) => setValue(e.target.value)}
+      />
+      {error && <span className="msc-field__error">{error}</span>}
+    </div>
   );
 }
 

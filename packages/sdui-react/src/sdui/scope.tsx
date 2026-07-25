@@ -18,7 +18,8 @@
  * than creating a variable nobody reads.
  */
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { ShellRuntimeContext } from "./context";
 
 /** One variable as the contract declares it. */
 export interface StateVar {
@@ -33,6 +34,16 @@ export interface Scope {
   vars: Record<string, StateVar>;
   /** Current values, by name. */
   values: Record<string, unknown>;
+  /** The rules each field registered when it mounted. Registered rather than
+   *  declared on the variable, because the rules belong next to the control that
+   *  states them — and collected here, because submitting has to check fields
+   *  that may not be on screen. */
+  rules: Record<string, Record<string, unknown>>;
+  registerRules: (name: string, rules: Record<string, unknown> | undefined) => void;
+  /** The current rejection for each field, from this client's validators or
+   *  from the server's — the same shape either way, which is the point. */
+  errors: Record<string, string>;
+  setErrors: (errors: Record<string, string>) => void;
   /** Write a declared name. Returns false if this scope does not declare it,
    *  so the caller can walk outward. */
   set: (name: string, raw: string) => boolean;
@@ -99,6 +110,13 @@ export function StateScope({ vars, children }: { vars: StateVar[]; children: Rea
     return out;
   }, [vars]);
 
+  const [errors, setErrorsState] = useState<Record<string, string>>({});
+  const rulesRef = useRef<Record<string, Record<string, unknown>>>({});
+  const registerRules = useCallback((name: string, r: Record<string, unknown> | undefined) => {
+    if (r) rulesRef.current[name] = r;
+    else delete rulesRef.current[name];
+  }, []);
+
   const [values, setValues] = useState<Record<string, unknown>>(() => {
     const out: Record<string, unknown> = {};
     for (const v of Object.values(declared)) {
@@ -122,10 +140,35 @@ export function StateScope({ vars, children }: { vars: StateVar[]; children: Rea
     const next = coerce(raw, v.type);
     if (next === undefined) return true; // declared, but the value would not parse
     setValues((prev) => (prev[name] === next ? prev : { ...prev, [name]: next }));
+    // Editing a field clears its rejection. Leaving it up while the value
+    // changes underneath is a message about something that is no longer true.
+    setErrorsState((prev) => (prev[name] === undefined ? prev : { ...prev, [name]: "" }));
     return true;
   }, []);
 
-  const scope = useMemo<Scope>(() => ({ vars: declared, values, set, parent }), [declared, values, set, parent]);
+  // A rejection the server pushed lands on the fields it names, in the scope
+  // that declares them. A name no scope declares is not silently dropped — the
+  // Shell renders it as a form-level message — because a rejection nobody can
+  // see is worse than one in the wrong place.
+  const runtime = useContext(ShellRuntimeContext);
+  const pushed = runtime?.fieldErrors?.errors;
+  useEffect(() => {
+    if (!pushed) return;
+    const mine: Record<string, string> = {};
+    let any = false;
+    for (const [field, message] of Object.entries(pushed)) {
+      if (field in declaredRef.current) {
+        mine[field] = message;
+        any = true;
+      }
+    }
+    if (any) setErrorsState((prev) => ({ ...prev, ...mine }));
+  }, [pushed]);
+
+  const scope = useMemo<Scope>(
+    () => ({ vars: declared, values, rules: rulesRef.current, registerRules, errors, setErrors: setErrorsState, set, parent }),
+    [declared, values, registerRules, errors, set, parent],
+  );
 
   return <ScopeContext.Provider value={scope}>{children}</ScopeContext.Provider>;
 }

@@ -82,6 +82,20 @@ const extra = (mine, theirs) => mine.filter((x) => !theirs.includes(x)).sort();
 const gap = (theirs, mine) => theirs.filter((x) => !mine.includes(x)).sort();
 const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
 
+// The two closed sets must match exactly, in both directions. A validator this
+// client does not implement is a rule the server can state and nothing enforces —
+// the fail-open case the closed set exists to prevent — and one it implements
+// that the contract does not declare is a rule no server can ask for.
+for (const [what, mine, theirs] of [
+  ["validator", [...native.VALIDATORS], [...fixture.validators].sort()],
+  ["predicate", [...native.PREDICATES], [...fixture.predicates].sort()],
+]) {
+  const missing = theirs.filter((x) => !mine.includes(x));
+  const extra = mine.filter((x) => !theirs.includes(x));
+  if (missing.length) problems.push(`this client implements no ${what} "${missing.join('", "')}" that the contract declares — the server could state it and nothing would enforce it.`);
+  if (extra.length) problems.push(`this client implements the ${what} "${extra.join('", "')}", which the contract does not declare.`);
+}
+
 for (const [what, mine, theirs] of [
   ["primitive", nativePrimitives, contractPrimitives],
   ["action kind", [...NATIVE_ACTION_KINDS], contractActions],
@@ -122,6 +136,7 @@ console.error(
   `check-vocabulary: ${nativePrimitives.length}/${contractPrimitives.length} primitives, ` +
     `${NATIVE_ACTION_KINDS.length}/${contractActions.length} action kinds, ` +
     `binding marker ${native.BINDING_MARKER}, ` +
+    `${native.VALIDATORS.length} validators, ${native.PREDICATES.length} predicates, ` +
     `against vocabulary ${fixture.version}. Declared gap: ` +
     `${EXPECTED_GAP.primitives.join(", ") || "none"} / ${EXPECTED_GAP.actions.join(", ") || "none"}.`,
 );

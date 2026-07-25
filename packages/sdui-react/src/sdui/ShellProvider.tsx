@@ -23,6 +23,10 @@ interface ShellProviderProps {
    *  prop binding resolves against, so they must be the params of the screen
    *  currently rendered, not of the one being navigated to. */
   params?: Record<string, unknown>;
+  /** A submission the server rejected, by field (ADR 0089). Each State scope
+   *  adopts the names it declares; a name no scope declares stays here as a
+   *  form-level message rather than being dropped. */
+  fieldErrors?: { errors: Record<string, string>; formError?: string };
   onNavigate: (screen: string, params?: Record<string, unknown>) => void;
   onBack: () => void;
   children: ReactNode;
@@ -43,7 +47,7 @@ interface ShellProviderProps {
 let seq = 0;
 const nextId = (p: string) => `${p}-${++seq}`;
 
-export function ShellProvider({ screen, params, onNavigate, onBack, children, render, onInvoke, onInput }: ShellProviderProps) {
+export function ShellProvider({ screen, params, fieldErrors, onNavigate, onBack, children, render, onInvoke, onInput }: ShellProviderProps) {
   const [overlays, setOverlays] = useState<OverlayHandle[]>([]);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -180,7 +184,10 @@ export function ShellProvider({ screen, params, onNavigate, onBack, children, re
     [dispatch],
   );
 
-  const runtime = useMemo(() => ({ dispatch, emit, screen, params, input: onInput }), [dispatch, emit, screen, params, onInput]);
+  const runtime = useMemo(
+    () => ({ dispatch, emit, screen, params, fieldErrors, input: onInput }),
+    [dispatch, emit, screen, params, fieldErrors, onInput],
+  );
 
   return (
     <ShellRuntimeContext.Provider value={runtime}>

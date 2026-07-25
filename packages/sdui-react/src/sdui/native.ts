@@ -79,3 +79,14 @@ export const NATIVE_ACTION_KINDS = [
   "toast",
   "sequence",
 ] as const;
+
+/**
+ * The two closed sets, by name.
+ *
+ * Here rather than in validate.ts so the conformance script can read them from a
+ * module that imports nothing — and checked against the contract's fixture in
+ * both directions, because a validator the contract declares and this client
+ * does not implement is a rule the server can state that nothing enforces.
+ */
+export const VALIDATORS = ["matches", "maxLength", "minLength", "oneOf", "pattern", "required"] as const;
+export const PREDICATES = ["all", "any", "equals", "not", "notEmpty", "oneOf"] as const;

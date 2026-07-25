@@ -24,7 +24,11 @@ export type { BindingScope } from "./sdui/binding";
 
 // State scopes (ADR 0087): named variables a subtree binds to and writes.
 export { StateScope, ScopeContext, lookup, write, collect, coerce } from "./sdui/scope";
-export { useField, asString, asNumber, asBoolean } from "./sdui/field";
+export { useField, useFieldError, useVisible, asString, asNumber, asBoolean } from "./sdui/field";
+
+// The six validators and the six predicates (ADR 0089), closed sets both.
+export { validateField, evaluate, VALIDATORS, PREDICATES } from "./sdui/validate";
+export type { RuleSet, Predicate } from "./sdui/validate";
 export type { Scope, StateVar } from "./sdui/scope";
 export type { Binding } from "./sdui/binding";
 

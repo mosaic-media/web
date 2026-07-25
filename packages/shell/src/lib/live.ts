@@ -47,6 +47,10 @@ export type Intent =
 
 export interface Live {
   status: LiveStatus;
+  /** The most recent submission the server rejected, by field (ADR 0089). The
+   *  same shape this client's own validators produce, so a rejection from
+   *  either side lands in the same place. */
+  fieldErrors: { errors: Record<string, string>; formError?: string } | null;
   /** The app shell tree (ShellUpdate), or null until the first push. */
   shell: UINode | null;
   /** The pushed regions by name (ADR 0029/0031); the primary one is "content". */
@@ -113,6 +117,7 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
   const [shell, setShell] = useState<UINode | null>(null);
   const [regions, setRegions] = useState<Record<string, UINode[]>>({});
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Live["fieldErrors"]>(null);
 
   // Keep the latest onOpen in a ref so the connect loop's identity does not
   // depend on it — the stream must not tear down when the callback changes.
@@ -200,6 +205,13 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
         case "toast":
           pushToast(msg.body.value.message, (msg.body.value.tone || "neutral") as Tone);
           break;
+        case "fieldErrors": {
+          const v = msg.body.value;
+          const errors: Record<string, string> = {};
+          for (const e of v.errors) errors[e.field] = e.message;
+          setFieldErrors({ errors, formError: v.formError || undefined });
+          break;
+        }
         case "event": {
           const ev = msg.body.value;
           // The Platform pushes the SDUI component-definition library (ADR 0024)
@@ -278,7 +290,7 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
     };
   }, [session, pushToast, send]);
 
-  return { status, shell, regions, toasts, send, dismissToast, pending: inFlight > 0 };
+  return { status, shell, regions, toasts, fieldErrors, send, dismissToast, pending: inFlight > 0 };
 }
 
 // runIntent maps a Shell intent onto the matching unary RPC. Params/input ride as

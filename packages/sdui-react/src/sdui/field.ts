@@ -18,8 +18,9 @@
  * would put it there.
  */
 
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { ScopeContext, lookup, write } from "./scope";
+import { evaluate, type Predicate, type RuleSet } from "./validate";
 
 /**
  * useField gives an input its value and a setter, from the scope when it is
@@ -36,9 +37,23 @@ export function useField<T>(
   initial: T,
   toScope: (v: T) => string,
   fromScope: (v: unknown) => T,
+  rules?: RuleSet,
 ): [T, (next: T) => void] {
   const scope = useContext(ScopeContext);
   const [local, setLocal] = useState<T>(initial);
+
+  // The rules travel to the scope so submitting can check fields that are not
+  // on screen — a conditionally hidden required field would otherwise pass by
+  // not being rendered.
+  useEffect(() => {
+    if (!name || !scope) return;
+    scope.registerRules(name, rules);
+    return () => scope.registerRules(name, undefined);
+    // The rules object arrives fresh from the props bag on every push, so it is
+    // compared by content rather than identity; otherwise this re-registers on
+    // every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, scope, JSON.stringify(rules ?? null)]);
 
   const hit = name ? lookup(scope, name) : { found: false as const };
   const value = hit.found ? fromScope(hit.value) : local;
@@ -52,6 +67,34 @@ export function useField<T>(
   );
 
   return [value, set];
+}
+
+/** The rejection currently standing against a field, if any. */
+export function useFieldError(name: string | undefined): string {
+  const scope = useContext(ScopeContext);
+  if (!name || !scope) return "";
+  return scope.errors[name] ?? "";
+}
+
+/**
+ * Whether a node should render at all.
+ *
+ * `visibleWhen` is a predicate over the scope's values rather than a prop of its
+ * own — a "show this when that field is set" flag answers one screen and earns a
+ * second flag for the next one. An absent condition means visible; an unreadable
+ * one means hidden, because a control shown because its rule could not be read
+ * is the fail-open case.
+ */
+export function useVisible(condition: Predicate | undefined): boolean {
+  const scope = useContext(ScopeContext);
+  if (condition === undefined) return true;
+  const values: Record<string, unknown> = {};
+  for (let s = scope; s; s = s.parent) {
+    for (const name of Object.keys(s.vars)) {
+      if (!(name in values) && name in s.values) values[name] = s.values[name];
+    }
+  }
+  return evaluate(condition, values);
 }
 
 /** The three coercions back out of a scope, matching the declared types. */

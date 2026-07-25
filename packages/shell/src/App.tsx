@@ -58,7 +58,7 @@ export function App() {
     send({ kind: "attach", screen: r.screen, params: r.params });
   }, []);
 
-  const { status, shell, regions, toasts, send, dismissToast, pending } = useLive(session, { onOpen: declareRoute });
+  const { status, shell, regions, toasts, fieldErrors, send, dismissToast, pending } = useLive(session, { onOpen: declareRoute });
 
   // A real navigation: record the route, push a history entry, tell the server.
   // pushState lives outside setRoute — a state updater must stay pure (React
@@ -149,6 +149,7 @@ export function App() {
     <ShellProvider
       screen={route.screen}
       params={route.params}
+      fieldErrors={fieldErrors ?? undefined}
       onNavigate={navigate}
       onBack={() => history.back()}
       onInvoke={onInvoke}

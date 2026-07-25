@@ -659,6 +659,15 @@
 .msc-field__input:focus {
   border-color: var(--color-accent);
 }
+/* A rejected field, from this client's validators or the server's — the same
+   mark either way, which is what the symmetric envelope is for. */
+.msc-field__input.is-invalid {
+  border-color: var(--color-danger);
+}
+.msc-field__error {
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
 
 .msc-select {
   position: relative;

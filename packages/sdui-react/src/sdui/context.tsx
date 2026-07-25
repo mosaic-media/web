@@ -11,6 +11,7 @@
 import { createContext, useCallback, useContext } from "react";
 import type { Action, ActionResult, UINode } from "./types";
 import { ScopeContext, write, collect, type Scope } from "./scope";
+import { validateField } from "./validate";
 
 export interface OverlayHandle {
   id: string;
@@ -29,6 +30,11 @@ export interface ShellRuntime {
    *  binding resolves against. Absent outside a live session (the storybook),
    *  where a binding simply resolves to nothing. */
   params?: Record<string, unknown>;
+  /** A submission the server rejected, by field name (ADR 0089). It is the
+   *  same shape this client's own validators produce, so a rejection from
+   *  either side renders in the same place — which is the whole reason the
+   *  envelope is symmetric. */
+  fieldErrors?: { errors: Record<string, string>; formError?: string };
   /** Stream a field value up as it changes (search-as-you-type). Present only
    *  in a live session (ADR 0032); absent otherwise, so a component falls back
    *  to submit-on-enter. */
@@ -76,6 +82,28 @@ function useScopedRuntime(ctx: ShellRuntime, scope: Scope | null): ShellRuntime 
         const inner = action.actions[0];
         if (!inner) return { ok: false, error: { category: "InvalidArgument", message: "submit carries no action" } };
         const values = collect(scope);
+
+        // Enforce this client's copy of the rules before anything is sent. Not a
+        // trust boundary — the server checks again — but it is the difference
+        // between a field that says it is wrong and a round trip that comes back
+        // saying so.
+        //
+        // Every registered field is checked, including ones not on screen: a
+        // conditionally hidden required field would otherwise pass by not being
+        // rendered.
+        if (scope) {
+          const errors: Record<string, string> = {};
+          let bad = false;
+          for (const [field, rules] of Object.entries(scope.rules)) {
+            const message = validateField(values[field], rules, values);
+            errors[field] = message;
+            if (message) bad = true;
+          }
+          scope.setErrors(errors);
+          if (bad) {
+            return { ok: false, error: { category: "InvalidArgument", message: "Some fields need attention" } };
+          }
+        }
         // Merged under whatever the producer set, not over it. A server that
         // pinned a field in the action's input is stating something the form is
         // not allowed to overwrite.
