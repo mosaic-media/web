@@ -5,6 +5,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import "@mosaic-media/sdui-react/styles.css";
+// The no-session states, after the token skin so they can read its variables.
+import "@/standby.css";
 
 import { installComponents, onUnknownType } from "@mosaic-media/sdui-react";
 import { installMockModuleComponents } from "@/mock/moduleComponents";

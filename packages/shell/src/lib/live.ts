@@ -36,7 +36,12 @@ import {
 } from "@mosaic-media/sdui/session";
 import type { NodeList, UINode as WireNode } from "@mosaic-media/sdui/sdui-pb";
 
-export type LiveStatus = "connecting" | "open" | "reconnecting" | "closed";
+/** "offline" is reconnecting that has given up: the retries are exhausted and
+ *  nothing further is scheduled. It is separated from "reconnecting" because
+ *  the two are different things to tell a viewer — one is "wait", the other is
+ *  "the Platform is not there, and I have stopped asking". A shell that says
+ *  "Reconnecting…" forever is lying after the first minute. */
+export type LiveStatus = "connecting" | "open" | "reconnecting" | "offline" | "closed";
 
 /** An intent the Shell streams up the unary lane. */
 export type Intent =
@@ -78,6 +83,18 @@ interface LiveOptions {
 // attempt up to the ceiling.
 const BACKOFF_BASE = 300;
 const BACKOFF_CEIL = 10_000;
+
+// How many attempts before the Shell stops retrying and says the Platform is
+// offline. With the ceiling above, ten attempts is a little over a minute of
+// trying — long enough to ride out a Supervisor rolling a Generation (the
+// reconnect case this backoff was written for), short enough that a viewer
+// looking at a dead Platform is told so rather than watched a spinner.
+//
+// It stops rather than retrying forever because forever is not a state anyone
+// can act on: the retry loop and the message have to agree, and a shell still
+// saying "Reconnecting…" after five minutes has been lying for four of them.
+// Reloading the page starts a fresh run, which is the honest way back.
+const MAX_RECONNECT_ATTEMPTS = 10;
 
 let toastSeq = 0;
 
@@ -274,6 +291,10 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
         // to a backoff reconnect rather than surfacing an error.
       }
       if (disposed) return;
+      if (attempt >= MAX_RECONNECT_ATTEMPTS) {
+        setStatus("offline");
+        return;
+      }
       setStatus("reconnecting");
       const cap = Math.min(BACKOFF_CEIL, BACKOFF_BASE * 2 ** attempt);
       attempt += 1;

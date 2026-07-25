@@ -1,0 +1,207 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+/* SPDX-FileCopyrightText: 2026 the Mosaic authors */
+
+/*
+ * The no-session states — the Shell's only self-rendered UI (ADR 0031).
+ *
+ * These are hand-written on purpose and it is the one place in this client that
+ * is allowed to be. Everything else is a server-emitted SDUI tree, but these
+ * screens exist precisely when there is no server to emit one: the Platform is
+ * unreachable, so there is nothing to render from. They are styled from the
+ * design tokens, so a re-skin still reaches them.
+ *
+ * They will not live here forever. In a full deployment the Supervisor is the
+ * process that is still up when the Platform is not, and it is the honest owner
+ * of "the Platform is down" — at which point these become a Supervisor-served
+ * page and this file goes away.
+ */
+
+.mos-standby {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  text-align: center;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+/* The bloom behind the mark. Accent while there is still hope of a connection,
+   warning once the Shell has given up — the only colour difference between the
+   two states, and it reads before any of the words do. */
+.mos-standby::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(52% 48% at 50% 44%, rgba(var(--accent-rgb), 0.16), transparent 72%);
+}
+.mos-standby--offline::before {
+  background: radial-gradient(52% 48% at 50% 44%, var(--color-warning-quiet), transparent 72%);
+}
+.mos-standby::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: var(--material-scuff), var(--material-blotch), var(--material-grain);
+  background-size: var(--material-scuff-size), var(--material-blotch-size), var(--material-grain-size);
+  mix-blend-mode: soft-light;
+  opacity: 0.5;
+}
+
+.mos-standby__body {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 520px;
+  padding: 0 var(--space-6);
+}
+
+/* The Mosaic mark: the same 3×3 tile grid the app shell's nav pill carries, so
+   the thing a viewer sees when nothing works is the thing they see when
+   everything does. */
+.mos-standby__mark {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  width: 34px;
+  height: 34px;
+  margin-bottom: var(--space-7);
+}
+.mos-standby__mark span {
+  border-radius: 2px;
+  background: var(--color-text-faint);
+}
+.mos-standby__mark span:nth-child(odd) {
+  background: rgb(var(--accent-rgb));
+}
+/* Offline puts one dead tile at the centre of the mark. */
+.mos-standby--offline .mos-standby__mark span:nth-child(odd) {
+  background: var(--color-text-faint);
+}
+.mos-standby--offline .mos-standby__mark span:nth-child(5) {
+  background: var(--color-warning);
+}
+
+.mos-standby__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: rgba(var(--accent-rgb), 0.9);
+}
+.mos-standby--offline .mos-standby__eyebrow {
+  color: var(--color-warning);
+}
+.mos-standby__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+}
+
+.mos-standby__title {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+.mos-standby__message {
+  margin: 0 0 var(--space-6);
+  max-width: 400px;
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+/* The indeterminate sweep, shown only while a retry is actually pending. It is
+   a claim that something is happening, so it must not outlive the retries. */
+.mos-standby__bar {
+  position: relative;
+  width: 220px;
+  height: 3px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--color-progress-track);
+  margin-bottom: var(--space-7);
+}
+.mos-standby__bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  border-radius: 2px;
+  background: rgb(var(--accent-rgb));
+  animation: mos-standby-sweep 1.9s var(--ease) infinite;
+}
+@keyframes mos-standby-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mos-standby__bar i {
+    animation: none;
+    width: 100%;
+    opacity: 0.4;
+  }
+}
+
+.mos-standby__actions {
+  display: flex;
+  gap: var(--space-3);
+}
+.mos-standby__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 44px;
+  padding: 0 22px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text);
+  font: var(--weight-medium) var(--text-sm) / 1 var(--font-sans);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.mos-standby__btn:hover {
+  background: rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+.mos-standby__btn--solid {
+  border-color: transparent;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: var(--weight-bold);
+}
+.mos-standby__btn--solid:hover {
+  background: var(--color-text);
+  border-color: transparent;
+  transform: translateY(-1px);
+}
+
+.mos-standby__foot {
+  position: absolute;
+  bottom: var(--space-6);
+  left: 0;
+  right: 0;
+  z-index: 3;
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+}

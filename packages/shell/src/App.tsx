@@ -145,15 +145,27 @@ export function App() {
   }, [playerKey]);
   const showPlayer = playerKey !== "" && dismissedPlayer !== playerKey;
 
-  if (authError) return <Standby title="Can’t reach the Platform" message={authError} />;
+  // Sign-in failing is the Platform being unreachable before a session ever
+  // existed, so it is the offline state rather than a third variant: there is
+  // nothing to retry into, and reloading is the same way out.
+  if (authError) return <Standby offline title="Can’t reach your server." message={authError} />;
   if (status !== "open" || !composed) {
+    if (status === "offline") {
+      return (
+        <Standby
+          offline
+          title="Can’t reach your server."
+          message="Mosaic has lost its connection to the Platform and has stopped retrying."
+        />
+      );
+    }
     const reconnecting = status === "reconnecting";
     return (
       <Standby
-        title={reconnecting ? "Reconnecting…" : "Connecting…"}
+        title={reconnecting ? "Finding your server." : "Opening a session."}
         message={
           reconnecting
-            ? "Lost the connection to the Mosaic Platform. Retrying…"
+            ? "The connection to the Mosaic Platform dropped. Trying to pick it back up."
             : "Opening a live session with the Mosaic Platform."
         }
       />
@@ -191,31 +203,74 @@ export function App() {
 }
 
 /** Standby — the Shell's only self-rendered UI (ADR 0031): shown when there is
- *  no live session to render from. Deliberately minimal — not a fake app. */
-function Standby({ title, message }: { title: string; message: string }) {
+ *  no live session to render from.
+ *
+ *  It is hand-written, and this is the one place in this client allowed to be.
+ *  Everything else is a server-emitted SDUI tree; these screens exist precisely
+ *  when there is no server to emit one. They are styled from the design tokens
+ *  (standby.css) so a re-skin still reaches them, and they will not live here
+ *  forever: in a full deployment the Supervisor is the process still up when the
+ *  Platform is not, and it is the honest owner of "the Platform is down".
+ *
+ *  Two states, and the difference between them is the point. The default is
+ *  "wait — I am still asking", with a sweep that says something is in flight.
+ *  `offline` is "I have stopped asking", reached when the reconnect budget is
+ *  spent. A shell that says "Reconnecting…" forever is lying after the first
+ *  minute, and leaves a viewer unable to tell a Platform that is restarting
+ *  from one that is switched off.
+ *
+ *  Neither state invents anything it does not know. The mockups show a server
+ *  name, a last-seen time and an offline-downloads route; the Shell has none of
+ *  those — it has lost the only connection that could tell it — so they are
+ *  left out rather than filled with plausible text. */
+function Standby({
+  offline = false,
+  title,
+  message,
+}: {
+  offline?: boolean;
+  title: string;
+  message: string;
+}) {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "0.75rem",
-        height: "100vh",
-        textAlign: "center",
-        color: "var(--color-text, #e8e8ea)",
-        background: "var(--color-bg, #0b0b0f)",
-      }}
-    >
-      <img
-        src={`${import.meta.env.BASE_URL}mosaic-icon-dark.png`}
-        alt="Mosaic"
-        width={44}
-        height={44}
-        style={{ opacity: 0.9 }}
-      />
-      <h1 style={{ fontSize: "1.1rem", fontWeight: 600, margin: 0 }}>{title}</h1>
-      <p style={{ opacity: 0.6, margin: 0, fontSize: "0.9rem" }}>{message}</p>
+    <div className={offline ? "mos-standby mos-standby--offline" : "mos-standby"}>
+      <div className="mos-standby__body">
+        <span className="mos-standby__mark" role="img" aria-label="Mosaic">
+          {Array.from({ length: 9 }, (_, i) => (
+            <span key={i} />
+          ))}
+        </span>
+        <div className="mos-standby__eyebrow">
+          {offline && <span className="mos-standby__dot" />}
+          {offline ? "Platform offline" : "Connecting"}
+        </div>
+        {/* aria-live so a viewer using a screen reader is told when the Shell
+            gives up, rather than being left on the last thing it announced. */}
+        <h1 className="mos-standby__title" aria-live="polite">
+          {title}
+        </h1>
+        <p className="mos-standby__message">{message}</p>
+        {offline ? (
+          <div className="mos-standby__actions">
+            <button
+              type="button"
+              className="mos-standby__btn mos-standby__btn--solid"
+              // A reload rather than a re-subscribe: the retry budget is spent
+              // and its counter lives inside useLive, so a fresh document is the
+              // honest way to start a fresh run of attempts.
+              onClick={() => window.location.reload()}
+            >
+              Try again
+            </button>
+          </div>
+        ) : (
+          // Shown only while a retry is actually pending. The sweep is a claim
+          // that something is in flight, so it must not outlive the retries.
+          <div className="mos-standby__bar" role="progressbar" aria-label="Connecting">
+            <i />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
