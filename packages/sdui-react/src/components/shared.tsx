@@ -32,6 +32,7 @@ export type IconName =
   | "chevron-down"
   | "star"
   | "plus"
+  | "refresh"
   | "check"
   | "close"
   | "dots"
@@ -55,6 +56,10 @@ const PATHS: Record<IconName, string> = {
   "chevron-down": "M6 9l6 6 6-6",
   star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z",
   plus: "M12 5v14M5 12h14",
+  // A clockwise arc with a gap and an arrowhead in it. "Refresh sources" was
+  // drawn with `plus`, which names the wrong verb — re-importing tops up a
+  // candidate set, and a plus reads as adding the title itself.
+  refresh: "M21 12a9 9 0 11-2.64-6.36M21 3v6h-6",
   check: "M5 13l4 4L19 7",
   close: "M6 6l12 12M18 6L6 18",
   dots: "M5 12h.01M12 12h.01M19 12h.01",
