@@ -56,8 +56,21 @@ export type Align = "start" | "center" | "end" | "stretch" | "baseline";
 export type Justify = "start" | "center" | "end" | "between" | "around";
 /** `"screen"` is the viewport in the relevant axis (100dvh tall / 100vw wide) —
  *  the one non-parent-relative size, for full-bleed heroes and the app frame. It
- *  is portable: Flutter reads it as MediaQuery.size in that axis. */
-export type Dimension = number | "full" | "screen" | "auto" | `${number}%`;
+ *  is portable: Flutter reads it as MediaQuery.size in that axis.
+ *
+ *  `"NN% screen"` is a *fraction* of that same axis, for the hero that has to
+ *  stop short of the fold so the band under it shows. It is a distinct spelling
+ *  from a plain `"NN%"` on purpose: the two resolve against different boxes and
+ *  the difference stays invisible until it is catastrophic — a hero asking for
+ *  `"88%"` of a parent whose height is the page's own content resolves to 88% of
+ *  the entire scroll length, which is what it did. */
+export type Dimension =
+  | number
+  | "full"
+  | "screen"
+  | "auto"
+  | `${number}%`
+  | `${number}% screen`;
 export type GradientStop = ColorToken | "transparent";
 /** One column of an explicit grid: fixed px, content-sized, or n shares of what
  *  is left over. */
@@ -274,8 +287,17 @@ const dim = (d?: Dimension): string | undefined => {
 // Axis-aware dimension: "screen" resolves to the viewport unit for its axis
 // (dvh so mobile browser chrome doesn't clip a full-height frame); everything
 // else defers to dim().
-const vdim = (d: Dimension | undefined, axis: "w" | "h"): string | undefined =>
-  d === "screen" ? (axis === "h" ? "100dvh" : "100vw") : dim(d);
+const SCREEN_FRACTION = /^([0-9]+(?:\.[0-9]+)?)% screen$/;
+const vdim = (d: Dimension | undefined, axis: "w" | "h"): string | undefined => {
+  if (d === "screen") return axis === "h" ? "100dvh" : "100vw";
+  if (typeof d === "string") {
+    const m = SCREEN_FRACTION.exec(d);
+    // dvh rather than vh for the same reason "screen" uses it: mobile browser
+    // chrome must not clip a surface sized against the viewport.
+    if (m) return axis === "h" ? `${m[1]}dvh` : `${m[1]}vw`;
+  }
+  return dim(d);
+};
 
 const Z: Record<NonNullable<BoxStyle["z"]>, number> = { raised: 1, overlay: 100, toast: 200 };
 

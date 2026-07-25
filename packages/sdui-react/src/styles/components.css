@@ -23,6 +23,13 @@
 .msc-pressable {
   border: none;
   margin: 0;
+  /* A Pressable renders as a <button>, and a button carries the user agent's own
+     padding — 1px 6px in Chrome. This reset cleared six properties and not that
+     one, so every card in the product was 12px narrower and 2px shorter inside
+     than the definition asked for: a 132px cast portrait drew at 120. Nothing
+     reported it because the *outer* box was the right size; only the art inside
+     it shrank. Every Pressable that wants padding states it in its own style. */
+  padding: 0;
   background: transparent;
   color: inherit;
   font: inherit;
