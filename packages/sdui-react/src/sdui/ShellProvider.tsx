@@ -19,6 +19,10 @@ export interface ToastItem {
 
 interface ShellProviderProps {
   screen: string;
+  /** The params the current screen was navigated with. They are the scope a
+   *  prop binding resolves against, so they must be the params of the screen
+   *  currently rendered, not of the one being navigated to. */
+  params?: Record<string, unknown>;
   onNavigate: (screen: string, params?: Record<string, unknown>) => void;
   onBack: () => void;
   children: ReactNode;
@@ -39,7 +43,7 @@ interface ShellProviderProps {
 let seq = 0;
 const nextId = (p: string) => `${p}-${++seq}`;
 
-export function ShellProvider({ screen, onNavigate, onBack, children, render, onInvoke, onInput }: ShellProviderProps) {
+export function ShellProvider({ screen, params, onNavigate, onBack, children, render, onInvoke, onInput }: ShellProviderProps) {
   const [overlays, setOverlays] = useState<OverlayHandle[]>([]);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -156,7 +160,7 @@ export function ShellProvider({ screen, onNavigate, onBack, children, render, on
     [dispatch],
   );
 
-  const runtime = useMemo(() => ({ dispatch, emit, screen, input: onInput }), [dispatch, emit, screen, onInput]);
+  const runtime = useMemo(() => ({ dispatch, emit, screen, params, input: onInput }), [dispatch, emit, screen, params, onInput]);
 
   return (
     <ShellRuntimeContext.Provider value={runtime}>

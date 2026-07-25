@@ -8,12 +8,27 @@
  * layout, not the renderer.
  */
 
-import { Fragment } from "react";
+import { Fragment, useContext } from "react";
 import type { UINode } from "./types";
 import { resolve, reportUnknownType } from "./registry";
+import { resolveProps } from "./binding";
+import { ShellRuntimeContext } from "./context";
 import { Unknown } from "../components/feedback/Unknown";
 
 export function RenderNode({ node }: { node: UINode }) {
+  // Bindings resolve here, at render, against the params the current screen was
+  // navigated with. Here rather than once when the tree arrives, because a
+  // re-render with different params must re-resolve — and because a tree stored
+  // half-resolved is a tree nobody can reason about later, when state scopes add
+  // more places to look.
+  //
+  // resolveProps returns the identical object when nothing was bound, so a tree
+  // with no bindings — every tree today — costs one shallow scan per node and
+  // allocates nothing.
+  const runtime = useContext(ShellRuntimeContext);
+  const resolved = resolveProps(node.props, runtime?.params);
+  if (resolved !== node.props) node = { ...node, props: resolved };
+
   const Component = resolve(node.type);
   if (!Component) {
     // Report before drawing. The placeholder is the graceful half; this is the

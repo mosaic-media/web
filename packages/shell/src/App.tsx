@@ -148,6 +148,7 @@ export function App() {
   return (
     <ShellProvider
       screen={route.screen}
+      params={route.params}
       onNavigate={navigate}
       onBack={() => history.back()}
       onInvoke={onInvoke}

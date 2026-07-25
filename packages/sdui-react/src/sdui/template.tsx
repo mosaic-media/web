@@ -25,6 +25,7 @@
 
 import type { ReactElement } from "react";
 import type { UINode } from "./types";
+import { isBinding, getPath } from "./binding";
 import { register } from "./registry";
 import { RenderNode } from "./Renderer";
 
@@ -42,21 +43,16 @@ type Args = Record<string, unknown>;
 function isObj(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
-function isBind(v: unknown): v is { $bind: string } {
-  return isObj(v) && "$bind" in v;
-}
 function isMatch(v: unknown): v is { $match: { on: unknown; cases: Record<string, unknown>; default?: unknown } } {
   return isObj(v) && "$match" in v;
 }
 
-/** Walk a dot path ("s.label") through args/objects. */
-function getPath(root: unknown, path: string): unknown {
-  return path.split(".").reduce<unknown>((acc, key) => (isObj(acc) ? acc[key] : undefined), root);
-}
-
 /** Resolve a template value against args: bindings, matches, nested structures. */
 function resolveValue(v: unknown, args: Args): unknown {
-  if (isBind(v)) return getPath(args, v.$bind);
+  // Read through the shared rule rather than a local one: a template's $bind
+  // and a screen's $bind are one concept applied at two moments, and two
+  // readings of "is this a binding?" is how they drift apart.
+  if (isBinding(v)) return getPath(args, v[Object.keys(v)[0]!]);
   if (isMatch(v)) {
     const key = String(resolveValue(v.$match.on, args));
     const chosen = key in v.$match.cases ? v.$match.cases[key] : v.$match.default;

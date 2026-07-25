@@ -17,6 +17,11 @@ export type { NodeComponent, NodeComponentProps } from "./sdui/registry";
 // Recursive renderer.
 export { RenderNode, Children, Slot, hasSlot } from "./sdui/Renderer";
 
+// Bindable props (ADR 0086): a prop value may be a literal or a binding this
+// runtime resolves where the node renders.
+export { isBinding, bindingPath, resolveProps, BINDING_MARKER } from "./sdui/binding";
+export type { Binding } from "./sdui/binding";
+
 // Component definitions (data → components).
 export { defineComponent, defineComponents } from "./sdui/template";
 // The served design tokens (ADR 0040): the Platform pushes them, the client

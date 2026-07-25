@@ -24,6 +24,10 @@ export interface ShellRuntime {
   emit: (action?: Action) => void;
   /** Current screen name, for highlighting nav. */
   screen: string;
+  /** The params the current screen was navigated with — the scope a prop
+   *  binding resolves against. Absent outside a live session (the storybook),
+   *  where a binding simply resolves to nothing. */
+  params?: Record<string, unknown>;
   /** Stream a field value up as it changes (search-as-you-type). Present only
    *  in a live session (ADR 0032); absent otherwise, so a component falls back
    *  to submit-on-enter. */

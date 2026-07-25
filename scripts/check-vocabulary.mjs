@@ -64,6 +64,17 @@ const contractActions = fixture.actions;
 
 const problems = [];
 
+// The binding marker. A client resolving a different one than the server emits
+// would leave every bound prop as an unread literal object — drawing nothing,
+// reporting nothing, and looking exactly like a server that sent no value. It is
+// one string, so it is checked rather than trusted.
+if (native.BINDING_MARKER !== fixture.bindingMarker) {
+  problems.push(
+    `this client reads bindings marked "${native.BINDING_MARKER}" but the contract emits ` +
+      `"${fixture.bindingMarker}" — every bound prop would silently draw nothing.`,
+  );
+}
+
 const extra = (mine, theirs) => mine.filter((x) => !theirs.includes(x)).sort();
 const gap = (theirs, mine) => theirs.filter((x) => !mine.includes(x)).sort();
 const same = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -107,6 +118,7 @@ if (problems.length > 0) {
 console.error(
   `check-vocabulary: ${nativePrimitives.length}/${contractPrimitives.length} primitives, ` +
     `${NATIVE_ACTION_KINDS.length}/${contractActions.length} action kinds, ` +
+    `binding marker ${native.BINDING_MARKER}, ` +
     `against vocabulary ${fixture.version}. Declared gap: ` +
     `${EXPECTED_GAP.primitives.join(", ") || "none"} / ${EXPECTED_GAP.actions.join(", ") || "none"}.`,
 );

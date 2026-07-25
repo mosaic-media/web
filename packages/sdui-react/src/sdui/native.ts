@@ -17,6 +17,17 @@
  * here fails the build, and so does the reverse.
  */
 
+/**
+ * The single key that makes a prop value a binding rather than a literal.
+ *
+ * It lives here with the rest of the bare vocabulary data so
+ * scripts/check-vocabulary.mjs can measure it against the contract's
+ * conformance fixture: a client resolving a different marker than the server
+ * emits would leave every bound prop as an unread literal object, drawing
+ * nothing and reporting nothing.
+ */
+export const BINDING_MARKER = "$bind";
+
 /** Node types this client implements natively (ADR 0024's primitive tier). */
 export const NATIVE_PRIMITIVE_TYPES = [
   "Box",
