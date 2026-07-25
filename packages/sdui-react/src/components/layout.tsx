@@ -11,6 +11,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { UINode } from "../sdui/types.js";
 import { prop } from "../sdui/registry.js";
+import { useRuntime } from "../sdui/context.js";
 import { StateScope, type StateVar } from "../sdui/scope.js";
 import { Slot, Children, RenderNode } from "../sdui/Renderer.js";
 import { sampleArtColors, setAmbientArt } from "../sdui/artlight.js";
@@ -165,8 +166,11 @@ export function Rotator({ node }: { node: UINode }) {
  */
 export function State({ node }: { node: UINode }) {
   const vars = prop<StateVar[]>(node, "vars", []);
+  // The runtime is read here rather than inside StateScope, because scope.tsx is
+  // imported by the runtime's own module and reaching back for it is a cycle.
+  const { fieldErrors } = useRuntime();
   return (
-    <StateScope vars={Array.isArray(vars) ? vars : []}>
+    <StateScope vars={Array.isArray(vars) ? vars : []} pushedErrors={fieldErrors?.errors}>
       <Children nodes={node.children} />
     </StateScope>
   );

@@ -19,7 +19,6 @@
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ShellRuntimeContext } from "./context.js";
 
 /** One variable as the contract declares it. */
 export interface StateVar {
@@ -99,7 +98,20 @@ export function coerce(raw: string, type: StateVar["type"]): unknown {
 }
 
 /** StateScope — the runtime behind the State primitive. */
-export function StateScope({ vars, children }: { vars: StateVar[]; children: ReactNode }) {
+export function StateScope({
+  vars,
+  pushedErrors,
+  children,
+}: {
+  vars: StateVar[];
+  /** A rejection the server pushed, by field. Handed in rather than read from
+   *  the runtime context here: this module is imported *by* the runtime's own
+   *  module, and reaching back for it made a cycle in which whichever module
+   *  evaluated second saw `undefined` — so `useContext(undefined)` threw in
+   *  whatever component happened to render first. */
+  pushedErrors?: Record<string, string>;
+  children: ReactNode;
+}) {
   const parent = useContext(ScopeContext);
 
   const declared = useMemo(() => {
@@ -150,8 +162,7 @@ export function StateScope({ vars, children }: { vars: StateVar[]; children: Rea
   // that declares them. A name no scope declares is not silently dropped — the
   // Shell renders it as a form-level message — because a rejection nobody can
   // see is worse than one in the wrong place.
-  const runtime = useContext(ShellRuntimeContext);
-  const pushed = runtime?.fieldErrors?.errors;
+  const pushed = pushedErrors;
   useEffect(() => {
     if (!pushed) return;
     const mine: Record<string, string> = {};
