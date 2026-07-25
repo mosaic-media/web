@@ -35,18 +35,19 @@ const require = createRequire(import.meta.url);
  * What the contract declares and this client does not implement.
  *
  * Everything here is deliberate and belongs to a later slice of the SDUI thread:
- * `query` — partial region refresh — is what is left. `setValue` left this list
- * when State scopes landed and `submit` when forms did; `Form` left the
- * primitive tier entirely, because it turned out to be a composition. That is
- * the shape every entry here should eventually take: closed by building it, or
- * removed by discovering it was never native. They are in the contract now because a vocabulary is
+ * **The gap is empty.** Every entry left the right way: `setValue` when State
+ * scopes landed, `submit` when forms did, `query` when lazy lists needed it, and
+ * `Form` by leaving the primitive tier entirely once it turned out to be a
+ * composition. The list stays because the next contract addition will land here
+ * first, and stating the gap is what keeps being behind a position rather than
+ * an accident. They are in the contract now because a vocabulary is
  * versioned and negotiated as a whole — see ADR 0083 — and they are listed here
  * so that being behind the contract is a stated position rather than an
  * accident. Update this list in the change that closes a gap, not after.
  */
 const EXPECTED_GAP = {
   primitives: [],
-  actions: ["query"],
+  actions: [],
 };
 
 const fixture = JSON.parse(readFileSync(require.resolve("@mosaic-media/sdui/conformance"), "utf8"));

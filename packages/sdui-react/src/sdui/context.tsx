@@ -26,6 +26,9 @@ export interface ShellRuntime {
   emit: (action?: Action) => void;
   /** Current screen name, for highlighting nav. */
   screen: string;
+  /** Re-read a screen without pushing history (the `query` action kind). Absent
+   *  outside a live session, where a re-read has nothing to re-read from. */
+  onQuery?: (screen: string, params?: Record<string, unknown>) => void;
   /** The params the current screen was navigated with — the scope a prop
    *  binding resolves against. Absent outside a live session (the storybook),
    *  where a binding simply resolves to nothing. */

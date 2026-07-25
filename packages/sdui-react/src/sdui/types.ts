@@ -43,6 +43,10 @@ export type Action =
   | { kind: "navigate"; screen: string; params?: Record<string, unknown> }
   /** Go back in the Shell's navigation stack. */
   | { kind: "back" }
+  /** Re-read a screen's data without changing the route (ADR 0093). It differs
+   *  from navigate only in not pushing history — which is the whole difference
+   *  between fetching a further page and putting each page in the back button. */
+  | { kind: "query"; screen: string; params?: Record<string, unknown> }
   /** Open an external URL in a new tab (validated by the Shell). */
   | { kind: "openUrl"; url: string }
   /**

@@ -78,6 +78,7 @@ export const NATIVE_ACTION_KINDS = [
   "playPart",
   "toast",
   "sequence",
+  "query",
 ] as const;
 
 /**

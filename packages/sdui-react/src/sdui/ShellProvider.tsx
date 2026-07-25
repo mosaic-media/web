@@ -42,12 +42,16 @@ interface ShellProviderProps {
    *  reported as such rather than quietly attempted over a second transport. */
   onInvoke?: (mutation: string, input?: Record<string, unknown>) => void;
   onInput?: (value: string) => void;
+  /** Re-read a screen without pushing history — the `query` action kind. It is
+   *  separate from onNavigate rather than a flag on it because the difference is
+   *  the history entry, and a flag would put the decision at every call site. */
+  onQuery?: (screen: string, params?: Record<string, unknown>) => void;
 }
 
 let seq = 0;
 const nextId = (p: string) => `${p}-${++seq}`;
 
-export function ShellProvider({ screen, params, fieldErrors, onNavigate, onBack, children, render, onInvoke, onInput }: ShellProviderProps) {
+export function ShellProvider({ screen, params, fieldErrors, onNavigate, onBack, children, render, onInvoke, onInput, onQuery }: ShellProviderProps) {
   const [overlays, setOverlays] = useState<OverlayHandle[]>([]);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -75,6 +79,15 @@ export function ShellProvider({ screen, params, fieldErrors, onNavigate, onBack,
 
         case "back":
           onBack();
+          return { ok: true };
+
+        case "query":
+          // Same fetch as a navigate, without the history entry. A further page
+          // of a list is not somewhere the back button should return to.
+          if (!onQuery) {
+            return { ok: false, error: { category: "Unavailable", message: "Not connected to a Platform session." } };
+          }
+          onQuery(action.screen, action.params);
           return { ok: true };
 
         case "openUrl": {
@@ -174,7 +187,7 @@ export function ShellProvider({ screen, params, fieldErrors, onNavigate, onBack,
         }
       }
     },
-    [onNavigate, onBack, dismissOverlay, pushToast, onInvoke],
+    [onNavigate, onBack, dismissOverlay, pushToast, onInvoke, onQuery],
   );
 
   const emit = useCallback(
@@ -185,8 +198,8 @@ export function ShellProvider({ screen, params, fieldErrors, onNavigate, onBack,
   );
 
   const runtime = useMemo(
-    () => ({ dispatch, emit, screen, params, fieldErrors, input: onInput }),
-    [dispatch, emit, screen, params, fieldErrors, onInput],
+    () => ({ dispatch, emit, screen, params, fieldErrors, input: onInput, onQuery }),
+    [dispatch, emit, screen, params, fieldErrors, onInput, onQuery],
   );
 
   return (

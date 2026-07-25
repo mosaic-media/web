@@ -16,6 +16,7 @@ import { ShellRuntimeContext } from "./context";
 import { ScopeContext, lookup } from "./scope";
 import { useLifecycle } from "./lifecycle";
 import { useFocusBehaviour } from "./useFocusable";
+import { useLazyList } from "./paging";
 import type { Action } from "./types";
 import { Unknown } from "../components/feedback/Unknown";
 
@@ -56,6 +57,7 @@ export function RenderNode({ node }: { node: UINode }) {
   const onDisappear = resolved?.onDisappear as Action | undefined;
   const wantsFocus =
     resolved?.focusable === true || resolved?.focusGroup === true || resolved?.initialFocus === true;
+  const wantsPaging = resolved?.hasMore === true;
   const marker = useRef<HTMLSpanElement | null>(null);
   useLifecycle(marker, onAppear, onDisappear, runtime?.emit ?? noop);
 
@@ -65,6 +67,13 @@ export function RenderNode({ node }: { node: UINode }) {
   // and no cost.
   useFocusBehaviour(marker, resolved);
 
+  // A list that says it is a page of something longer asks for the next one as
+  // its end approaches. The child count is the guard: until it changes, the page
+  // has not arrived and asking again is a request loop.
+  const hasMore = resolved?.hasMore === true;
+  const loadMore = resolved?.loadMore as Action | undefined;
+  useLazyList(marker, hasMore, loadMore, node.children?.length ?? 0, runtime?.emit ?? noop);
+
   const Component = resolve(node.type);
   if (!Component) {
     // Report before drawing. The placeholder is the graceful half; this is the
@@ -73,7 +82,7 @@ export function RenderNode({ node }: { node: UINode }) {
     return <Unknown type={node.type} />;
   }
   const rendered = <Component node={node} />;
-  if (!onAppear && !onDisappear && !wantsFocus) return rendered;
+  if (!onAppear && !onDisappear && !wantsFocus && !wantsPaging) return rendered;
   return (
     <span ref={marker} style={CONTENTS} data-node-id={node.id}>
       {rendered}

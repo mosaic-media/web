@@ -39,6 +39,9 @@ export { a11yAttrs, ROLES } from "./sdui/a11y";
 export { nearestInDirection, focusablesIn, applyRoving } from "./sdui/focus";
 export type { FocusDirection } from "./sdui/focus";
 export { useFocusBehaviour } from "./sdui/useFocusable";
+
+// Lazy lists (ADR 0093): a page of something longer, and what fetches the next.
+export { useLazyList, PREFETCH_MARGIN_PX } from "./sdui/paging";
 export type { A11yAttrs } from "./sdui/a11y";
 export type { RuleSet, Predicate } from "./sdui/validate";
 export type { Scope, StateVar } from "./sdui/scope";

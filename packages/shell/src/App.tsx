@@ -74,6 +74,21 @@ export function App() {
     [send],
   );
 
+  // A `query` re-reads a screen without pushing history, and *replaces* the
+  // current entry rather than adding one. A further page of a list is not
+  // somewhere the back button should return to — a viewer who scrolled through
+  // five pages should get one press back to where they came from, not five.
+  const query = useCallback(
+    (screenName: string, params?: Record<string, unknown>) => {
+      const next: Route = params ? { screen: screenName, params } : { screen: screenName };
+      history.replaceState(next, "", routeToUrl(next));
+      routeRef.current = next;
+      setRoute(next);
+      send({ kind: "navigate", screen: screenName, params });
+    },
+    [send],
+  );
+
   const onInvoke = useCallback(
     (mutation: string, input?: Record<string, unknown>) => send({ kind: "invoke", action: mutation, input }),
     [send],
@@ -151,6 +166,7 @@ export function App() {
       params={route.params}
       fieldErrors={fieldErrors ?? undefined}
       onNavigate={navigate}
+      onQuery={query}
       onBack={() => history.back()}
       onInvoke={onInvoke}
       onInput={onInput}
