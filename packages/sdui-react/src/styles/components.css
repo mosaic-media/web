@@ -81,18 +81,33 @@
    The no-hover branch below is the stated fallback: a touch screen or a remote
    has no hover state at all, and a veil that could never be revealed would take
    the detail with it. Those clients get it always-visible. */
+/* Driven by an inherited custom property rather than a descendant selector,
+   because groups nest and only the NEAREST one may answer.
+   `.msc-hover-group:hover .msc-hover-reveal` looks right and is wrong: a
+   Section is a hover group (its "see all"), each episode row inside it is
+   another, and that selector matched every row's veil whenever the pointer was
+   anywhere in the section — so hovering one episode lit up all of them.
+
+   A custom property has exactly the semantics needed for free: it inherits, so
+   the closest ancestor that sets it wins, and an inner group resets its own
+   subtree to 0 while the outer one is showing 1. */
+.msc-hover-group {
+  --msc-reveal: 0;
+}
+.msc-hover-group:hover,
+.msc-hover-group:focus-within {
+  --msc-reveal: 1;
+}
 .msc-hover-reveal {
-  opacity: 0;
+  /* The fallback is 1: a reveal with no group above it must not be invisible
+     forever. Unreachable detail is the worse failure. */
+  opacity: var(--msc-reveal, 1);
   transition: opacity var(--dur-med) var(--ease);
 }
-.msc-hover-group:hover .msc-hover-reveal,
-.msc-hover-group:focus-visible .msc-hover-reveal,
-.msc-hover-group:focus-within .msc-hover-reveal {
-  opacity: 1;
-}
 @media (hover: none) {
-  .msc-hover-reveal {
-    opacity: 1;
+  .msc-hover-group,
+  .msc-hover-group:hover {
+    --msc-reveal: 1;
   }
 }
 
@@ -891,26 +906,38 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A segmented control: ONE track carrying the options, not a scatter of
+   separate chips. The distinction is the point — a segmented control says
+   "these are the alternatives and exactly one is chosen", which a row of
+   independently-bordered pills does not. */
 .msc-seasons {
-  display: flex;
-  gap: var(--space-2);
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   flex-wrap: wrap;
 }
 .msc-seasons__pill {
-  padding: var(--space-2) var(--space-4);
+  padding: 7px 15px;
+  border: none;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-raised);
+  background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
 }
+.msc-seasons__pill:hover {
+  color: var(--color-text);
+}
+/* The selected segment is a quiet accent wash, not a saturated fill: it marks
+   which one is chosen without competing with the episode artwork below it. */
 .msc-seasons__pill.is-active {
-  background: var(--gradient-accent);
-  color: var(--color-text-on-accent);
-  border-color: transparent;
-  box-shadow: var(--glow-accent);
+  color: var(--color-text);
+  background: rgba(var(--accent-rgb), var(--accent-quiet-a));
 }
 
 /* ──────────── computed / animated primitives ──────────── */
