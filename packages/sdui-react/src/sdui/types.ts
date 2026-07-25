@@ -73,7 +73,7 @@ export type Action =
    *  merged into its input (ADR 0088). The values lose to anything the producer
    *  set explicitly there — a pinned field is a statement the form must not
    *  overwrite. */
-  | { kind: "submit"; actions: Action[] }
+  | { kind: "submit"; actions: Action[]; field?: string }
   /** Run several actions in order. */
   | { kind: "sequence"; actions: Action[] };
 

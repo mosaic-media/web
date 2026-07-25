@@ -51,7 +51,6 @@ export const NATIVE_PRIMITIVE_TYPES = [
   "Slider",
   "Spacer",
   "State",
-  "SubmitField",
   "Switch",
   "Tabs",
   "Text",

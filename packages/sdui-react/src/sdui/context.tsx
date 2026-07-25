@@ -110,10 +110,19 @@ function useScopedRuntime(ctx: ShellRuntime, scope: Scope | null): ShellRuntime 
         // Merged under whatever the producer set, not over it. A server that
         // pinned a field in the action's input is stating something the form is
         // not allowed to overwrite.
-        const merged =
-          inner.kind === "invoke"
-            ? { ...inner, input: { ...values, ...(inner.input ?? {}) } }
-            : inner;
+        // Where the values land is the action's business, not this client's.
+        // `field` names a path into the input — "settings" for a module's
+        // configureModule, absent for the top level. Without it the values could
+        // only ever land at the top, which is the whole reason the string
+        // substitution it replaces survived as long as it did.
+        const into = action.field;
+        let merged = inner;
+        if (inner.kind === "invoke") {
+          const input = inner.input ?? {};
+          merged = into
+            ? { ...inner, input: { ...input, [into]: { ...values, ...((input[into] as object) ?? {}) } } }
+            : { ...inner, input: { ...values, ...input } };
+        }
         return dispatch(merged);
       }
       if (action.kind === "sequence") {

@@ -28,7 +28,7 @@ import { initAcrylic } from "../sdui/acrylic.js";
 import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives.js";
 import { NavItem } from "./shell.js";
 import { Tabs, NavBar, Rotator, State } from "./layout.js";
-import { TextInput, Switch, SelectInput, Menu, SearchBar, SubmitField, Slider, RatingControl, ProgressBar, ProgressRing } from "./controls.js";
+import { TextInput, Switch, SelectInput, Menu, SearchBar, Slider, RatingControl, ProgressBar, ProgressRing } from "./controls.js";
 import { SeasonSelector } from "./media.js";
 import { Player } from "./player.js";
 import { Skeleton } from "./feedback.js";
@@ -72,7 +72,6 @@ export const NATIVE_COMPONENTS = {
   State,
   Menu,
   SearchBar,
-  SubmitField,
   TextInput,
   Switch,
   SelectInput,
