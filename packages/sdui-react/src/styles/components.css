@@ -51,6 +51,72 @@
   background: linear-gradient(140deg, var(--color-surface-raised), var(--color-surface-overlay));
 }
 
+/* ── style.scrim / .glow / .grain ─────────────────────────────────────────────
+   The gradient itself is inline (boxToCss picks the recipe); what needs a rule
+   here is only what an inline style cannot say — the blend mode, and the fact
+   that a decorative overlay must never eat a pointer event aimed at the card
+   underneath it. */
+.msc-scrim,
+.msc-glow,
+.msc-grain {
+  pointer-events: none;
+}
+/* Screen-blend, so the bloom lights the artwork rather than fogging it. */
+.msc-glow {
+  mix-blend-mode: screen;
+  opacity: 0.55;
+}
+/* Soft-light, matching how global.css lays the same three textures on the page,
+   so a grained panel and the page behind it read as one material. */
+.msc-grain {
+  mix-blend-mode: soft-light;
+  opacity: 0.5;
+}
+
+/* ── style.hoverGroup / style.hoverReveal ─────────────────────────────────────
+   The card veil. Hidden at rest, revealed when the group is approached — by
+   pointer, or by keyboard focus landing anywhere inside it, so the detail is
+   reachable without a mouse.
+
+   The no-hover branch below is the stated fallback: a touch screen or a remote
+   has no hover state at all, and a veil that could never be revealed would take
+   the detail with it. Those clients get it always-visible. */
+.msc-hover-reveal {
+  opacity: 0;
+  transition: opacity var(--dur-med) var(--ease);
+}
+.msc-hover-group:hover .msc-hover-reveal,
+.msc-hover-group:focus-visible .msc-hover-reveal,
+.msc-hover-group:focus-within .msc-hover-reveal {
+  opacity: 1;
+}
+@media (hover: none) {
+  .msc-hover-reveal {
+    opacity: 1;
+  }
+}
+
+/* ── Image motion="drift" ─────────────────────────────────────────────────────
+   The slow scale-and-pan that makes a still backdrop read as a live surface.
+   A rule rather than an inline style because of the reduced-motion branch: a
+   viewer who has asked the platform for less movement gets a still frame. */
+.msc-image--drift {
+  animation: msc-drift 32s var(--ease) infinite alternate;
+}
+@keyframes msc-drift {
+  from {
+    transform: scale(1.03) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.11) translate3d(-1.5%, -1%, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .msc-image--drift {
+    animation: none;
+  }
+}
+
 /* ── Acrylic "Optical Parallax" material ──────────────────────────────────────
    Applied to every glass surface (the Box primitive adds .msc-acrylic when
    style.glass is set). Layer 1 (background distortion) is the element's own
@@ -346,13 +412,16 @@
 }
 
 /* ── Rotator — the home's cinematic hero carousel ─────────────────────────────
-   A sticky, viewport-tall stage that cross-fades through hero slides. It owns the
-   `sticky` behaviour the single hero used to have, so the content sheet still
-   scrolls UP over it (and the acrylic edge-light tracks the active slide's art).
-   Slides stack absolutely and cross-fade on opacity; dots sit low over the art. */
+   A viewport-tall stage that cross-fades through hero slides. Slides stack
+   absolutely and cross-fade on opacity; dots sit low over the art.
+
+   It scrolls away with the page rather than sticking under it. It was sticky
+   once, for a home whose rows rode on an opaque sheet that hid it on the way
+   past; the rows are now the page itself, with only `overlap` pulling the first
+   one into the hero's floor, so a sticky stage would sit visible *behind*
+   transparent content and read as two screens printed over each other. */
 .msc-rotator {
-  position: sticky;
-  top: 0;
+  position: relative;
   height: 100dvh;
   flex-shrink: 0;
   overflow: hidden;

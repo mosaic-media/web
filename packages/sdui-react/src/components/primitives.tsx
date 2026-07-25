@@ -18,7 +18,16 @@ import type { Action, UINode } from "../sdui/types.js";
 import { prop } from "../sdui/registry.js";
 import { Children } from "../sdui/Renderer.js";
 import { useRuntime } from "../sdui/context.js";
-import { boxToCss, mergeStyle, textToCss, type BoxStyle, type ColorToken, type SpaceToken, type TextStyle } from "../sdui/style.js";
+import {
+  boxClasses,
+  boxToCss,
+  mergeStyle,
+  textToCss,
+  type BoxStyle,
+  type ColorToken,
+  type SpaceToken,
+  type TextStyle,
+} from "../sdui/style.js";
 import { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, type Rgb } from "../sdui/artlight.js";
 import { cx, Icon, type IconName } from "./shared.js";
 import { a11yAttrs } from "../sdui/a11y.js";
@@ -59,7 +68,7 @@ export function Box({ node }: { node: UINode }) {
   const style = useResponsiveStyle(prop<BoxStyle>(node, "style", {}));
   return (
     <div
-      className={style.glass ? "msc-acrylic" : undefined}
+      className={cx(style.glass && "msc-acrylic", ...boxClasses(style)) || undefined}
       data-kind={style.kind}
       style={boxToCss(style)}
       {...a11yAttrs(node.props)}
@@ -95,6 +104,10 @@ export function Image({ node }: { node: UINode }) {
   const placeholder = prop<string | undefined>(node, "placeholder", undefined);
   const placeholderMode = prop<"label" | "initials">(node, "placeholderMode", "label");
   const artLight = prop<"ambient" | "focus" | undefined>(node, "artLight", undefined);
+  // A still backdrop reading as a live surface. The animation itself is a CSS
+  // rule (.msc-image--drift) because it honours prefers-reduced-motion, which an
+  // inline style cannot express.
+  const motion = prop<"drift" | undefined>(node, "motion", undefined);
   const style = prop<BoxStyle>(node, "style", {});
   const css = boxToCss(style);
 
@@ -180,6 +193,7 @@ export function Image({ node }: { node: UINode }) {
       // Remount when falling back so the browser re-fetches without crossOrigin.
       key={useCors ? "cors" : "plain"}
       ref={imgRef}
+      className={motion === "drift" ? "msc-image--drift" : undefined}
       src={src}
       alt={alt}
       loading={artLight === "ambient" ? "eager" : "lazy"}
@@ -218,7 +232,7 @@ export function Pressable({ node }: { node: UINode }) {
   const label = prop<string | undefined>(node, "label", undefined);
   return (
     <button
-      className={cx("msc-pressable", lift && "msc-pressable--lift", style.glass && "msc-acrylic")}
+      className={cx("msc-pressable", lift && "msc-pressable--lift", style.glass && "msc-acrylic", ...boxClasses(style))}
       style={boxToCss(style)}
       disabled={disabled}
       aria-label={label}
