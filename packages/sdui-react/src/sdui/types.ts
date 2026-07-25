@@ -61,6 +61,10 @@ export type Action =
   | { kind: "playPart"; partId: string; nodeId?: string }
   /** Show a transient toast. */
   | { kind: "toast"; message: string; tone?: Tone }
+  /** Write a value into the nearest enclosing State scope that declares the
+   *  field (ADR 0087). The value is a string on the wire; the scope's declared
+   *  type says how to read it. */
+  | { kind: "setValue"; field: string; value: string }
   /** Run several actions in order. */
   | { kind: "sequence"; actions: Action[] };
 

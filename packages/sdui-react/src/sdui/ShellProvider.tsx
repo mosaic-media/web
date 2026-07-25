@@ -126,6 +126,17 @@ export function ShellProvider({ screen, params, onNavigate, onBack, children, re
           return { ok: true };
         }
 
+        case "setValue":
+          // Reached only when a setValue is dispatched from outside any State
+          // scope — useRuntime handles it where the control is, because "the
+          // nearest enclosing scope" is a question only the emitting component
+          // can answer. Arriving here means there was no scope at all, which is
+          // a screen that wired a write to nothing.
+          return {
+            ok: false,
+            error: { category: "InvalidArgument", message: `No enclosing State scope declares "${action.field}"` },
+          };
+
         case "sequence": {
           let last: ActionResult = { ok: true };
           for (const a of action.actions) {

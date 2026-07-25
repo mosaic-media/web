@@ -8,11 +8,12 @@
  * layout, not the renderer.
  */
 
-import { Fragment, useContext } from "react";
+import { Fragment, useCallback, useContext } from "react";
 import type { UINode } from "./types";
 import { resolve, reportUnknownType } from "./registry";
-import { resolveProps } from "./binding";
+import { resolveProps, getPath, type BindingScope } from "./binding";
 import { ShellRuntimeContext } from "./context";
+import { ScopeContext, lookup } from "./scope";
 import { Unknown } from "../components/feedback/Unknown";
 
 export function RenderNode({ node }: { node: UINode }) {
@@ -26,7 +27,22 @@ export function RenderNode({ node }: { node: UINode }) {
   // with no bindings — every tree today — costs one shallow scan per node and
   // allocates nothing.
   const runtime = useContext(ShellRuntimeContext);
-  const resolved = resolveProps(node.props, runtime?.params);
+  const scope = useContext(ScopeContext);
+  // Nearest-first: a State scope that declares the name wins over an enclosing
+  // one, and the screen's params are the outermost scope of all. `lookup`
+  // reports whether a scope *declared* the name rather than whether it held a
+  // value, so a declared variable holding nothing stops the search instead of
+  // falling through to a screen param that happens to share its name.
+  const bindingScope = useCallback<BindingScope>(
+    (path) => {
+      const head = path.split(".")[0]!;
+      const hit = lookup(scope, head);
+      if (hit.found) return path.includes(".") ? getPath({ [head]: hit.value }, path) : hit.value;
+      return getPath(runtime?.params, path);
+    },
+    [scope, runtime?.params],
+  );
+  const resolved = resolveProps(node.props, bindingScope);
   if (resolved !== node.props) node = { ...node, props: resolved };
 
   const Component = resolve(node.type);

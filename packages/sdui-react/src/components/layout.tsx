@@ -11,6 +11,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { UINode } from "../sdui/types";
 import { prop } from "../sdui/registry";
+import { StateScope, type StateVar } from "../sdui/scope";
 import { Slot, Children, RenderNode } from "../sdui/Renderer";
 import { sampleArtColors, setAmbientArt } from "../sdui/artlight";
 import { cx } from "./shared";
@@ -150,5 +151,23 @@ export function Rotator({ node }: { node: UINode }) {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * State — the scope primitive (ADR 0087). It draws nothing: it declares named
+ * variables, holds them across renders, and renders its children inside them.
+ *
+ * Native because a tree is a description of one moment and something has to
+ * remember what was typed between two of them — and because it is the scope
+ * boundary itself, which is a question only the renderer, walking its own tree,
+ * can answer.
+ */
+export function State({ node }: { node: UINode }) {
+  const vars = prop<StateVar[]>(node, "vars", []);
+  return (
+    <StateScope vars={Array.isArray(vars) ? vars : []}>
+      <Children nodes={node.children} />
+    </StateScope>
   );
 }

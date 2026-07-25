@@ -8,8 +8,9 @@
  * for the network themselves.
  */
 
-import { createContext, useContext } from "react";
+import { createContext, useCallback, useContext } from "react";
 import type { Action, ActionResult, UINode } from "./types";
+import { ScopeContext, write, type Scope } from "./scope";
 
 export interface OverlayHandle {
   id: string;
@@ -36,10 +37,53 @@ export interface ShellRuntime {
 
 export const ShellRuntimeContext = createContext<ShellRuntime | null>(null);
 
+/**
+ * The runtime as seen from *this* point in the tree.
+ *
+ * setValue is handled here rather than in ShellProvider because it is the one
+ * action whose meaning depends on where it was emitted: "the nearest enclosing
+ * scope that declares this field" is a question only the component that emitted
+ * it can answer. Everything else is position-independent and is delegated.
+ *
+ * A sequence is walked here too, so a setValue nested inside one still resolves
+ * against the emitting component's scope rather than against nothing.
+ */
 export function useRuntime(): ShellRuntime {
   const ctx = useContext(ShellRuntimeContext);
+  const scope = useContext(ScopeContext);
   if (!ctx) {
     throw new Error("useRuntime must be used within a <ShellProvider>");
   }
-  return ctx;
+  return useScopedRuntime(ctx, scope);
+}
+
+function useScopedRuntime(ctx: ShellRuntime, scope: Scope | null): ShellRuntime {
+  const dispatch = useCallback(
+    async (action: Action): Promise<ActionResult> => {
+      if (action.kind === "setValue") {
+        if (!write(scope, action.field, action.value)) {
+          // Refused rather than silently creating a variable nobody reads. A
+          // write to a name no enclosing scope declares is a typo or a control
+          // outside the scope it thinks it is in, and both are worth a message.
+          return {
+            ok: false,
+            error: { category: "InvalidArgument", message: `No enclosing State scope declares "${action.field}"` },
+          };
+        }
+        return { ok: true };
+      }
+      if (action.kind === "sequence") {
+        let last: ActionResult = { ok: true };
+        for (const a of action.actions) {
+          last = await dispatch(a);
+          if (!last.ok) break;
+        }
+        return last;
+      }
+      return ctx.dispatch(action);
+    },
+    [ctx, scope],
+  );
+  const emit = useCallback((action?: Action) => { if (action) void dispatch(action); }, [dispatch]);
+  return { ...ctx, dispatch, emit };
 }

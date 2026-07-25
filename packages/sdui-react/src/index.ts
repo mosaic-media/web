@@ -20,6 +20,11 @@ export { RenderNode, Children, Slot, hasSlot } from "./sdui/Renderer";
 // Bindable props (ADR 0086): a prop value may be a literal or a binding this
 // runtime resolves where the node renders.
 export { isBinding, bindingPath, resolveProps, BINDING_MARKER } from "./sdui/binding";
+export type { BindingScope } from "./sdui/binding";
+
+// State scopes (ADR 0087): named variables a subtree binds to and writes.
+export { StateScope, ScopeContext, lookup, write, coerce } from "./sdui/scope";
+export type { Scope, StateVar } from "./sdui/scope";
 export type { Binding } from "./sdui/binding";
 
 // Component definitions (data → components).

@@ -49,6 +49,15 @@ export function bindingPath(v: unknown): string | undefined {
   return isBinding(v) ? (v as Record<string, string>)[BINDING_MARKER] : undefined;
 }
 
+/**
+ * How a path is looked up. It is a function rather than an object because a
+ * binding no longer resolves against one bag: it resolves against the nearest
+ * enclosing State scope that declares the name, then outward, and only then
+ * against the screen's params. Passing a merged object instead would flatten
+ * that order and let an outer scope's value shadow an inner one.
+ */
+export type BindingScope = (path: string) => unknown;
+
 /** Walk a dot path through a scope. Shared with the template expander so a
  *  binding means the same thing in a screen and in a definition. */
 export function getPath(root: unknown, path: string): unknown {
@@ -72,7 +81,7 @@ export function getPath(root: unknown, path: string): unknown {
  */
 export function resolveProps(
   props: Record<string, unknown> | undefined,
-  scope: Record<string, unknown> | undefined,
+  scope: BindingScope,
 ): Record<string, unknown> | undefined {
   if (!props) return props;
   let out: Record<string, unknown> | undefined;
@@ -88,9 +97,9 @@ export function resolveProps(
 
 /** Resolve one value, walking into arrays and objects so a binding nested inside
  *  a prop (a meta line, an action's input) resolves too. */
-function resolveValue(v: unknown, scope: Record<string, unknown> | undefined): unknown {
+function resolveValue(v: unknown, scope: BindingScope): unknown {
   const path = bindingPath(v);
-  if (path !== undefined) return getPath(scope, path);
+  if (path !== undefined) return scope(path);
   if (Array.isArray(v)) {
     let changed = false;
     const out = v.map((x) => {

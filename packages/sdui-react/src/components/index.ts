@@ -27,7 +27,7 @@ import { initAcrylic } from "../sdui/acrylic";
 
 import { Box, Text, Image, IconPrimitive, Pressable, Spacer, Fragment, Outlet } from "./primitives";
 import { NavItem } from "./shell";
-import { Tabs, NavBar, Rotator } from "./layout";
+import { Tabs, NavBar, Rotator, State } from "./layout";
 import { TextInput, Switch, SelectInput, Menu, SearchBar, SubmitField, Slider, RatingControl, ProgressBar, ProgressRing } from "./controls";
 import { SeasonSelector } from "./media";
 import { Player } from "./player";
@@ -65,6 +65,11 @@ export const NATIVE_COMPONENTS = {
   NavBar,
   // 1. primitive — the home's auto-advancing cinematic hero carousel
   Rotator,
+
+  // 1. primitive — the scope that remembers what was typed (ADR 0087). It
+  // draws nothing; it is native because a static tree cannot hold a value
+  // between two renders, and because it *is* the scope boundary.
+  State,
   Menu,
   SearchBar,
   SubmitField,
