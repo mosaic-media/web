@@ -28,6 +28,7 @@ export type IconName =
   | "play"
   | "search"
   | "chevron-right"
+  | "arrow-right"
   | "chevron-left"
   | "chevron-down"
   | "star"
@@ -52,6 +53,11 @@ const PATHS: Record<IconName, string> = {
   play: "M8 5v14l11-7z",
   search: "M10 4a6 6 0 104.9 9.5l4.3 4.3 1.4-1.4-4.3-4.3A6 6 0 0010 4zm0 2a4 4 0 110 8 4 4 0 010-8z",
   "chevron-right": "M9 6l6 6-6 6",
+  // Section's onward link has asked for this since the component existed, and
+  // the set never had it — so every "see all" arrow in the product rendered as
+  // nothing. A chevron is not a substitute: the design draws "Browse series →",
+  // and an arrow says "go there" where a chevron says "there is more".
+  "arrow-right": "M4 12h15M13 6l6 6-6 6",
   "chevron-left": "M15 6l-6 6 6 6",
   "chevron-down": "M6 9l6 6 6-6",
   star: "M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z",
