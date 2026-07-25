@@ -196,14 +196,14 @@ export const GROUPS: Group[] = [
     blurb: "Components a module contributed as pure ComponentDefinition data — the Platform never shipped them. Registered at runtime; rendered identically to built-ins.",
     demos: [
       {
-        name: "module.StatChip",
+        name: "demo:StatChip",
         node: {
           type: "Box",
           props: { style: { direction: "row", gap: 2, wrap: true } },
           children: [
-            { type: "module.StatChip", props: { icon: "star", label: "Rating", value: "8.9" } },
-            { type: "module.StatChip", props: { icon: "grid", label: "Episodes", value: "26", tone: "success" } },
-            { type: "module.StatChip", props: { icon: "info", label: "Year", value: "1998", tone: "info" } },
+            { type: "demo:StatChip", props: { icon: "star", label: "Rating", value: "8.9" } },
+            { type: "demo:StatChip", props: { icon: "grid", label: "Episodes", value: "26", tone: "success" } },
+            { type: "demo:StatChip", props: { icon: "info", label: "Year", value: "1998", tone: "info" } },
           ],
         },
       },

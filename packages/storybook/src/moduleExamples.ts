@@ -4,7 +4,7 @@
 import { defineComponents, type ComponentDefinition } from "@mosaic-media/sdui-react";
 
 const statChip: ComponentDefinition = {
-  name: "module.StatChip",
+  name: "demo:StatChip",
   params: { icon: "star", tone: "accent" },
   template: {
     type: "Box",

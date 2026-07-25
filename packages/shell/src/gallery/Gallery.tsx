@@ -158,27 +158,27 @@ const GROUPS: Group[] = [
     blurb: "Components a module contributed as pure data — the Platform never shipped them. Registered at runtime via defineComponent; the Shell expands the primitive template like any other node.",
     demos: [
       {
-        name: "module.StatChip",
+        name: "demo:StatChip",
         wide: true,
         node: {
           type: "Box",
           props: { style: { direction: "row", gap: 2, wrap: true } },
           children: [
-            { type: "module.StatChip", props: { icon: "star", label: "Rating", value: "8.9" } },
-            { type: "module.StatChip", props: { icon: "grid", label: "Episodes", value: "26", tone: "success" } },
-            { type: "module.StatChip", props: { icon: "info", label: "Year", value: "1998", tone: "info" } },
+            { type: "demo:StatChip", props: { icon: "star", label: "Rating", value: "8.9" } },
+            { type: "demo:StatChip", props: { icon: "grid", label: "Episodes", value: "26", tone: "success" } },
+            { type: "demo:StatChip", props: { icon: "info", label: "Year", value: "1998", tone: "info" } },
           ],
         },
       },
       {
-        name: "module.Panel (Outlet passthrough)",
+        name: "demo:Panel (Outlet passthrough)",
         wide: true,
         node: {
-          type: "module.Panel",
+          type: "demo:Panel",
           props: { title: "A module-defined panel" },
           children: [
             { type: "Text", props: { text: "The caller's children flow into the panel body through an Outlet.", style: { color: "text-muted" } } },
-            { type: "module.StatChip", props: { icon: "check", label: "Nested", value: "works" } },
+            { type: "demo:StatChip", props: { icon: "check", label: "Nested", value: "works" } },
           ],
         },
       },

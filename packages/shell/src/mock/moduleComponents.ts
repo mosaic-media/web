@@ -10,12 +10,19 @@
  *
  * In production these would arrive over the wire (a module's manifest / a
  * payload) and be registered at runtime; here we register them at boot.
+ *
+ * The names are namespaced `demo:Type` because that is the contract's rule
+ * (ADR 0085): a core type is unprefixed, a module's carries the id of the module
+ * that owns it, and the Platform refuses a module tree that breaks it. These
+ * used to be `module.StatChip` — a separator invented here, in a client, for a
+ * convention that did not exist yet, which is the small version of exactly the
+ * drift this simulation is meant to be honest about.
  */
 
 import { defineComponents, type ComponentDefinition } from "@mosaic-media/sdui-react";
 
 const statChip: ComponentDefinition = {
-  name: "module.StatChip",
+  name: "demo:StatChip",
   params: { icon: "star", tone: "accent" },
   template: {
     type: "Box",
@@ -32,7 +39,7 @@ const statChip: ComponentDefinition = {
 
 // Demonstrates Outlet: the caller's children flow into the panel body.
 const panel: ComponentDefinition = {
-  name: "module.Panel",
+  name: "demo:Panel",
   template: {
     type: "Box",
     props: { style: { gap: 3, p: 4, bg: "surface", border: true, radius: "lg" } },
