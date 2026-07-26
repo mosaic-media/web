@@ -22,7 +22,14 @@
 /* Derived from the dark theme's tokens. */
 :root,
 :root[data-theme="dark"] {
-  --ambient: radial-gradient(1100px 620px at 18% -8%, var(--art-glow-1), transparent 60%), radial-gradient(900px 560px at 88% 6%, var(--art-glow-2), transparent 62%), radial-gradient(1200px 800px at 60% 108%, var(--art-glow-3), transparent 60%);
+  /* Anchored to the artwork, not to the viewport. acrylic.ts publishes
+     --art-origin-x/y — the luminance centroid of the current backdrop, in
+     viewport percentages — so the wash sits under the thing casting it instead
+     of at a fixed corner that has no relationship to where the art is. The three
+     layers keep their original spread by offsetting from that origin, and the
+     fallbacks are the previous literals, so a page with no artwork renders
+     exactly what it rendered before. */
+  --ambient: radial-gradient(1100px 620px at var(--art-origin-x, 18%) var(--art-origin-y, -8%), var(--art-glow-1), transparent 60%), radial-gradient(900px 560px at calc(var(--art-origin-x, 18%) + 70%) calc(var(--art-origin-y, -8%) + 14%), var(--art-glow-2), transparent 62%), radial-gradient(1200px 800px at calc(var(--art-origin-x, 18%) + 42%) calc(var(--art-origin-y, -8%) + 116%), var(--art-glow-3), transparent 60%);
   --color-accent: rgb(var(--accent-rgb));
   --color-accent-hover: color-mix(in srgb, rgb(var(--accent-rgb)) 78%, #ffffff);
   --color-accent-quiet: rgba(var(--accent-rgb), var(--accent-quiet-a));
@@ -33,7 +40,7 @@
 
 /* Derived from the light theme's tokens — only the INPUTS differ. */
 :root[data-theme="light"] {
-  --ambient: radial-gradient(1100px 640px at 16% -10%, var(--art-glow-1), transparent 60%), radial-gradient(1000px 620px at 92% -4%, var(--art-glow-2), transparent 62%), radial-gradient(1200px 820px at 62% 112%, var(--art-glow-3), transparent 60%);
+  --ambient: radial-gradient(1100px 640px at var(--art-origin-x, 16%) var(--art-origin-y, -10%), var(--art-glow-1), transparent 60%), radial-gradient(1000px 620px at calc(var(--art-origin-x, 16%) + 76%) calc(var(--art-origin-y, -10%) + 6%), var(--art-glow-2), transparent 62%), radial-gradient(1200px 820px at calc(var(--art-origin-x, 16%) + 46%) calc(var(--art-origin-y, -10%) + 122%), var(--art-glow-3), transparent 60%);
   --color-accent-hover: color-mix(in srgb, rgb(var(--accent-rgb)) 82%, #000000);
   --shadow-3: 0 24px 60px rgba(90, 60, 130, 0.2), 0 0 40px rgba(var(--accent-rgb), 0.18);
 }

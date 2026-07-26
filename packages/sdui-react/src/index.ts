@@ -70,8 +70,20 @@ export type { BoxStyle, TextStyle, ColorToken, SpaceToken, RadiusToken } from ".
 
 // Art-light: the artwork-driven ambient "refraction" wash. The Image primitive
 // drives it via `artLight`; consumers only need refreshArtLight() on theme change.
-export { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, refreshArtLight } from "./sdui/artlight.js";
-export type { Rgb } from "./sdui/artlight.js";
+export {
+  sampleArtColors,
+  sampleArtLight,
+  setAmbientArt,
+  focusArt,
+  releaseArt,
+  clearAmbientArt,
+  refreshArtLight,
+  currentLightMap,
+  sampleLab,
+  rgbToLab,
+  labToRgb,
+} from "./sdui/artlight.js";
+export type { Rgb, Lab, LightMap, ArtSample } from "./sdui/artlight.js";
 
 // The built-in component vocabulary (primitives + definitions).
 export { installComponents, NATIVE_COMPONENTS } from "./components/index.js";

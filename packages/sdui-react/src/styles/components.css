@@ -159,8 +159,16 @@
      light pooling beneath the panel — over a dark depth shadow. */
   /* Offset and blur are deliberately short. A caustic is light pooling just
      under the panel's shadow edge; spread over 44px it stops being a material
-     property and becomes a halo. */
+     property and becomes a halo.
+
+     The first shadow is the opposite thing: a BLOOM thrown toward the light, in
+     the colour of whichever edge faces it. A rim on its own is a 1px line, and
+     what reads as a lit edge is the line plus the light coming off it. Offset
+     toward the source (positive --lx/--ly) so it gathers at the corner that
+     faces the artwork rather than haloing the whole panel. */
   box-shadow:
+    calc(var(--lx, var(--light-x)) * 9px) calc(var(--ly, var(--light-y)) * 11px) 28px
+      rgba(var(--edge-lit, var(--acrylic-edge)), calc(0.3 * var(--acrylic-intensity, 1))),
     calc(var(--lx, var(--light-x)) * -7px) calc(var(--ly, var(--light-y)) * -9px) 20px
       rgba(var(--acrylic-caustic), calc(var(--acrylic-caustic-a) * var(--acrylic-intensity, 1))),
     calc(var(--lx, var(--light-x)) * -6px) calc(var(--ly, var(--light-y)) * -9px) 18px rgba(2, 3, 8, 0.45);
@@ -190,14 +198,25 @@
   border-radius: inherit;
   padding: 1px;
   pointer-events: none;
-  /* Layer 3 — directional edge light: a bright, art-2-coloured rim on the edge
-     facing the light, dim on the far edge. */
+  /* Layer 3 — directional edge light. A CONIC sweep rather than a linear ramp,
+     because the rim's colour has to vary around the perimeter: cool where the
+     sky is behind that edge, warm where the sunset is. A linear gradient across
+     the whole element can put its bright end at a corner, but it carries one
+     hue, and one hue per surface is a statement the material cannot make no
+     matter how well the colour is picked.
+
+     acrylic.ts samples each edge from the light map and bakes the brightness
+     ramp into the colour it writes, so this stays a plain sweep between four
+     measured values. The fallback chain is what an unmeasured surface gets: the
+     palette's single edge colour, which is the old behaviour exactly. */
   opacity: calc(var(--acrylic-edge-strength) * var(--acrylic-intensity, 1));
-  background: linear-gradient(
-    var(--edge-angle, var(--light-angle)),
-    rgba(255, 255, 255, 0.015) 0%,
-    rgba(var(--acrylic-edge), 0.2) 46%,
-    color-mix(in srgb, rgb(var(--acrylic-edge)) 62%, #ffffff) 100%
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgb(var(--edge-t, var(--acrylic-edge))) 0deg,
+    rgb(var(--edge-r, var(--acrylic-edge))) 90deg,
+    rgb(var(--edge-b, var(--acrylic-edge))) 180deg,
+    rgb(var(--edge-l, var(--acrylic-edge))) 270deg,
+    rgb(var(--edge-t, var(--acrylic-edge))) 360deg
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;

@@ -14,7 +14,7 @@ import { prop } from "../sdui/registry.js";
 import { useRuntime } from "../sdui/context.js";
 import { StateScope, type StateVar } from "../sdui/scope.js";
 import { Slot, Children, RenderNode } from "../sdui/Renderer.js";
-import { sampleArtColors, setAmbientArt } from "../sdui/artlight.js";
+import { sampleArtLight, setAmbientArt } from "../sdui/artlight.js";
 import { cx } from "./shared.js";
 
 /**
@@ -107,8 +107,8 @@ export function Rotator({ node }: { node: UINode }) {
     const img = slide?.querySelector("img") as HTMLImageElement | null;
     if (!img) return;
     const apply = () => {
-      const colors = sampleArtColors(img);
-      if (colors) setAmbientArt(colors);
+      const s = sampleArtLight(img);
+      if (s) setAmbientArt(s.palette, s.map);
     };
     if (img.complete) apply();
     else {
