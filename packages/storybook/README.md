@@ -2,7 +2,7 @@
 
 A live, **bespoke** storybook for the [Mosaic](https://github.com/mosaic-media) Server-Driven-UI component library. Every component is rendered from real SDUI data through [`@mosaic-media/sdui-react`](https://github.com/mosaic-media/web/tree/main/packages/sdui-react), shown beside the `UINode` payload that produced it.
 
-> **Live:** [mosaic-media.github.io/mosaic-storybook](https://mosaic-media.github.io/mosaic-storybook)
+> **Live:** [mosaic-media.github.io/web](https://mosaic-media.github.io/web)
 
 ## Why bespoke (not Storybook.js)
 
@@ -22,7 +22,7 @@ Primitives, layout, media, controls, feedback, and **module-defined** components
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173/mosaic-storybook/
+npm run dev      # http://localhost:5173/web/
 npm run build    # static site → dist/
 ```
 

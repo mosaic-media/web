@@ -2,7 +2,7 @@
 // The web binding: primitives, the registry, the recursive renderer, the
 // definition expander, the runtime context/provider, the token-driven skin, and
 // the built-in component vocabulary. Consumed by the Shell app and by
-// mosaic-storybook. It is a *client implementation* (AGPL-3.0-only), distinct
+// the storybook package. It is a *client implementation* (AGPL-3.0-only), distinct
 // from the technology-agnostic contract in @mosaic-media/sdui.
 //
 // Styles ship separately: import "@mosaic-media/sdui-react/styles.css".

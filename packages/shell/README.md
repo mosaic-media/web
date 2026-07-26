@@ -1,6 +1,6 @@
 # Mosaic Shell
 
-A **server-driven-UI (SDUI) web client** for the [Mosaic](https://github.com/mosaic-media) self-hosted media platform. The Platform sends a tree of UI nodes; the Shell renders them. This repo is the **skeleton**: the SDUI runtime, the full component vocabulary, and a neutral, token-driven skin. The Mosaic Design Language will land on top of the tokens later — no component rewrites required.
+A **server-driven-UI (SDUI) web client** for the [Mosaic](https://github.com/mosaic-media) self-hosted media platform. The Platform sends a tree of UI nodes; the Shell renders them. This package is the **skeleton**: the SDUI runtime, the full component vocabulary, and a neutral, token-driven skin. The Mosaic Design Language will land on top of the tokens later — no component rewrites required.
 
 > Status: `v0.0.1` — skeleton, now running live. It signs in over the Platform's `AuthService` and renders what the two-lane `SessionService` pushes (ADR 0041/0061); the mock SDUI payloads remain in-tree but are off the boot path.
 
@@ -33,7 +33,7 @@ src/
 Dependencies: `@mosaic-media/sdui-react` (the renderer) — which brings the
 component vocabulary and the skin (`@mosaic-media/sdui-react/styles.css`). Browse
 every component live at the
-[storybook](https://mosaic-media.github.io/mosaic-storybook/).
+[storybook](https://mosaic-media.github.io/web/).
 
 ### The component model
 
@@ -63,7 +63,7 @@ Flutter) implements.
 The runtime rebuilds *its own* components this way — containers included — the
 proof the vocabulary is expressive enough for a module to build any look from
 data. This repo's `mock/moduleComponents.ts` simulates a module doing exactly
-that. Open the **Components** gallery (or the [storybook](https://mosaic-media.github.io/mosaic-storybook/))
+that. Open the **Components** gallery (or the [storybook](https://mosaic-media.github.io/web/))
 to see it live.
 
 **Known boundaries** (each maps to a future vocab addition): definitions drop
