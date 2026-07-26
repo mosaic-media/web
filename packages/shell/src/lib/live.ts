@@ -25,6 +25,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { applyTokens, defineComponents, type ToastItem, type Tone, type UINode } from "@mosaic-media/sdui-react";
 import { createClient, type Client } from "@connectrpc/connect";
 import { clientProfile } from "./profile";
+import { currentSession, isUnauthenticated, refreshSession, type StoredSession } from "./session";
 import { clientVocabulary } from "./vocabulary";
 import { currentTraceId } from "./trace";
 import { transport } from "./transport";
@@ -77,6 +78,11 @@ interface LiveOptions {
   /** Called on every (re)open with a live send. The Shell uses it to re-Attach
    *  the current route so the server re-renders it. */
   onOpen?: (send: (intent: Intent) => void) => void;
+  /** Called when the credential could not be renewed (ADR 0102) — the refresh
+   *  chain is gone, so there is nothing to retry and the client is signed out.
+   *  It is separate from the reconnect backoff because it is a different fact:
+   *  the Platform is reachable and is refusing. */
+  onSignedOut?: () => void;
 }
 
 // Full-jitter backoff: the delay is a random point in [0, cap], cap doubling each
@@ -105,7 +111,7 @@ const jsonBytes = (v: Record<string, unknown> | undefined): Uint8Array =>
 /** Opens the live session once the session id is known, exposing the pushed
  *  shell/regions and a way to stream intents up. Reconnects automatically with
  *  resume. */
-export function useLive(session: string | null, options: LiveOptions = {}): Live {
+export function useLive(session: StoredSession | null, options: LiveOptions = {}): Live {
   const [status, setStatus] = useState<LiveStatus>("connecting");
   // Counted rather than boolean: two intents can be in flight at once (a
   // navigate while a search is still resolving), and a flag would clear on the
@@ -120,6 +126,15 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
   // depend on it — the stream must not tear down when the callback changes.
   const onOpenRef = useRef(options.onOpen);
   onOpenRef.current = options.onOpen;
+  const onSignedOutRef = useRef(options.onSignedOut);
+  onSignedOutRef.current = options.onSignedOut;
+
+  // The live credential (ADR 0102). Held in a ref rather than in state because
+  // a rotation must not re-run the effect below: refreshing is a routine thing
+  // that happens every few minutes, and tearing the stream down each time would
+  // turn the pair into a reconnect loop.
+  const credentialRef = useRef<StoredSession | null>(session);
+  credentialRef.current = credentialRef.current ?? session;
 
   // send is stable; it forwards to the current connection's dispatcher.
   const sendRef = useRef<(intent: Intent) => void>(() => {});
@@ -143,6 +158,8 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
   useEffect(() => {
     if (!session) return;
 
+    credentialRef.current = session;
+
     const client: Client<typeof SessionService> = createClient(SessionService, transport);
     const abort = new AbortController();
     let disposed = false;
@@ -150,7 +167,36 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
     let cursor = 0n; // last seq seen — the resume cursor.
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
-    sendRef.current = (intent) => void runIntent(client, session, intent, abort.signal);
+    // The credential every call goes through (ADR 0102). It renews the access
+    // token before it expires and, if a call is refused anyway, refreshes once
+    // and retries — which is the whole of "every client implements refresh,
+    // including retry-on-Unauthenticated", in the one place the four clients
+    // must not diverge.
+    const withCredential = async <T,>(fn: (token: string) => Promise<T>): Promise<T> => {
+      const held = credentialRef.current;
+      if (!held) throw new Error("no session");
+      let live = await currentSession(held);
+      credentialRef.current = live;
+      try {
+        return await fn(live.accessToken);
+      } catch (err) {
+        if (!isUnauthenticated(err)) throw err;
+        // Refused despite a token this client believed in: the server's clock,
+        // a revocation, or a restart. One refresh and one retry — a loop here
+        // would hammer a Platform that has already said no.
+        live = await refreshSession(credentialRef.current);
+        credentialRef.current = live;
+        return fn(live.accessToken);
+      }
+    };
+
+    sendRef.current = (intent) => {
+      void withCredential((token) => runIntent(client, token, intent, abort.signal)).catch(() => {
+        // runIntent already swallows and records an intent failure; what
+        // reaches here is a credential that could not be renewed.
+        onSignedOutRef.current?.();
+      });
+    };
 
     const applyRegion = (u: RegionUpdate) => {
       const node = u.uiNode ? toStructural(u.uiNode) : null;
@@ -250,8 +296,14 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
       setStatus((prev) => (prev === "open" || attempt > 0 ? "reconnecting" : "connecting"));
       let opened = false;
       try {
+        // The stream is opened through the credential too, so a client coming
+        // back after an absence renews before it subscribes rather than
+        // discovering the expiry as a failed connect it would then back off
+        // from.
+        const held = await currentSession(credentialRef.current ?? session);
+        credentialRef.current = held;
         const stream = client.subscribe(
-          { session, resumeCursor: cursor },
+          { session: held.accessToken, resumeCursor: cursor },
           { signal: abort.signal },
         );
         for await (const msg of stream) {
@@ -265,8 +317,23 @@ export function useLive(session: string | null, options: LiveOptions = {}): Live
           cursor = msg.seq;
           apply(msg);
         }
-      } catch {
+      } catch (err) {
         if (disposed) return;
+        if (isUnauthenticated(err)) {
+          // Refused rather than dropped. Refresh once and reconnect at once —
+          // backing off would leave a client that only needed a new token
+          // staring at "reconnecting" for a minute.
+          try {
+            credentialRef.current = await refreshSession(credentialRef.current ?? session);
+            attempt = 0;
+            void connect();
+            return;
+          } catch {
+            onSignedOutRef.current?.();
+            setStatus("closed");
+            return;
+          }
+        }
         // A drop (server going away, restart, network) is expected — fall through
         // to a backoff reconnect rather than surfacing an error.
       }
@@ -342,14 +409,22 @@ async function runIntent(
         break;
     }
   } catch (err) {
-    // An intent either succeeds (Ack) or fails; its visible effect arrives on the
-    // push lane. A failed/aborted intent is swallowed here — the stream is the
-    // source of truth, so we do not throw into React.
+    // **An Unauthenticated intent is rethrown, and that is load-bearing**
+    // (ADR 0102). Everything else is swallowed — the stream is the source of
+    // truth, so an ordinary failure does not throw into React — but swallowing
+    // this one defeats the refresh above it: the caller cannot retry an error
+    // it never sees, and the client sits on a credential the server has
+    // already refused.
     //
-    // Swallowed is not the same as unrecorded, though. The trace id is written
-    // to the console so a failure a user can see but not describe becomes one
-    // string they can quote, and that string joins this click to the Platform's
-    // own records of what it did with it (ADR 0054).
+    // Found by revoking a live device and watching the browser carry on
+    // showing the screen it had. The transport said 401, the retry was written,
+    // and this catch ate the only signal that would have triggered it.
+    if (isUnauthenticated(err)) throw err;
+
+    // Swallowed is not the same as unrecorded. The trace id is written to the
+    // console so a failure a user can see but not describe becomes one string
+    // they can quote, and that string joins this click to the Platform's own
+    // records of what it did with it (ADR 0054).
     if (!signal.aborted) {
       console.warn(`mosaic: intent "${intent.kind}" failed (trace ${currentTraceId()})`, err);
     }

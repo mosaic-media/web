@@ -18,13 +18,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShellProvider, RenderNode, OverlayHost, ToastHost, refreshArtLight } from "@mosaic-media/sdui-react";
 import type { UINode } from "@mosaic-media/sdui-react";
-import { devSignIn } from "@/lib/session";
+import { clearSession, loadSession, signIn, type StoredSession } from "@/lib/session";
 import { fetchDoorway } from "@/lib/bootstrap";
 import { useLive, type Intent } from "@/lib/live";
 import { routeFromLocation, routeToUrl, sameRoute, type Route } from "@/lib/history";
 
 export function App() {
-  const [session, setSession] = useState<string | null>(null);
+  const [session, setSession] = useState<StoredSession | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   // The doorway (ADR 0101): the server-emitted screen shown before a session
   // exists, with the skin and the components it needs delivered alongside it.
@@ -66,10 +66,20 @@ export function App() {
         // the doorway would say the same thing less well.
       },
     );
-    devSignIn().then(
-      (s) => !cancelled && setSession(s),
-      (e: unknown) => !cancelled && setAuthError(e instanceof Error ? e.message : "Sign-in failed"),
-    );
+
+    // A stored credential is used as it is (ADR 0102). This is what makes
+    // closing the browser for a fortnight and coming back still signed in the
+    // ordinary case rather than the exceptional one: nothing is re-authenticated
+    // on boot, because the pair outlived the page.
+    const stored = loadSession();
+    if (stored) {
+      setSession(stored);
+    } else {
+      signIn().then(
+        (s) => !cancelled && setSession(s),
+        (e: unknown) => !cancelled && setAuthError(e instanceof Error ? e.message : "Sign-in failed"),
+      );
+    }
 
     return () => {
       cancelled = true;
@@ -84,7 +94,21 @@ export function App() {
     send({ kind: "attach", screen: r.screen, params: r.params });
   }, []);
 
-  const { status, shell, regions, toasts, fieldErrors, send, dismissToast, pending } = useLive(session, { onOpen: declareRoute });
+  // A credential that could not be renewed is a sign-out: the refresh chain is
+  // gone, so there is nothing to retry. The stored pair is dropped and the
+  // doorway is what the client falls back to, which is ADR 0101's "the same
+  // call answers a refused session" — signed out and never signed in are one
+  // path.
+  const onSignedOut = useCallback(() => {
+    clearSession();
+    setSession(null);
+    setAuthError("This device was signed out.");
+  }, []);
+
+  const { status, shell, regions, toasts, fieldErrors, send, dismissToast, pending } = useLive(session, {
+    onOpen: declareRoute,
+    onSignedOut,
+  });
 
   // A real navigation: record the route, push a history entry, tell the server.
   // pushState lives outside setRoute — a state updater must stay pure (React
