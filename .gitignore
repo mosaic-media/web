@@ -12,3 +12,4 @@ dist-ssr/
 
 # Editor and IDE state
 .idea/
+.vscode/
