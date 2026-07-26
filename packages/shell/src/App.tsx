@@ -19,12 +19,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShellProvider, RenderNode, OverlayHost, ToastHost, refreshArtLight } from "@mosaic-media/sdui-react";
 import type { UINode } from "@mosaic-media/sdui-react";
 import { devSignIn } from "@/lib/session";
+import { fetchDoorway } from "@/lib/bootstrap";
 import { useLive, type Intent } from "@/lib/live";
 import { routeFromLocation, routeToUrl, sameRoute, type Route } from "@/lib/history";
 
 export function App() {
   const [session, setSession] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  // The doorway (ADR 0101): the server-emitted screen shown before a session
+  // exists, with the skin and the components it needs delivered alongside it.
+  // Null until the bootstrap answers, which is the only moment this client has
+  // genuinely nothing to draw.
+  const [doorway, setDoorway] = useState<UINode | null>(null);
   const [route, setRoute] = useState<Route>(() => routeFromLocation());
 
   // The current route, mirrored in a ref so the socket's on-open handler can
@@ -39,15 +45,35 @@ export function App() {
     history.replaceState(routeRef.current, "", routeToUrl(routeRef.current));
   }, []);
 
-  // Sign in once; the socket opens as soon as we have a session.
+  // Boot: bootstrap, then sign in (ADR 0101's sequence — bootstrap → doorway →
+  // sign in → Attach → the session pushes the full library and skin).
+  //
+  // The two run in parallel rather than in series. The doorway is what this
+  // client shows while it has no session, and making sign-in wait for it would
+  // add a round trip to every boot for a screen most boots never settle on. A
+  // bootstrap that fails is not fatal: the Standby state below is the fallback,
+  // which is the one place this client is allowed to draw its own UI, and it is
+  // the honest answer when the Platform could not even describe its own door.
   useEffect(() => {
+    const abort = new AbortController();
     let cancelled = false;
+
+    fetchDoorway(abort.signal).then(
+      (d) => !cancelled && setDoorway(d.tree),
+      () => {
+        // Deliberately swallowed. If the Platform is unreachable, the sign-in
+        // below reports it with a message worth reading; a second error about
+        // the doorway would say the same thing less well.
+      },
+    );
     devSignIn().then(
       (s) => !cancelled && setSession(s),
       (e: unknown) => !cancelled && setAuthError(e instanceof Error ? e.message : "Sign-in failed"),
     );
+
     return () => {
       cancelled = true;
+      abort.abort();
     };
   }, []);
 
@@ -145,6 +171,20 @@ export function App() {
   }, [playerKey]);
   const showPlayer = playerKey !== "" && dismissedPlayer !== playerKey;
 
+  // No session yet — either still opening one, or refused one. Both are the
+  // doorway (ADR 0101): "signed out" and "never signed in" are one path, and
+  // the same call answers both, so a server that has since been re-claimed
+  // serves a door this client has not seen before without needing to know it
+  // changed.
+  //
+  // It is shown only once it has arrived. A doorway drawn before its skin and
+  // its components would be the unstyled page of unregistered components this
+  // whole mechanism exists to remove, so the hand-written Standby below covers
+  // the gap and nothing else does.
+  if ((authError || status !== "open" || !composed) && doorway && status !== "offline") {
+    return <DoorwayHost node={doorway} />;
+  }
+
   // Sign-in failing is the Platform being unreachable before a session ever
   // existed, so it is the offline state rather than a third variant: there is
   // nothing to retry into, and reloading is the same way out.
@@ -198,6 +238,35 @@ export function App() {
       )}
     >
       <RenderNode node={composed} />
+    </ShellProvider>
+  );
+}
+
+/** DoorwayHost — the pre-session screen (ADR 0101), rendered exactly like every
+ *  other server-emitted tree.
+ *
+ *  It is a ShellProvider around a RenderNode and nothing else: there is no app
+ *  shell to fill, no route to declare and no intent to dispatch, because there
+ *  is no session to dispatch one on. The handlers are therefore no-ops rather
+ *  than something plausible — a doorway that appeared to navigate would be an
+ *  affordance with nothing behind it, which is the failure ADR 0036 names.
+ *
+ *  Note what this host is *not*: it is not a sign-in screen written here. The
+ *  tree, its components and its skin all came from the Platform in one
+ *  response, so the doorway can be redesigned, and given a form, without this
+ *  client changing at all. */
+function DoorwayHost({ node }: { node: UINode }) {
+  return (
+    <ShellProvider
+      screen="doorway"
+      onNavigate={() => {}}
+      onQuery={() => {}}
+      onBack={() => {}}
+      onInvoke={() => {}}
+      onInput={() => {}}
+      render={() => null}
+    >
+      <RenderNode node={node} />
     </ShellProvider>
   );
 }

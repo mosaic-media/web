@@ -34,7 +34,7 @@ import {
   type RegionUpdate,
   type ServerMessage,
 } from "@mosaic-media/sdui/session";
-import type { NodeList, UINode as WireNode } from "@mosaic-media/sdui/sdui-pb";
+import { toStructural } from "./node";
 
 /** "offline" is reconnecting that has given up: the retries are exhausted and
  *  nothing further is scheduled. It is separated from "reconnecting" because
@@ -101,26 +101,6 @@ let toastSeq = 0;
 const encoder = new TextEncoder();
 const jsonBytes = (v: Record<string, unknown> | undefined): Uint8Array =>
   encoder.encode(JSON.stringify(v ?? {}));
-
-// toStructural converts the wire protobuf UINode into the runtime's structural
-// UINode, unwrapping each slot's NodeList (protobuf maps cannot hold `repeated`,
-// so slots is map<string, NodeList> on the wire — ADR 0044). props already
-// arrives as a plain object (google.protobuf.Struct).
-function toStructural(n: WireNode): UINode {
-  const out: UINode = { type: n.type };
-  if (n.id) out.id = n.id;
-  if (n.props) out.props = n.props as Record<string, unknown>;
-  if (n.children.length > 0) out.children = n.children.map(toStructural);
-  const slotKeys = Object.keys(n.slots);
-  if (slotKeys.length > 0) {
-    const slots: Record<string, UINode[]> = {};
-    for (const key of slotKeys) {
-      slots[key] = (n.slots[key] as NodeList).nodes.map(toStructural);
-    }
-    out.slots = slots;
-  }
-  return out;
-}
 
 /** Opens the live session once the session id is known, exposing the pushed
  *  shell/regions and a way to stream intents up. Reconnects automatically with
