@@ -9,3 +9,6 @@ dist-ssr/
 .env
 .env.*
 !.env.example
+
+# Editor and IDE state
+.idea/
