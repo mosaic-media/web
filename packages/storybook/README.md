@@ -1,6 +1,6 @@
 # Mosaic Storybook
 
-A live, **bespoke** storybook for the [Mosaic](https://github.com/mosaic-media) Server-Driven-UI component library. Every component is rendered from real SDUI data through [`@mosaic-media/sdui-react`](https://github.com/mosaic-media/mosaic-sdui-react), shown beside the `UINode` payload that produced it.
+A live, **bespoke** storybook for the [Mosaic](https://github.com/mosaic-media) Server-Driven-UI component library. Every component is rendered from real SDUI data through [`@mosaic-media/sdui-react`](https://github.com/mosaic-media/web/tree/main/packages/sdui-react), shown beside the `UINode` payload that produced it.
 
 > **Live:** [mosaic-media.github.io/mosaic-storybook](https://mosaic-media.github.io/mosaic-storybook)
 
@@ -14,8 +14,8 @@ Primitives, layout, media, controls, feedback, and **module-defined** components
 
 ## Stack
 
-- [`@mosaic-media/sdui-react`](https://github.com/mosaic-media/mosaic-sdui-react) — the renderer (primitives, registry, expander, token skin).
-- [`@mosaic-media/sdui`](https://github.com/mosaic-media/sdui) — the contract (types, definitions, tokens).
+- [`@mosaic-media/sdui-react`](https://github.com/mosaic-media/web/tree/main/packages/sdui-react) — the renderer (primitives, registry, expander, token skin).
+- [`@mosaic-media/sdui`](https://github.com/mosaic-media/contracts) — the contract (types, definitions, tokens).
 - React + TypeScript + Vite, deployed to GitHub Pages by `.github/workflows/deploy-pages.yml`.
 
 ## Run it

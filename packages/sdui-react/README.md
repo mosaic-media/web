@@ -1,8 +1,8 @@
 # @mosaic-media/sdui-react
 
-The **React runtime** for the [Mosaic](https://github.com/mosaic-media) Server-Driven-UI contract — the web binding that turns an SDUI payload into rendered UI. Consumed by the Shell ([`mosaic-shell`](https://github.com/mosaic-media/mosaic-shell)), the component storybook ([`mosaic-storybook`](https://github.com/mosaic-media/mosaic-storybook)), and any other web surface — all as peers.
+The **React runtime** for the [Mosaic](https://github.com/mosaic-media) Server-Driven-UI contract — the web binding that turns an SDUI payload into rendered UI. Consumed by the Shell ([`packages/shell`](https://github.com/mosaic-media/web/tree/main/packages/shell)), the component storybook ([`packages/storybook`](https://github.com/mosaic-media/web/tree/main/packages/storybook)), and any other web surface — all as peers.
 
-It is a **client implementation**, not the contract. The technology-agnostic contract (schema, standard definitions, tokens) lives in [`@mosaic-media/sdui`](https://github.com/mosaic-media/sdui); this is one specific way to render it, in React. That's why it's **AGPL-3.0-only** (first-party client code) while the contract is Apache-2.0.
+It is a **client implementation**, not the contract. The technology-agnostic contract (schema, standard definitions, tokens) lives in [`contracts`](https://github.com/mosaic-media/contracts), published as `@mosaic-media/sdui`; this is one specific way to render it, in React. That's why it's **AGPL-3.0-only** (first-party client code) while the contract is Apache-2.0.
 
 ## What's in it
 

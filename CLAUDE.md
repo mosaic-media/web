@@ -39,7 +39,7 @@ conveniences rather than by large mistakes.
   and it is not a template for adding more.
 - **This client contains no components, and adding one is the bug. Hard rule.**
   Every composition — a card, a row, a frame, a screen's chrome — is a
-  **definition**: data, authored in the contract (`mosaic-sdui`
+  **definition**: data, authored in the contract (`contracts`
   `definitions/*.json`) and pushed to this client by the Platform on connect
   ([ADR 0040](https://github.com/mosaic-media/architecture/blob/main/docs/adr/0040-server-delivered-definitions-and-skin.md)).
   This package ships the **native vocabulary only**: primitives, the action kinds
@@ -126,9 +126,14 @@ unpublished local build in the Shell's `node_modules`, where a fresh
 `npm install` would have reverted it.
 
 **`@mosaic-media/sdui` is a published npm dependency, not a link to the sibling
-checkout.** Mounting `../sdui` into the dev container does nothing for the
-Shell; only the version in `packages/shell/package.json` decides what the client
-is compiled against. **A stale one fails silently and is very hard to see.**
+checkout.** In the ordinary dev stack the version in
+`packages/shell/package.json` is the only thing that decides what the client is
+compiled against — a bind mount of `../contracts` on its own changes nothing,
+because nothing installs from it. `platform`'s `docker-compose.local.yml` overlay
+is the one exception and it is explicit about it: it mounts `../contracts`,
+`npm pack`s that checkout and installs the tarball into the Shell and the
+storybook, so there a local contract edit does reach this client.
+**A stale one fails silently and is very hard to see.**
 Connect-ES serialises only the fields in the schema it was built with, so when
 the Shell was pinned to `0.9.0` and the Platform had already shipped
 `ClientProfile` in `0.10.0`, the client sent the field, the wire dropped it, the

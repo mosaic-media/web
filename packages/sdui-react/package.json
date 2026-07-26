@@ -31,7 +31,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mosaic-media/mosaic-sdui-react.git"
+    "url": "git+https://github.com/mosaic-media/web.git",
+    "directory": "packages/sdui-react"
   },
   "publishConfig": {
     "access": "public"

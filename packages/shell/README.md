@@ -16,9 +16,10 @@ The Platform (and its optional modules) decide *what* to show. The Shell only de
 The Shell is now a **thin app** on top of a shared runtime. The whole SDUI
 renderer — primitives, registry, recursive renderer, definition expander, runtime
 provider, and the token-driven skin — lives in
-[`@mosaic-media/sdui-react`](https://github.com/mosaic-media/mosaic-sdui-react)
-(its own repo). This repo holds only the application: chrome, routing, and the
-mock payloads it renders until the Platform emits real ones.
+[`@mosaic-media/sdui-react`](https://github.com/mosaic-media/web/tree/main/packages/sdui-react)
+(a sibling package in this workspace). This package holds only the application:
+chrome, routing, and the mock payloads it renders until the Platform emits real
+ones.
 
 ```
 src/
