@@ -115,7 +115,13 @@ rather than the screen.
 
 `@mosaic-media/sdui-react` is published from CI, and **CI checks the published
 version against the git tag** — they must match, so a release cannot silently be
-a local build. That check exists because the package once ran for weeks as an
+a local build.
+
+**Publishing is a pushed tag and nothing else.** `.github/workflows/release.yml`
+fires on `push: tags: ["v*"]` and publishes the package. There is no
+`npm publish` to run by hand, no registry token on any developer machine, and
+asking for one is asking for the wrong thing. To release: bump the version,
+commit, tag, push the tag. That check exists because the package once ran for weeks as an
 unpublished local build in the Shell's `node_modules`, where a fresh
 `npm install` would have reverted it.
 
