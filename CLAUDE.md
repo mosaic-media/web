@@ -137,6 +137,19 @@ new contract field appears not to arrive, check the installed version before
 suspecting the code — and bump the dependency in the same change that starts
 using the field.
 
+**Bump every consumer's range together, and never leave one behind.**
+`check-versions.mjs` now refuses a workspace whose packages range
+`@mosaic-media/*` differently, and refuses a range that the workspace's own
+`sdui-react` version does not satisfy. Both rules exist because the second
+condition is exactly what npm uses to decide whether to link `packages/sdui-react`
+or to go to the registry instead — and it goes to the registry *silently*,
+installing the published package into the consumer's own `node_modules` where
+it shadows the link. It happened twice: the Shell at `^0.17.0` (380a10c) and
+then the storybook, left on `^0.17.0`/`^0.41.0` for another eleven contract
+releases while `npm run build --workspaces` stayed green. A range fix alone
+does not undo it — the lockfile records the resolution, so delete
+`package-lock.json` and reinstall.
+
 ## Everything runs in the container, nothing runs on the host
 
 **Do not run `npm install`, `npm run build`, `vite` or `tsc` directly on this
@@ -157,10 +170,13 @@ Two reasons, and the second is specific to this repository:
   stack then mounts Linux ones, or fails to, and the resulting breakage points
   anywhere but at its cause. The container keeps installs in named volumes, so
   the two can never meet.
-- **`scripts/check-versions.mjs` catches its own git failure** and reports "no
-  tags yet — nothing to check against", exit 0. A missing or unhappy git makes
-  it pass by finding nothing, so the container uses the full Node image rather
-  than `-slim` (which ships no git) and runs `git rev-parse` first.
+- **`scripts/check-versions.mjs` needs a working git**, so the container uses
+  the full Node image rather than `-slim` (which ships no git). It used to
+  *catch* a git failure and report "no tags yet — nothing to check against",
+  exit 0, which made a missing or unhappy git pass by finding nothing; it now
+  distinguishes a repository with no tags from a git that cannot run and fails
+  on the second. The `git rev-parse` in the compose command is redundancy
+  rather than the load-bearing guard it once was.
 
 **To see the client, run the dev stack** rather than `npm run dev` — it is in
 the Platform repository and brings the Shell, the Platform and its database up

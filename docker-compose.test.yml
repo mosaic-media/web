@@ -23,11 +23,14 @@ name: mosaic-web-test
 
 services:
   test:
-    # The full image, not -slim, and the reason is git. check-versions.mjs
-    # shells out to `git tag` and *catches the failure*, reporting "no tags yet
-    # — nothing to check against" and exiting 0. On a slim image, which ships
-    # no git, the check would pass by never running — the precise failure it
-    # was written to prevent.
+    # The full image, not -slim, and the reason is git: check-versions.mjs
+    # shells out to `git tag`, and a slim image ships no git. That used to be
+    # silent — the script caught the failure and reported "no tags yet —
+    # nothing to check against", exit 0, so the check passed by never running,
+    # the precise failure it was written to prevent. It now tells a repository
+    # with no tags apart from a git that cannot run and fails on the second, so
+    # a slim image would fail loudly rather than pass. Still the full image:
+    # failing loudly is the fallback, not the plan.
     #
     # 22 matches the Shell's service in the Platform's docker-compose.dev.yml,
     # so a developer does not change Node between running the app and testing
@@ -37,10 +40,11 @@ services:
     working_dir: /src/web
     environment:
       # git refuses a bind-mounted repository owned by a different uid than the
-      # one running it — "dubious ownership", exit non-zero — which
-      # check-versions would swallow exactly as it swallows a missing git. Set
-      # through the environment rather than a Dockerfile so this repository
-      # needs no image of its own.
+      # one running it — "dubious ownership", exit non-zero. check-versions
+      # used to swallow that exactly as it swallowed a missing git; it now
+      # fails on it, which is right but is still a broken run, so the config
+      # stays. Set through the environment rather than a Dockerfile so this
+      # repository needs no image of its own.
       GIT_CONFIG_COUNT: "1"
       GIT_CONFIG_KEY_0: safe.directory
       GIT_CONFIG_VALUE_0: "*"
@@ -56,8 +60,10 @@ services:
       - mosaic-web-node-sdui-react:/src/web/packages/sdui-react/node_modules
       - mosaic-web-node-storybook:/src/web/packages/storybook/node_modules
     # The order .github/workflows/verify.yml runs it in, plus the typechecks.
-    # The `git rev-parse` is not ceremony: it turns a broken git into a loud
-    # failure here rather than a quiet pass inside check-versions.
+    # The `git rev-parse` was what turned a broken git into a loud failure here
+    # rather than a quiet pass inside check-versions; check-versions now does
+    # that itself, so this is redundancy — kept because it costs a millisecond
+    # and guards the whole command rather than one script.
     command:
       - bash
       - -eu
