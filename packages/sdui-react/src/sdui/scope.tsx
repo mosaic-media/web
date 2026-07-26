@@ -97,10 +97,15 @@ export function coerce(raw: string, type: StateVar["type"]): unknown {
   }
 }
 
+/** The scope variable a pushed form-level error is written into. One name,
+ *  spelled here, so the client and every producer agree on it. */
+export const formErrorVar = "formError";
+
 /** StateScope — the runtime behind the State primitive. */
 export function StateScope({
   vars,
   pushedErrors,
+  pushedFormError,
   children,
 }: {
   vars: StateVar[];
@@ -110,6 +115,22 @@ export function StateScope({
    *  evaluated second saw `undefined` — so `useContext(undefined)` threw in
    *  whatever component happened to render first. */
   pushedErrors?: Record<string, string>;
+  /** A rejection that belongs to the submission rather than to any one field —
+   *  a wrong password, two fields that conflict, a service that was down.
+   *
+   *  It lands in the scope variable named `formError`, when one is declared,
+   *  and nowhere otherwise. That is a convention rather than a mechanism, and
+   *  it is the one that keeps the *placement* on the server: a producer that
+   *  wants the message shown binds some node's text to `formError` and decides
+   *  where it goes, exactly as it decides everything else about the tree. The
+   *  alternative — this client drawing the message itself — would be the
+   *  hand-written UI the whole SDUI thesis exists to prevent, and it would put
+   *  the one sentence a refused sign-in shows in the one file no designer can
+   *  reach.
+   *
+   *  A form that declares no such variable shows nothing, which is a screen
+   *  that did not ask to be told. */
+  pushedFormError?: string;
   children: ReactNode;
 }) {
   const parent = useContext(ScopeContext);
@@ -175,6 +196,17 @@ export function StateScope({
     }
     if (any) setErrorsState((prev) => ({ ...prev, ...mine }));
   }, [pushed]);
+
+  // The form-level message, into the variable a producer said to put it in.
+  // Written as a value rather than as an error because it is one: the tree
+  // binds it wherever it wants it drawn, and a value is the only thing a
+  // binding can resolve.
+  useEffect(() => {
+    if (!(formErrorVar in declaredRef.current)) return;
+    setValues((prev) =>
+      prev[formErrorVar] === (pushedFormError ?? "") ? prev : { ...prev, [formErrorVar]: pushedFormError ?? "" },
+    );
+  }, [pushedFormError]);
 
   const scope = useMemo<Scope>(
     () => ({ vars: declared, values, rules: rulesRef.current, registerRules, errors, setErrors: setErrorsState, set, parent }),

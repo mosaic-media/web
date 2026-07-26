@@ -170,7 +170,11 @@ export function State({ node }: { node: UINode }) {
   // imported by the runtime's own module and reaching back for it is a cycle.
   const { fieldErrors } = useRuntime();
   return (
-    <StateScope vars={Array.isArray(vars) ? vars : []} pushedErrors={fieldErrors?.errors}>
+    <StateScope
+      vars={Array.isArray(vars) ? vars : []}
+      pushedErrors={fieldErrors?.errors}
+      pushedFormError={fieldErrors?.formError}
+    >
       <Children nodes={node.children} />
     </StateScope>
   );

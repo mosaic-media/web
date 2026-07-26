@@ -18,8 +18,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShellProvider, RenderNode, OverlayHost, ToastHost, refreshArtLight } from "@mosaic-media/sdui-react";
 import type { UINode } from "@mosaic-media/sdui-react";
-import { clearSession, loadSession, signIn, type StoredSession } from "@/lib/session";
-import { fetchDoorway } from "@/lib/bootstrap";
+import { clearSession, loadSession, type StoredSession } from "@/lib/session";
+import { fetchDoorway, invokeDoorway } from "@/lib/bootstrap";
 import { useLive, type Intent } from "@/lib/live";
 import { routeFromLocation, routeToUrl, sameRoute, type Route } from "@/lib/history";
 
@@ -45,41 +45,40 @@ export function App() {
     history.replaceState(routeRef.current, "", routeToUrl(routeRef.current));
   }, []);
 
-  // Boot: bootstrap, then sign in (ADR 0101's sequence — bootstrap → doorway →
-  // sign in → Attach → the session pushes the full library and skin).
+  // Boot: a stored credential, or the doorway (ADR 0101's sequence — bootstrap
+  // → doorway → sign in or claim → Attach → the session pushes the full library
+  // and skin).
   //
-  // The two run in parallel rather than in series. The doorway is what this
-  // client shows while it has no session, and making sign-in wait for it would
-  // add a round trip to every boot for a screen most boots never settle on. A
-  // bootstrap that fails is not fatal: the Standby state below is the fallback,
-  // which is the one place this client is allowed to draw its own UI, and it is
-  // the honest answer when the Platform could not even describe its own door.
+  // **Nothing signs in here any more.** The Shell used to authenticate on boot
+  // with a username and password compiled into the bundle, which made every
+  // browser that opened it the same person and put the administrator's password
+  // in a build artefact. Signing in is a form on the doorway now, and this
+  // effect's only job is to decide which of the two the client is starting
+  // from.
+  //
+  // A stored credential is used as it is (ADR 0102). That is what makes closing
+  // the browser for a fortnight and coming back still signed in the ordinary
+  // case rather than the exceptional one: nothing is re-authenticated on boot,
+  // because the pair outlived the page.
   useEffect(() => {
     const abort = new AbortController();
     let cancelled = false;
 
+    const stored = loadSession();
+    if (stored) setSession(stored);
+
     fetchDoorway(abort.signal).then(
       (d) => !cancelled && setDoorway(d.tree),
-      () => {
-        // Deliberately swallowed. If the Platform is unreachable, the sign-in
-        // below reports it with a message worth reading; a second error about
-        // the doorway would say the same thing less well.
+      (e: unknown) => {
+        // Only fatal when there is no stored credential to fall back on. A
+        // client that is already signed in does not need a door, and the
+        // reconnect states below describe an unreachable Platform better than a
+        // bootstrap failure would.
+        if (!cancelled && !stored) {
+          setAuthError(e instanceof Error ? e.message : "Could not reach your server.");
+        }
       },
     );
-
-    // A stored credential is used as it is (ADR 0102). This is what makes
-    // closing the browser for a fortnight and coming back still signed in the
-    // ordinary case rather than the exceptional one: nothing is re-authenticated
-    // on boot, because the pair outlived the page.
-    const stored = loadSession();
-    if (stored) {
-      setSession(stored);
-    } else {
-      signIn().then(
-        (s) => !cancelled && setSession(s),
-        (e: unknown) => !cancelled && setAuthError(e instanceof Error ? e.message : "Sign-in failed"),
-      );
-    }
 
     return () => {
       cancelled = true;
@@ -94,15 +93,25 @@ export function App() {
     send({ kind: "attach", screen: r.screen, params: r.params });
   }, []);
 
-  // A credential that could not be renewed is a sign-out: the refresh chain is
-  // gone, so there is nothing to retry. The stored pair is dropped and the
-  // doorway is what the client falls back to, which is ADR 0101's "the same
-  // call answers a refused session" — signed out and never signed in are one
-  // path.
+  // A credential that no longer works is a sign-out, and there are now two ways
+  // to get one: a refresh chain that could not be renewed, and the account
+  // cluster's Sign out, which revokes this very session server-side. They are
+  // deliberately one path — ADR 0101's "the same call answers a refused
+  // session" — so the client re-asks for the door rather than reasoning about
+  // which of them happened.
+  //
+  // The doorway is re-fetched rather than reused. A server that has been
+  // re-claimed, renamed or upgraded since this page loaded serves a door this
+  // client has not seen, and the stale one would be a form pointing at a state
+  // that no longer exists.
   const onSignedOut = useCallback(() => {
     clearSession();
     setSession(null);
-    setAuthError("This device was signed out.");
+    setAuthError(null);
+    fetchDoorway().then(
+      (d) => setDoorway(d.tree),
+      () => setAuthError("This device was signed out, and the sign-in screen could not be loaded."),
+    );
   }, []);
 
   const { status, shell, regions, toasts, fieldErrors, send, dismissToast, pending } = useLive(session, {
@@ -206,7 +215,7 @@ export function App() {
   // whole mechanism exists to remove, so the hand-written Standby below covers
   // the gap and nothing else does.
   if ((authError || status !== "open" || !composed) && doorway && status !== "offline") {
-    return <DoorwayHost node={doorway} />;
+    return <DoorwayHost node={doorway} onReplace={setDoorway} />;
   }
 
   // Sign-in failing is the Platform being unreachable before a session ever
@@ -269,24 +278,66 @@ export function App() {
 /** DoorwayHost — the pre-session screen (ADR 0101), rendered exactly like every
  *  other server-emitted tree.
  *
- *  It is a ShellProvider around a RenderNode and nothing else: there is no app
- *  shell to fill, no route to declare and no intent to dispatch, because there
- *  is no session to dispatch one on. The handlers are therefore no-ops rather
- *  than something plausible — a doorway that appeared to navigate would be an
- *  affordance with nothing behind it, which is the failure ADR 0036 names.
+ *  It is a ShellProvider around a RenderNode: there is no app shell to fill and
+ *  no route to declare, so navigation stays a no-op — a doorway that appeared
+ *  to navigate would be an affordance with nothing behind it, which is the
+ *  failure ADR 0036 names.
  *
- *  Note what this host is *not*: it is not a sign-in screen written here. The
- *  tree, its components and its skin all came from the Platform in one
- *  response, so the doorway can be redesigned, and given a form, without this
- *  client changing at all. */
-function DoorwayHost({ node }: { node: UINode }) {
+ *  What it does have is one live handler. A doorway's controls emit ordinary
+ *  SDUI actions, and they travel on AuthService's pre-session lane because
+ *  there is no session and therefore no push lane for the outcome. **This
+ *  client interprets none of them**: it forwards the name the server wrote and
+ *  applies whichever of the three outcomes comes back. The tree, its
+ *  components, its skin and the meaning of its actions are all the Platform's,
+ *  so the door can be redesigned — or given a fifth step — without this file
+ *  changing at all. */
+function DoorwayHost({ node, onReplace }: { node: UINode; onReplace: (n: UINode) => void }) {
+  const [fieldErrors, setFieldErrors] = useState<
+    { errors: Record<string, string>; formError: string } | undefined
+  >(undefined);
+
+  // The doorway's one live handler. It forwards the action name the server
+  // wrote and applies whichever of the three outcomes comes back; it does not
+  // know what any of them mean, which is what lets the door change without this
+  // file changing.
+  //
+  // A minted session is applied by reloading rather than by lifting state up.
+  // Everything above this point — the transport's interceptors, the live
+  // socket's retry budget, the history entry — was constructed for a client
+  // with no session, and a fresh document is a shorter and far more honest way
+  // to become one that has one than re-deriving each of them in place.
+  const onInvoke = useCallback((action: string, input?: Record<string, unknown>) => {
+    setFieldErrors(undefined);
+    invokeDoorway(action, input).then(
+      (outcome) => {
+        if (outcome.session) {
+          window.location.reload();
+          return;
+        }
+        if (outcome.doorway) {
+          onReplace(outcome.doorway);
+          return;
+        }
+        if (outcome.fieldErrors) setFieldErrors(outcome.fieldErrors);
+      },
+      (e: unknown) => {
+        // A transport failure has no field to land on, so it lands on the form.
+        setFieldErrors({
+          errors: {},
+          formError: e instanceof Error ? e.message : "That did not work. Try again.",
+        });
+      },
+    );
+  }, [onReplace]);
+
   return (
     <ShellProvider
       screen="doorway"
+      fieldErrors={fieldErrors}
       onNavigate={() => {}}
       onQuery={() => {}}
       onBack={() => {}}
-      onInvoke={() => {}}
+      onInvoke={onInvoke}
       onInput={() => {}}
       render={() => null}
     >

@@ -29,6 +29,8 @@ import {
   type TextStyle,
 } from "../sdui/style.js";
 import { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, type Rgb } from "../sdui/artlight.js";
+import { useVisible } from "../sdui/field.js";
+import type { Predicate } from "../sdui/validate.js";
 import { cx, Icon, type IconName } from "./shared.js";
 import { a11yAttrs } from "../sdui/a11y.js";
 
@@ -63,9 +65,19 @@ function useResponsiveStyle(style: BoxStyle): BoxStyle {
 /** Box — the workhorse container: flex layout + token box styling. A glass Box
  *  also carries the acrylic material class, whose pseudo-element layers (pigment,
  *  caustic, edge light — components.css) are driven by the same custom
- *  properties, refined per surface by acrylic.ts (Optical Parallax). */
+ *  properties, refined per surface by acrylic.ts (Optical Parallax).
+ *
+ *  It resolves two things no static tree can carry, and `visibleWhen` is the
+ *  second: a predicate over the enclosing State scope, evaluated where the box
+ *  renders. On a field it hides one control; here it hides a branch, which is
+ *  what makes a multi-step form expressible — the setup wizard is one tree with
+ *  one scope, and each step is a Box that draws only while the scope names it.
+ *  Without it the alternative is a round trip per step, and a round trip per
+ *  step means every step's answers travel back down inside the next tree. */
 export function Box({ node }: { node: UINode }) {
   const style = useResponsiveStyle(prop<BoxStyle>(node, "style", {}));
+  const visible = useVisible(prop<Predicate | undefined>(node, "visibleWhen", undefined));
+  if (!visible) return null;
   return (
     <div
       className={cx(style.glass && "msc-acrylic", ...boxClasses(style)) || undefined}

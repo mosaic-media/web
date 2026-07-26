@@ -16,7 +16,7 @@
  * because the Platform served exactly the right tree and the browser drew
  * "SignInPanel — not registered in this Shell" on an unstyled page.
  *
- * The same declaration rides this call that rides Attach, so the server
+ * The same declaration rides both calls here that rides Attach, so the server
  * negotiates the doorway exactly as it negotiates every screen after it — one
  * declaration, not a second copy that could drift.
  */
@@ -28,6 +28,7 @@ import type { UINode as WireNode } from "@mosaic-media/sdui/sdui-pb";
 import { clientVocabulary } from "./vocabulary";
 import { toStructural } from "./node";
 import { transport } from "./transport";
+import { deviceID, saveSession, storedFrom, type StoredSession } from "./session";
 
 /** The doorway, ready to render: the tree, with its skin and its components
  *  already applied to this client. */
@@ -54,4 +55,74 @@ export async function fetchDoorway(signal?: AbortSignal): Promise<Doorway> {
 
   if (!res.uiNode) throw new Error("The Platform answered the bootstrap with no doorway.");
   return { tree: toStructural(res.uiNode as WireNode) };
+}
+
+/** What a doorway action produced.
+ *
+ *  Exactly one of the three is set, because the server's own response is a
+ *  oneof: an action either signed the caller in, replaced the door, or was
+ *  refused on the fields it came from. A client that had to rank them would be
+ *  a client that could get the ranking wrong. */
+export interface DoorwayOutcome {
+  session?: StoredSession;
+  doorway?: UINode;
+  fieldErrors?: { errors: Record<string, string>; formError: string };
+}
+
+/**
+ * Runs a doorway action and returns what it produced.
+ *
+ * **This client interprets none of them.** It sends the name the server wrote
+ * into the tree and applies whichever outcome comes back; it does not know what
+ * "signIn" means and must not learn, because a client that did would be a
+ * client that had to be released before the door could change.
+ *
+ * The device id rides the request rather than the input, because a session
+ * belongs to a device whatever the action was — and an action that mints one
+ * must not have to remember to say so.
+ *
+ * A replacement door brings its own definitions and they are registered before
+ * the tree is returned, for the same reason the bootstrap registers its own:
+ * a door this client has not seen may name a component it was not sent, and a
+ * tree rendered ahead of its components draws placeholders.
+ */
+export async function invokeDoorway(action: string, input: unknown): Promise<DoorwayOutcome> {
+  const client = createClient(AuthService, transport);
+  const res = await client.invoke({
+    action,
+    input: new TextEncoder().encode(JSON.stringify(input ?? {})),
+    deviceId: deviceID(),
+    vocabulary: clientVocabulary(),
+  });
+
+  switch (res.outcome.case) {
+    case "signed": {
+      const tokens = res.outcome.value.tokens;
+      if (!tokens?.accessToken || !tokens.refreshToken) {
+        throw new Error("The Platform signed this device in with no credential pair.");
+      }
+      const stored = storedFrom(tokens);
+      saveSession(stored);
+      return { session: stored };
+    }
+    case "doorway": {
+      const door = res.outcome.value;
+      if (door.definitions.length > 0) {
+        defineComponents(JSON.parse(new TextDecoder().decode(door.definitions)));
+      }
+      if (!door.uiNode) throw new Error("The Platform replaced the doorway with nothing.");
+      return { doorway: toStructural(door.uiNode as WireNode) };
+    }
+    case "fieldErrors": {
+      const value = res.outcome.value;
+      const errors: Record<string, string> = {};
+      for (const e of value.errors) errors[e.field] = e.message;
+      return { fieldErrors: { errors, formError: value.formError } };
+    }
+    default:
+      // A response with no outcome is a server that answered without answering.
+      // Worth a message rather than a silent no-op: the button somebody pressed
+      // would otherwise appear to do nothing at all.
+      throw new Error("The Platform answered that action with nothing.");
+  }
 }

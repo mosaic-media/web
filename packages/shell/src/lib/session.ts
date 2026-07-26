@@ -22,14 +22,18 @@
  * Platform can end this browser without ending a TV — and a refresh token is
  * bound to the device it was issued to, so a client that forgot its own device
  * id would be indistinguishable from a stolen credential replayed elsewhere.
+ *
+ * **Nothing here signs in.** It used to: the Shell authenticated on boot with a
+ * username and password compiled into the bundle, which is how a build artefact
+ * came to hold the administrator's credentials and how every browser that
+ * opened it became the same person. Signing in is now a form on the doorway,
+ * and the doorway's actions travel on bootstrap.ts's lane — so this module is
+ * storage, rotation and nothing else.
  */
 
 import { createClient, ConnectError, Code } from "@connectrpc/connect";
 import { AuthService } from "@mosaic-media/sdui/auth";
 import { transport } from "./transport";
-
-const DEV_USERNAME = import.meta.env.VITE_DEV_USERNAME ?? "admin";
-const DEV_PASSWORD = import.meta.env.VITE_DEV_PASSWORD ?? "admin";
 
 const STORAGE_KEY = "mosaic.session";
 const DEVICE_KEY = "mosaic.device";
@@ -82,31 +86,6 @@ export function clearSession(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-/** Signs in and stores the pair.
- *
- * The credentials still come from the build (VITE_DEV_USERNAME / _PASSWORD, or
- * the Platform's bootstrap admin) because the sign-in *screen* is the next
- * milestone. What changed is what happens afterwards: the pair is persisted, so
- * this runs once rather than on every page load. */
-export async function signIn(): Promise<StoredSession> {
-  const client = createClient(AuthService, transport);
-  try {
-    const { tokens } = await client.signIn({
-      username: DEV_USERNAME,
-      password: DEV_PASSWORD,
-      deviceId: deviceID(),
-    });
-    if (!tokens?.accessToken || !tokens.refreshToken) {
-      throw new Error("The Platform issued a session with no credential pair.");
-    }
-    const stored = pairToStored(tokens);
-    saveSession(stored);
-    return stored;
-  } catch (e) {
-    throw new Error(signInMessage(e));
-  }
-}
-
 /** Exchanges the stored refresh token for a new pair.
  *
  * **The old token is spent by this call**, so the new pair replaces it the
@@ -128,7 +107,7 @@ export async function refreshSession(stored: StoredSession): Promise<StoredSessi
     if (!tokens?.accessToken || !tokens.refreshToken) {
       throw new Error("The Platform refreshed a session with no credential pair.");
     }
-    const next = pairToStored(tokens);
+    const next = storedFrom(tokens);
     saveSession(next);
     return next;
   } catch (e) {
@@ -155,7 +134,12 @@ export function isUnauthenticated(e: unknown): boolean {
   return e instanceof ConnectError && e.code === Code.Unauthenticated;
 }
 
-function pairToStored(tokens: {
+/** storedFrom turns an issued pair into what this client keeps.
+ *
+ * Exported because two paths mint a session now — the doorway's actions and a
+ * refresh — and a second copy of this conversion is a second place the expiry
+ * can be got wrong. */
+export function storedFrom(tokens: {
   accessToken: string;
   refreshToken: string;
   accessExpiresAt?: { seconds: bigint };
@@ -169,18 +153,4 @@ function pairToStored(tokens: {
     // credential long after the server stopped.
     accessExpiresAt: seconds > 0n ? Number(seconds) * 1000 : 0,
   };
-}
-
-function signInMessage(e: unknown): string {
-  if (!(e instanceof ConnectError)) {
-    return e instanceof Error ? e.message : "Sign-in failed.";
-  }
-  switch (e.code) {
-    case Code.Unauthenticated:
-      return `Sign-in was refused for "${DEV_USERNAME}". Check VITE_DEV_USERNAME / VITE_DEV_PASSWORD against the Platform's bootstrap admin.`;
-    case Code.Unavailable:
-      return "Could not reach the Platform. Is it running on the address the dev proxy points at?";
-    default:
-      return `Sign-in failed (${Code[e.code]}): ${e.rawMessage}`;
-  }
 }
