@@ -10,7 +10,7 @@
 
 import { createContext, useCallback, useContext } from "react";
 import type { Action, ActionResult, UINode } from "./types.js";
-import { ScopeContext, write, collect, type Scope } from "./scope.js";
+import { ScopeContext, formErrorVar, write, collect, type Scope } from "./scope.js";
 import { mergeSubmit } from "./submit.js";
 import { validateField } from "./validate.js";
 
@@ -105,8 +105,23 @@ function useScopedRuntime(ctx: ShellRuntime, scope: Scope | null): ShellRuntime 
           }
           scope.setErrors(errors);
           if (bad) {
-            return { ok: false, error: { category: "InvalidArgument", message: "Some fields need attention" } };
+            const message = "Some of what you entered needs another look.";
+            // The refusal also goes where a *server* refusal goes, so a form
+            // that asked to be told (by declaring `formError`) hears about both
+            // the same way.
+            //
+            // Without this, a local failure was returned to a caller that
+            // discards it — `emit` ignores the result — so a submit could be
+            // refused with nothing on screen changing at all. That is invisible
+            // on a one-page form, where the marked field is right there, and
+            // silent on a multi-step one, where the field that failed is on a
+            // step nobody is looking at. A button that does nothing and says
+            // nothing is the worst thing a final step can do.
+            scope.set(formErrorVar, message);
+            return { ok: false, error: { category: "InvalidArgument", message } };
           }
+          // A submission that passes clears whatever the last one said.
+          scope.set(formErrorVar, "");
         }
         return dispatch(mergeSubmit(inner, values, action.field));
       }

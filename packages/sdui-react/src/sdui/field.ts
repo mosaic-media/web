@@ -42,9 +42,20 @@ export function useField<T>(
   const scope = useContext(ScopeContext);
   const [local, setLocal] = useState<T>(initial);
 
-  // The rules travel to the scope so submitting can check fields that are not
-  // on screen — a conditionally hidden required field would otherwise pass by
-  // not being rendered.
+  // The rules travel to the scope so submitting can check a field that is on
+  // screen but not visible: `visibleWhen` on the input itself returns null from
+  // the component *after* this hook has run, so the rule is still registered
+  // and a hidden required field is still checked.
+  //
+  // **It does not survive an unmounted branch, and that limit is real.**
+  // `visibleWhen` on a Box removes the subtree, so the inputs inside it never
+  // render, this effect never runs, and their rules are not in the scope when
+  // the submit collects it. A multi-step form built that way is therefore
+  // validated by the server rather than here — which is the boundary that
+  // matters and was always going to run anyway, but it means the answer arrives
+  // as a round trip and lands on a step nobody is looking at. A producer
+  // building one should write its rejections to stand alone in the form-level
+  // message, because that is the only part of it the person can see.
   useEffect(() => {
     if (!name || !scope) return;
     scope.registerRules(name, rules);
