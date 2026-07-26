@@ -6,6 +6,15 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Called by release.yml, so the tag path runs exactly these gates rather than
+  # a second copy of them that could drift.
+  workflow_call:
+
+# Nothing here reads the token — it checks out, installs and builds. Stated
+# rather than left to the repository default because a called workflow inherits
+# the caller's, and release.yml declares none.
+permissions:
+  contents: read
 
 jobs:
   verify:

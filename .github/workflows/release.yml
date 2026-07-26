@@ -5,6 +5,13 @@ name: release
 # repository (or org) secret — an npm automation token for the @mosaic-media
 # scope.
 #
+# The publish runs behind the full gate, by reusing verify.yml against the
+# tagged commit rather than a second copy of the checks that could drift — the
+# shape every module repository's release.yml uses, and for the same reason: a
+# tag must never publish something unverified. A published npm version cannot be
+# taken back, only deprecated and superseded, so the gate runs before the
+# publish; there is no after.
+#
 # NOTE: the tag names the sdui-react version. If a second workspace package ever
 # becomes publishable, move to a scoped tag (e.g. sdui-react-v*) so a tag is
 # unambiguous about which package it releases.
@@ -13,7 +20,13 @@ on:
     tags: ["v*"]
 
 jobs:
+  # The same gates as an ordinary push, run against the tagged commit. Reused
+  # rather than restated, so the tag path cannot fall behind what main enforces.
+  verify:
+    uses: ./.github/workflows/verify.yml
+
   npm:
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,6 +34,10 @@ jobs:
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
+      # Not redundant with the verify job's check-versions.mjs, which asks
+      # whether the published package agrees with the *newest* tag in the
+      # repository. This asks whether it agrees with the tag being released,
+      # which is the question that decides what npm is about to serve.
       - name: Guard — sdui-react version matches the tag
         run: |
           tag="${GITHUB_REF_NAME#v}"
