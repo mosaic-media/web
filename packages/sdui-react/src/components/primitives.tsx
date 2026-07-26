@@ -28,7 +28,14 @@ import {
   type SpaceToken,
   type TextStyle,
 } from "../sdui/style.js";
-import { sampleArtColors, setAmbientArt, focusArt, releaseArt, clearAmbientArt, type Rgb } from "../sdui/artlight.js";
+import {
+  sampleArtLight,
+  setAmbientArt,
+  focusArt,
+  releaseArt,
+  clearAmbientArt,
+  type ArtSample,
+} from "../sdui/artlight.js";
 import { useVisible } from "../sdui/field.js";
 import type { Predicate } from "../sdui/validate.js";
 import { cx, Icon, type IconName } from "./shared.js";
@@ -124,7 +131,9 @@ export function Image({ node }: { node: UINode }) {
   const css = boxToCss(style);
 
   const imgRef = useRef<HTMLImageElement | null>(null);
-  const palette = useRef<Rgb[] | null>(null);
+  // One read of the image yields both the palette (the page's wash) and the
+  // light map (what lights each acrylic surface), so they are cached together.
+  const palette = useRef<ArtSample | null>(null);
   // artLight needs a CORS-anonymous request so the canvas is readable, but a CDN
   // that sends no CORS headers then fails the request and the image never shows.
   // On such a failure we retry once without crossOrigin: the image displays, and
@@ -137,7 +146,7 @@ export function Image({ node }: { node: UINode }) {
   const sample = () => {
     const el = imgRef.current;
     if (!el || !el.complete || el.naturalWidth === 0) return null;
-    if (!palette.current) palette.current = sampleArtColors(el);
+    if (!palette.current) palette.current = sampleArtLight(el);
     return palette.current;
   };
 
@@ -145,7 +154,10 @@ export function Image({ node }: { node: UINode }) {
   useEffect(() => {
     if (artLight !== "ambient") return;
     const el = imgRef.current;
-    if (el?.complete) setAmbientArt(sample());
+    if (el?.complete) {
+      const s = sample();
+      setAmbientArt(s?.palette ?? null, s?.map ?? null);
+    }
     return () => clearAmbientArt();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artLight, src]);
@@ -178,13 +190,16 @@ export function Image({ node }: { node: UINode }) {
         ...(useCors ? { crossOrigin: "anonymous" as const } : {}),
         onLoad: () => {
           palette.current = null;
-          if (artLight === "ambient") setAmbientArt(sample());
+          if (artLight === "ambient") {
+            const s = sample();
+            setAmbientArt(s?.palette ?? null, s?.map ?? null);
+          }
         },
         ...(artLight === "focus"
           ? {
               onMouseEnter: () => {
-                const c = sample();
-                if (c) focusArt(c);
+                const s = sample();
+                if (s?.palette.length) focusArt(s.palette);
               },
               onMouseLeave: () => releaseArt(),
             }

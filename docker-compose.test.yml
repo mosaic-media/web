@@ -86,6 +86,12 @@ services:
         # answers, and any disagreement is a named failing case rather than a
         # screen that behaves differently on one platform (ADR 0094).
         node scripts/check-conformance.mjs
+        # The art-light colour maths, also after the build because it imports
+        # what the build produced. This is the only code here that *computes* a
+        # colour, and a wrong transform still renders — plausibly, which is the
+        # worst of the options. Pinned against the published OKLab coordinates
+        # of the sRGB primaries rather than only against itself.
+        node scripts/check-artlight.mjs
 
 volumes:
   mosaic-web-npm:
