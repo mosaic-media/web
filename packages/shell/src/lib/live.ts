@@ -145,15 +145,29 @@ export function useLive(session: StoredSession | null, options: LiveOptions = {}
     sendRef.current(intent);
   }, []);
 
-  const pushToast = useCallback((message: string, tone: Tone) => {
-    const id = `toast-${++toastSeq}`;
-    setToasts((t) => [...t, { id, message, tone }]);
-    window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4200);
-  }, []);
-  const dismissToast = useCallback(
-    (id: string) => setToasts((t) => t.filter((x) => x.id !== id)),
+  // One notification stack, two lifetimes (ADR 0052).
+  //
+  // An anonymous message is a toast: it enters the stack and removes itself on
+  // a timer. A *named* one is a standing notice — it replaces whatever is
+  // already showing under that name rather than stacking a second copy, and, if
+  // the server marked it persistent, it stays until the user dismisses it or
+  // the server retracts it by name.
+  //
+  // The lifetime is the only difference. Both appear in the same place, because
+  // a lasting condition given a region of its own would mean two competing
+  // places to look for "something is wrong", and the one that appears less
+  // often is the one people stop checking.
+  const pushToast = useCallback(
+    (message: string, tone: Tone, name?: string, persistent?: boolean) => {
+      const id = name || `toast-${++toastSeq}`;
+      setToasts((t) => [...t.filter((x) => x.id !== id), { id, message, tone }]);
+      if (persistent) return;
+      window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4200);
+    },
     [],
   );
+  const clearToast = useCallback((id: string) => setToasts((t) => t.filter((x) => x.id !== id)), []);
+  const dismissToast = clearToast;
 
   useEffect(() => {
     if (!session) return;
@@ -245,9 +259,18 @@ export function useLive(session: StoredSession | null, options: LiveOptions = {}
         case "region":
           applyRegion(msg.body.value);
           break;
-        case "toast":
-          pushToast(msg.body.value.message, (msg.body.value.tone || "neutral") as Tone);
+        case "toast": {
+          const t = msg.body.value;
+          // A retraction names a notice and carries nothing else; a client
+          // holding no such notice ignores it, which is the ordinary case after
+          // a reconnect rebuilt the stack from nothing.
+          if (t.cleared) {
+            if (t.id) clearToast(t.id);
+            break;
+          }
+          pushToast(t.message, (t.tone || "neutral") as Tone, t.id, t.persistent);
           break;
+        }
         case "fieldErrors": {
           const v = msg.body.value;
           const errors: Record<string, string> = {};
@@ -356,7 +379,7 @@ export function useLive(session: StoredSession | null, options: LiveOptions = {}
       abort.abort();
       sendRef.current = () => {};
     };
-  }, [session, pushToast, send]);
+  }, [session, pushToast, clearToast, send]);
 
   return { status, shell, regions, toasts, fieldErrors, send, dismissToast, pending: inFlight > 0 };
 }
