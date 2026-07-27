@@ -77,7 +77,9 @@ export interface ArtSample {
    small vivid element out of existence before the weighting loop ever saw it. */
 const SAMPLE = 64;
 const MAP = 16;
-const BLOCK = SAMPLE / MAP;
+/* The palette-only read (a hovered tile). Coarser on purpose — see
+   sampleArtPalette: this one runs inside a pointer interaction. */
+const PALETTE_SAMPLE = 32;
 
 /* Pixels too dark or too grey to carry a hue are not evidence of one. The floors
    are deliberately low — this excludes black bars and neutral backdrops, not
@@ -205,42 +207,77 @@ function sourceRect(img: HTMLImageElement): [number, number, number, number] {
  * Returns null when the canvas is unreadable (tainted by a cross-origin load) or
  * the image is not yet decoded — the caller keeps whatever light it already had.
  */
+function read(img: HTMLImageElement, size: number): { lab: Float32Array; opaque: Uint8Array; n: number } | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  // No willReadFrequently: this is a single read, and that hint forces a
+  // software-backed canvas which makes the drawImage slower, not faster.
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  const [sx, sy, sw, sh] = sourceRect(img);
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
+  const { data } = ctx.getImageData(0, 0, size, size);
+
+  const n = size * size;
+  const lab = new Float32Array(n * 3);
+  const opaque = new Uint8Array(n);
+  for (let i = 0, p = 0; p < n; i += 4, p++) {
+    if (data[i + 3]! < 128) continue;
+    opaque[p] = 1;
+    const c = rgbToLab(data[i]!, data[i + 1]!, data[i + 2]!);
+    lab[p * 3] = c[0];
+    lab[p * 3 + 1] = c[1];
+    lab[p * 3 + 2] = c[2];
+  }
+  return { lab, opaque, n };
+}
+
 export function sampleArtLight(img: HTMLImageElement, max = 3): ArtSample | null {
   if (!img.complete || img.naturalWidth === 0) return null;
   try {
-    const canvas = document.createElement("canvas");
-    canvas.width = SAMPLE;
-    canvas.height = SAMPLE;
-    // No willReadFrequently: this is a single read, and that hint forces a
-    // software-backed canvas which makes the drawImage slower, not faster.
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    const [sx, sy, sw, sh] = sourceRect(img);
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, SAMPLE, SAMPLE);
-    const { data } = ctx.getImageData(0, 0, SAMPLE, SAMPLE);
+    const r = read(img, SAMPLE);
+    if (!r) return null;
+    return {
+      palette: extractPalette(r.lab, r.opaque, r.n, max),
+      map: buildMap(r.lab, r.opaque, SAMPLE),
+    };
+  } catch {
+    return null;
+  }
+}
 
-    const n = SAMPLE * SAMPLE;
-    const lab = new Float32Array(n * 3);
-    const opaque = new Uint8Array(n);
-    for (let i = 0, p = 0; p < n; i += 4, p++) {
-      if (data[i + 3]! < 128) continue;
-      opaque[p] = 1;
-      const c = rgbToLab(data[i]!, data[i + 1]!, data[i + 2]!);
-      lab[p * 3] = c[0];
-      lab[p * 3 + 1] = c[1];
-      lab[p * 3 + 2] = c[2];
-    }
-
-    return { palette: extractPalette(lab, opaque, n, max), map: buildMap(lab, opaque) };
+/**
+ * The palette alone, read at a quarter of the detail and with no light map.
+ *
+ * This is the `artLight="focus"` path — a hovered poster lends its colours to
+ * the page wash and nothing else, so it has no use for the grid. That matters
+ * because it runs **inside a pointer interaction**, on the main thread, the
+ * first time each tile is hovered, and a library grid has a lot of tiles: the
+ * full read is four times the pixels plus the grid reduction, all of it landing
+ * in the frame the browser is timing for responsiveness.
+ *
+ * A palette does not need the resolution a light map does. It is a handful of
+ * dominant colours over the whole image, and 1024 samples locate those as well
+ * as 4096 do.
+ */
+export function sampleArtPalette(img: HTMLImageElement, max = 3): Rgb[] | null {
+  if (!img.complete || img.naturalWidth === 0) return null;
+  try {
+    const r = read(img, PALETTE_SAMPLE);
+    if (!r) return null;
+    const palette = extractPalette(r.lab, r.opaque, r.n, max);
+    return palette.length ? palette : null;
   } catch {
     return null;
   }
 }
 
 /** Reduce the read to the light-map grid, and locate the light within it. */
-function buildMap(lab: Float32Array, opaque: Uint8Array): LightMap {
+function buildMap(lab: Float32Array, opaque: Uint8Array, size: number): LightMap {
+  const block = size / MAP;
   const cells = new Float32Array(MAP * MAP * 3);
   for (let gy = 0; gy < MAP; gy++) {
     for (let gx = 0; gx < MAP; gx++) {
@@ -248,9 +285,9 @@ function buildMap(lab: Float32Array, opaque: Uint8Array): LightMap {
       let A = 0;
       let B = 0;
       let count = 0;
-      for (let y = gy * BLOCK; y < (gy + 1) * BLOCK; y++) {
-        for (let x = gx * BLOCK; x < (gx + 1) * BLOCK; x++) {
-          const p = y * SAMPLE + x;
+      for (let y = gy * block; y < (gy + 1) * block; y++) {
+        for (let x = gx * block; x < (gx + 1) * block; x++) {
+          const p = y * size + x;
           if (!opaque[p]) continue;
           L += lab[p * 3]!;
           A += lab[p * 3 + 1]!;
@@ -505,9 +542,15 @@ export function clearAmbientArt(): void {
 }
 
 /** Repaint the standing ambient — call after a theme change so the alphas and
- *  the accent tone follow the new theme. */
+ *  the accent tone follow the new theme.
+ *
+ *  It signals a relight as well, because the per-surface pass memoises what it
+ *  last wrote: a theme change moves the palette underneath those values without
+ *  moving any geometry, and without this the memo would consider every surface
+ *  unchanged and leave the old theme's light on them. */
 export function refreshArtLight(): void {
   paint(ambient);
+  signalRelight();
 }
 
 /**

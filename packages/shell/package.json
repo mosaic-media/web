@@ -16,7 +16,7 @@
     "@connectrpc/connect": "^2.0.0",
     "@connectrpc/connect-web": "^2.0.0",
     "@mosaic-media/sdui": "^0.59.0",
-    "@mosaic-media/sdui-react": "^0.20.0",
+    "@mosaic-media/sdui-react": "^0.21.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

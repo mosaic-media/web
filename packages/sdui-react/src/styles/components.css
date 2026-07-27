@@ -149,7 +149,8 @@
                    side (away from the light), read as light pooling beneath.
      · ::after   — layer 3 directional edge light: a masked gradient border,
                    bright + pigmented on the edge facing the light, dim opposite.
-   --lx/--ly/--edge-angle/--acrylic-intensity come from acrylic.ts per surface,
+   --lx/--ly/--acrylic-intensity and the four --edge-* come from acrylic.ts per
+   surface, and only when that surface has actually moved relative to the light;
    each falling back to the global light vector so an unmeasured surface is still
    correctly lit. Reads as internally-lit pigmented acrylic, not frosted glass. */
 .msc-acrylic {

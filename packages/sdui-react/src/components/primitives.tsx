@@ -30,11 +30,13 @@ import {
 } from "../sdui/style.js";
 import {
   sampleArtLight,
+  sampleArtPalette,
   setAmbientArt,
   focusArt,
   releaseArt,
   clearAmbientArt,
-  type ArtSample,
+  type LightMap,
+  type Rgb,
 } from "../sdui/artlight.js";
 import { useVisible } from "../sdui/field.js";
 import type { Predicate } from "../sdui/validate.js";
@@ -131,9 +133,10 @@ export function Image({ node }: { node: UINode }) {
   const css = boxToCss(style);
 
   const imgRef = useRef<HTMLImageElement | null>(null);
-  // One read of the image yields both the palette (the page's wash) and the
-  // light map (what lights each acrylic surface), so they are cached together.
-  const palette = useRef<ArtSample | null>(null);
+  // One read of the image yields the palette (the page's wash) and, for an
+  // ambient source, the light map (what lights each acrylic surface) — cached
+  // together because one read produces both.
+  const palette = useRef<{ palette: Rgb[]; map: LightMap | null } | null>(null);
   // artLight needs a CORS-anonymous request so the canvas is readable, but a CDN
   // that sends no CORS headers then fails the request and the image never shows.
   // On such a failure we retry once without crossOrigin: the image displays, and
@@ -146,7 +149,16 @@ export function Image({ node }: { node: UINode }) {
   const sample = () => {
     const el = imgRef.current;
     if (!el || !el.complete || el.naturalWidth === 0) return null;
-    if (!palette.current) palette.current = sampleArtLight(el);
+    if (palette.current) return palette.current;
+    // A hovered tile lends only its colours, so it takes the cheap read — and it
+    // is the one that matters, because it runs inside a pointer interaction on
+    // first hover, once per tile, across a whole grid of them.
+    if (artLight === "focus") {
+      const p = sampleArtPalette(el);
+      palette.current = p ? { palette: p, map: null } : null;
+    } else {
+      palette.current = sampleArtLight(el);
+    }
     return palette.current;
   };
 

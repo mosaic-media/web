@@ -75,6 +75,25 @@ const HOT = 0.62;
 
 const NEUTRAL: Rgb = [136, 148, 178];
 
+/**
+ * What each surface was last given, so an unchanged surface costs nothing.
+ *
+ * A WeakMap rather than an expando or a data attribute: it holds no element
+ * alive, so a surface removed from the tree is collected with its entry, and
+ * nothing has to notice the removal.
+ */
+const memo = new WeakMap<HTMLElement, string>();
+
+/**
+ * Bumped whenever something OUTSIDE a surface's geometry changes the light —
+ * new artwork, a theme repaint, a resize. It rides the signature, so one
+ * increment invalidates every memo at once without walking anything.
+ */
+let epoch = 0;
+
+/** The last origin written to :root, memoised for the same reason. */
+let lastOrigin = "";
+
 /** The global studio light from the tokens, as a unit vector. Cached: reading it
  *  is a style resolve, and it changes only with the theme. */
 let studio: { x: number; y: number } | null = null;
@@ -152,27 +171,54 @@ function relight(): void {
   const G = studioLight();
 
   // Where the light is, in viewport percentages, so the page wash can follow it.
-  if (lit && map && art) {
-    const ox = ((art.left + map.cx * art.width) / vw) * 100;
-    const oy = ((art.top + map.cy * art.height) / vh) * 100;
-    el0.style.setProperty("--art-origin-x", `${ox.toFixed(1)}%`);
-    el0.style.setProperty("--art-origin-y", `${oy.toFixed(1)}%`);
-  } else {
-    el0.style.removeProperty("--art-origin-x");
-    el0.style.removeProperty("--art-origin-y");
+  // Memoised like everything else: this one feeds three page-sized radial
+  // gradients on the body, which is the most expensive single thing to repaint
+  // on the screen.
+  // Quantised to whole percent, which is what makes the memo above bite during a
+  // scroll. The artwork moves continuously, so a tenth-of-a-percent origin
+  // changes on every single frame and repaints the wash every time — and the
+  // wash is three viewport-sized radial gradients, the largest paint on screen.
+  // One percent is ~10px of travel under a 1100px gradient with a soft falloff:
+  // there is no frame in which the difference is visible.
+  const origin =
+    lit && map && art
+      ? `${Math.round(((art.left + map.cx * art.width) / vw) * 100)}%|` +
+        `${Math.round(((art.top + map.cy * art.height) / vh) * 100)}%`
+      : "";
+  if (origin !== lastOrigin) {
+    lastOrigin = origin;
+    if (origin) {
+      const [ox, oy] = origin.split("|");
+      el0.style.setProperty("--art-origin-x", ox!);
+      el0.style.setProperty("--art-origin-y", oy!);
+    } else {
+      el0.style.removeProperty("--art-origin-x");
+      el0.style.removeProperty("--art-origin-y");
+    }
   }
 
   const falloff = lit ? FALLOFF_ART : FALLOFF_BRAND;
-  const fallbackEdge = lit ? null : paletteEdge();
+  let fallbackEdge: Lab | null = null;
   const reach = lit && art ? RIM_REACH * Math.min(art.width, art.height) : 0;
 
+  // PASS 1 — read every rectangle before writing anything.
+  //
+  // Interleaving reads and writes is what made this pass cost what it did: an
+  // inline style write marks that element's style dirty, so the NEXT
+  // getBoundingClientRect has to flush it, and the loop pays a style recalc per
+  // surface instead of one for the batch.
+  const surfaces: Array<{ el: HTMLElement; r: DOMRect }> = [];
   document.querySelectorAll<HTMLElement>(".msc-acrylic").forEach((el) => {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) return; // not laid out / hidden
     // A surface nowhere near the viewport cannot be seen; skip the maths rather
     // than writing custom properties nothing will paint.
     if (r.bottom < -240 || r.top > vh + 240 || r.right < -240 || r.left > vw + 240) return;
+    surfaces.push({ el, r });
+  });
 
+  // PASS 2 — cheap geometry, the memo gate, then colour only for what moved.
+  for (const { el, r } of surfaces) {
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
 
@@ -203,12 +249,31 @@ function relight(): void {
       intensity = clamp(1 - d / (diag * 0.95), falloff.lo, falloff.hi);
     }
 
+    // The memo gate, and the reason this pass can run on every scroll frame.
+    //
+    // A surface and the artwork lighting it usually scroll TOGETHER, so their
+    // relative geometry — and therefore every value below — is unchanged. The
+    // signature is expressed relative to the artwork precisely so that a scroll
+    // which moves both by the same amount produces the same string.
+    //
+    // The gate has to sit HERE, before the sampling and the colour conversions,
+    // not merely in front of the writes: computing six samples and six OKLab
+    // conversions only to discard them would keep most of the cost. And skipping
+    // the writes matters more than skipping the maths, because these properties
+    // feed gradients and a blurred multi-layer shadow, so writing an IDENTICAL
+    // value still invalidates paint.
+    const sig = lit && art
+      ? `1|${epoch}|${Math.round(r.left - art.left)}|${Math.round(r.top - art.top)}|` +
+        `${Math.round(r.width)}|${Math.round(r.height)}|${ux.toFixed(3)}|${uy.toFixed(3)}|${intensity.toFixed(3)}`
+      : `0|${epoch}|${ux.toFixed(3)}|${uy.toFixed(3)}|${intensity.toFixed(3)}`;
+    if (memo.get(el) === sig) continue;
+    memo.set(el, sig);
+
     el.style.setProperty("--lx", ux.toFixed(3));
     el.style.setProperty("--ly", uy.toFixed(3));
-    // Gradient angle whose 100% (bright) end points at the light: for
-    // linear-gradient(θ), the end direction is (sin θ, -cos θ) in screen space.
-    el.style.setProperty("--edge-angle", `${((Math.atan2(ux, -uy) * 180) / Math.PI).toFixed(1)}deg`);
     el.style.setProperty("--acrylic-intensity", intensity.toFixed(3));
+
+    if (!lit && !fallbackEdge) fallbackEdge = paletteEdge();
 
     let hottest = -2;
     let hotColour: Rgb = NEUTRAL;
@@ -245,7 +310,7 @@ function relight(): void {
       el.style.removeProperty("--acrylic-fill");
       el.style.removeProperty("--acrylic-caustic");
     }
-  });
+  }
 }
 
 let scheduled = false;
@@ -291,7 +356,14 @@ export function initAcrylic(): void {
   injectFilter();
   // New screens/cards mutate the tree; a rAF-coalesced relight covers them.
   new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
-  window.addEventListener("resize", schedule, { passive: true });
+  window.addEventListener(
+    "resize",
+    () => {
+      epoch++;
+      schedule();
+    },
+    { passive: true },
+  );
   // Live parallax: as content (and the artwork) scrolls, each surface re-lights
   // from the artwork's new position. capture:true catches the content region's
   // own scroll, not just the window. rAF-coalesced to one relight per frame.
@@ -301,6 +373,10 @@ export function initAcrylic(): void {
   // dropped here rather than cached forever.
   window.addEventListener("mosaic:artlight", () => {
     studio = null;
+    // New artwork (or a theme repaint) changes the light without moving a single
+    // surface, so the memo has to be invalidated explicitly or every surface
+    // would be judged unchanged and keep the previous screen's light.
+    epoch++;
     schedule();
   });
   schedule();

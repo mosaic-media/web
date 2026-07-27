@@ -73,6 +73,7 @@ export type { BoxStyle, TextStyle, ColorToken, SpaceToken, RadiusToken } from ".
 export {
   sampleArtColors,
   sampleArtLight,
+  sampleArtPalette,
   setAmbientArt,
   focusArt,
   releaseArt,
