@@ -96,8 +96,31 @@ export function clearSession(): void {
  *
  * A failure clears storage. There is nothing to retry: a refused refresh means
  * the chain is gone, and holding a dead credential only delays the sign-in that
- * has to happen anyway. */
-export async function refreshSession(stored: StoredSession): Promise<StoredSession> {
+ * has to happen anyway.
+ *
+ * **Concurrent callers share one exchange**, and that is load-bearing rather
+ * than an optimisation. Because the old token is spent, two refreshes racing
+ * with the same stored pair mean the second presents a token the first has
+ * already burned — the Platform correctly reads that as a replay and refuses,
+ * and this client correctly reads a refused refresh as "sign in again". So a
+ * *successful* rotation signed the user out.
+ *
+ * It is not a rare race. Restarting the Platform under a live client drops the
+ * Subscribe stream and fails whatever intents were in flight, and both paths
+ * refresh: the reconnect renews before it subscribes, the intent retries on
+ * Unauthenticated. Found by restarting the Platform to test something else and
+ * arriving at the doorway. */
+let refreshInFlight: Promise<StoredSession> | null = null;
+
+export function refreshSession(stored: StoredSession): Promise<StoredSession> {
+  if (refreshInFlight) return refreshInFlight;
+  refreshInFlight = exchangeRefreshToken(stored).finally(() => {
+    refreshInFlight = null;
+  });
+  return refreshInFlight;
+}
+
+async function exchangeRefreshToken(stored: StoredSession): Promise<StoredSession> {
   const client = createClient(AuthService, transport);
   try {
     const { tokens } = await client.refresh({
