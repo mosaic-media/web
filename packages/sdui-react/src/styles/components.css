@@ -1302,6 +1302,18 @@
   display: block;
 }
 
+/* A stream that cannot start says so, rather than leaving a black rectangle.
+   This styles a state of the Player primitive, not a layout: a browser with
+   neither native HLS nor Media Source Extensions cannot play a transcoded
+   release at all, and the failure is otherwise indistinguishable from one that
+   is merely slow to buffer. */
+.mos-player__error {
+  padding: var(--mos-space-3, 0.75rem);
+  color: var(--mos-color-text-muted, #999);
+  font-size: var(--mos-font-size-sm, 0.875rem);
+  text-align: center;
+}
+
 /* Pending indicator (ADR 0041): an intent is in flight and its result has not
    been pushed yet. A thin line at the top of the viewport rather than an
    overlay — the current screen is still valid and still usable until the

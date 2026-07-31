@@ -8,21 +8,33 @@
  * cannot be pushed over a network at frame rate, and every client platform has
  * its own decoder, so the node names the mechanism and the client runs it.
  *
- * **Why a bare <video> and not Shaka Player yet.** Shaka is the right renderer
- * the moment there is an adaptive stream — it handles DASH and HLS over Media
- * Source Extensions, and its support probe is the natural source for the
- * capability profile ADR 0048 wants a client to declare. It adds *no codec
- * support of its own*: the browser decodes either way. Both paths the Platform
- * serves today are progressive MP4 — a relayed upstream, or a stream-copy remux
- * out of ffmpeg — and for those Shaka does nothing a <video> element does not,
- * so adding it now would be a dependency that only forwards to the same element.
- * It goes in with HLS, or with the profile probe, whichever lands first.
+ * **A media framework, now that the origin serves HLS** (ADR 0070's stated
+ * condition, met by ADR 0109). That record chose a bare <video> and said the
+ * client adopts a framework when the Platform serves something a <video> cannot
+ * play, "which today means HLS" — and a release that must go through ffmpeg is
+ * now a playlist and segments rather than a progressive stream.
+ *
+ * Three things keep the adoption as narrow as the limit it sits under:
+ *
+ *   - **A relayed stream is untouched.** A release needing no work is still the
+ *     upstream's own bytes at a plain `src`, byte-range seekable, no library in
+ *     the path. That is most plays, and should become more of them as selection
+ *     learns to rank on codec and dynamic range.
+ *   - **Safari is untouched too.** It plays HLS natively, and asking the element
+ *     is how everything else here decides what a browser can do — the same
+ *     `canPlayType` the profile is built from, rather than a user-agent table.
+ *   - **The library is imported only when it is needed.** A dynamic import keeps
+ *     it out of the bundle every other playback loads, which matters precisely
+ *     because transcoding is the last resort rather than the normal path.
+ *
+ * It adds no codec support: the browser still decodes. What it adds is the
+ * ability to read a playlist and feed segments to Media Source Extensions.
  *
  * The src is always a Platform-origin ticket URL. The client never holds the
  * upstream location, which for a debrid link carries a credential (ADR 0045).
  */
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRuntime } from "../sdui/context.js";
 import type { UINode } from "../sdui/types.js";
 
@@ -36,6 +48,28 @@ import type { UINode } from "../sdui/types.js";
  */
 const PROGRESS_INTERVAL_MS = 15_000;
 
+/**
+ * What the Platform names a segmented stream as (ADR 0109). It travels on the
+ * node so the pipeline is chosen before anything is fetched, rather than
+ * discovered from a response the wrong reader has already started consuming.
+ */
+const HLS_MIME = "application/vnd.apple.mpegurl";
+
+/**
+ * Whether this browser reads a playlist without help.
+ *
+ * Safari does, on every Apple platform, and handing it hls.js there would
+ * replace a native pipeline with a worse one. Asked of the element rather than
+ * inferred from the user agent, which is the same rule the capability profile
+ * follows and for the same reason: a table is a guess that ages.
+ *
+ * `canPlayType` answers "probably", "maybe" or "" — and "maybe" is a real yes
+ * here. Safari returns it for HLS, because it cannot know without the manifest.
+ */
+function playsHLSNatively(el: HTMLVideoElement): boolean {
+  return el.canPlayType(HLS_MIME) !== "";
+}
+
 export function Player({ node }: { node: UINode }) {
   const props = (node.props ?? {}) as {
     src?: string;
@@ -48,11 +82,74 @@ export function Player({ node }: { node: UINode }) {
   };
   const videoRef = useRef<HTMLVideoElement>(null);
   const src = props.src ?? "";
+  const isHLS = props.mimeType === HLS_MIME;
 
-  // Resume is applied once the element knows it can seek. A remuxed stream
-  // cannot seek at all (fragmented MP4 off a pipe has no index, so the origin
-  // answers Accept-Ranges: none) — setting currentTime there is a no-op rather
-  // than an error, which is the correct degradation until segmenting lands.
+  /*
+   * Attaching hls.js, and only where all three conditions hold: the server said
+   * this is a playlist, the browser cannot read one itself, and there is a src.
+   *
+   * The element's `src` attribute is left unset in that case — hls.js drives the
+   * element through Media Source Extensions, and an element with both would
+   * fetch the playlist as though it were media and fail to decode it.
+   *
+   * `failed` is React state rather than a ref because it has to reach the
+   * render: a browser with neither native HLS nor MSE cannot play a segmented
+   * release at all, and the honest answer is to say so rather than to leave a
+   * black rectangle that never starts.
+   */
+  const [failed, setFailed] = useState("");
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !src || !isHLS) return;
+    if (playsHLSNatively(el)) {
+      el.src = src;
+      return;
+    }
+
+    let hls: { destroy(): void } | undefined;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { default: Hls } = await import("hls.js");
+        if (cancelled) return;
+        if (!Hls.isSupported()) {
+          setFailed("This browser cannot play a transcoded stream.");
+          return;
+        }
+        const instance = new Hls({
+          // The origin restarts ffmpeg for a segment nothing has reached, so a
+          // request can legitimately take seconds to answer (ADR 0111). The
+          // defaults assume a segment either exists or does not.
+          manifestLoadingTimeOut: 30_000,
+          fragLoadingTimeOut: 60_000,
+        });
+        hls = instance;
+        instance.on(Hls.Events.ERROR, (_evt, data) => {
+          // Only fatal errors reach the viewer. hls.js reports recoverable ones
+          // constantly — a segment that arrived late, a gap it bridged — and
+          // surfacing those would turn ordinary playback into a wall of errors.
+          if (data.fatal) setFailed("This stream stopped: " + data.details);
+        });
+        instance.loadSource(src);
+        instance.attachMedia(el);
+      } catch (err) {
+        setFailed("The player could not be loaded.");
+        void err;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      hls?.destroy();
+    };
+  }, [src, isHLS]);
+
+  // Resume is applied once the element knows it can seek — which is now every
+  // path but one. A relayed stream ranges against the upstream; a segmented one
+  // has a complete VOD playlist, so a position nothing has produced yet is
+  // reachable (ADR 0109). The exception is a source that reported no duration,
+  // which the origin serves as an unseekable pipe: setting currentTime there is
+  // a no-op rather than an error, which is the correct degradation.
   const resumeAt = props.resumeAt ?? 0;
   useEffect(() => {
     const el = videoRef.current;
@@ -146,16 +243,27 @@ export function Player({ node }: { node: UINode }) {
   // The surface around it — backdrop, title bar, dismissal — belongs to whoever
   // hosts the player region, not here. This renders the mechanism the server
   // named and nothing else, which is what keeps the limit in ADR 0047 narrow.
+  //
+  // `src` is set on the element for every path except a playlist this browser
+  // cannot read, where hls.js owns the source instead. Setting both would have
+  // the element fetch the playlist as media and fail to decode it.
   return (
-    <video
-      ref={videoRef}
-      className="mos-player__video"
-      src={src}
-      poster={props.poster}
-      controls
-      autoPlay
-      playsInline
-      aria-label={props.title ?? "Player"}
-    />
+    <>
+      <video
+        ref={videoRef}
+        className="mos-player__video"
+        src={isHLS ? undefined : src}
+        poster={props.poster}
+        controls
+        autoPlay
+        playsInline
+        aria-label={props.title ?? "Player"}
+      />
+      {failed ? (
+        <p className="mos-player__error" role="alert">
+          {failed}
+        </p>
+      ) : null}
+    </>
   );
 }
