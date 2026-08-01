@@ -21,7 +21,8 @@
     "sync-tokens": "node scripts/sync-tokens.mjs"
   },
   "dependencies": {
-    "hls.js": "^1.5.20"
+    "hls.js": "^1.5.20",
+    "jassub": "^2.5.14"
   },
   "peerDependencies": {
     "react": "^18.3.1",

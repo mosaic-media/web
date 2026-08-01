@@ -11,6 +11,12 @@ import { fileURLToPath, URL } from "node:url";
 const platform = process.env.MOSAIC_PLATFORM_URL ?? "http://localhost:8081";
 
 export default defineConfig({
+  // The libass subtitle renderer's worker is an ES module that code-splits
+  // (ADR 0115), and Vite's default worker format is IIFE, which Rollup refuses
+  // to emit for a split build — "UMD and IIFE output formats are not supported
+  // for code-splitting builds". Every browser this client targets supports
+  // module workers.
+  worker: { format: "es" },
   plugins: [react()],
   resolve: {
     alias: {

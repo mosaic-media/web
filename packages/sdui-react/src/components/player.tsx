@@ -56,6 +56,38 @@ const PROGRESS_INTERVAL_MS = 15_000;
 const HLS_MIME = "application/vnd.apple.mpegurl";
 
 /**
+ * SubtitleTrackProp is one authored subtitle script the server offered
+ * (ADR 0115) — a URL under the same playback ticket, what it is, and whether it
+ * is the one the viewer's preference chose.
+ */
+type SubtitleTrackProp = {
+  src?: string;
+  format?: string;
+  language?: string;
+  label?: string;
+  default?: boolean;
+};
+
+/**
+ * pickScriptTrack chooses which authored script to draw, or none.
+ *
+ * The server's choice, echoed — the track it marked default, and otherwise the
+ * first it offered. **The client does not rank these.** Which subtitles a person
+ * gets is a preference the Platform resolved against the release (ADR 0112), and
+ * re-deciding it here would give two clients two different answers from one
+ * preference.
+ *
+ * Only `ass`, because that is the only format libass draws and the only one
+ * whose fidelity is the reason this path exists.
+ */
+function pickScriptTrack(
+  tracks: SubtitleTrackProp[] | undefined,
+): SubtitleTrackProp | undefined {
+  const usable = (tracks ?? []).filter((t) => t.src && t.format === "ass");
+  return usable.find((t) => t.default) ?? usable[0];
+}
+
+/**
  * Whether this browser reads a playlist without help.
  *
  * Safari does, on every Apple platform, and handing it hls.js there would
@@ -79,6 +111,7 @@ export function Player({ node }: { node: UINode }) {
     resumeAt?: number;
     nodeId?: string;
     partId?: string;
+    subtitleTracks?: SubtitleTrackProp[];
   };
   const videoRef = useRef<HTMLVideoElement>(null);
   const src = props.src ?? "";
@@ -143,6 +176,59 @@ export function Player({ node }: { node: UINode }) {
       hls?.destroy();
     };
   }, [src, isHLS]);
+
+  /*
+   * Authored subtitle scripts, drawn by libass (ADR 0115).
+   *
+   * **This is a vocabulary capability, not a component.** The server decides
+   * which track and sends the script; all that happens here is that a renderer
+   * the browser cannot supply is loaded and pointed at the element. Nothing
+   * about which subtitles, in what language, or whether they are on is decided
+   * in this file.
+   *
+   * The reason it exists at all is that ASS is what anime releases use to place
+   * signs and captions over the picture, and every other delivery loses that.
+   * A WebVTT rendition keeps the words and drops the positions and colours; the
+   * server can burn the track into the video instead, which keeps everything and
+   * costs a full re-encode. This path keeps everything for free.
+   *
+   * **Every failure degrades to the HLS subtitle renditions**, which the server
+   * declares in the playlist regardless. That is the whole reason this can be
+   * attempted at all: a browser too old for the WASM, a blocked asset, a script
+   * that will not parse — each of them leaves a player that still has subtitles,
+   * so none of them is worth reporting as a playback error.
+   */
+  const scriptTrack = pickScriptTrack(props.subtitleTracks);
+  const scriptSrc = scriptTrack?.src ?? "";
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !scriptSrc) return;
+
+    let renderer: { destroy(): void } | undefined;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { default: JASSUB } = await import("jassub");
+        if (cancelled) return;
+        // No asset URLs are passed, and that is deliberate rather than an
+        // omission. jassub locates its own worker, its two WASM builds and its
+        // fallback font with `new URL("./…", import.meta.url)` relative to its
+        // own module — the one form a bundler rewrites into a built asset
+        // address. Naming them here would mean guessing paths inside somebody
+        // else's package and re-breaking on its next release; two earlier
+        // attempts did exactly that.
+        renderer = new JASSUB({ video: el, subUrl: scriptSrc });
+      } catch (err) {
+        // Silent on purpose. The renditions are already there.
+        void err;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      renderer?.destroy();
+    };
+  }, [scriptSrc]);
 
   // Resume is applied once the element knows it can seek — which is now every
   // path but one. A relayed stream ranges against the upstream; a segmented one
