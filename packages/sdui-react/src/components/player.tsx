@@ -230,6 +230,45 @@ export function Player({ node }: { node: UINode }) {
     };
   }, [scriptSrc]);
 
+  /*
+   * Subtitle files the server found elsewhere and serves as WebVTT (ADR 0117).
+   *
+   * These are `<track>` elements, which is the browser's own mechanism and needs
+   * no renderer at all — unlike the authored scripts above, whose whole point is
+   * that a browser cannot draw them. They are attached rather than rendered into
+   * the JSX so that adding one does not re-create the video element and restart
+   * the playback.
+   *
+   * None is `default`: the server marks no external file default, because the
+   * release's own tracks are what a preference was resolved against and a file
+   * from elsewhere turning itself on would override a decision nobody asked it
+   * to make. A viewer picks one from the browser's subtitle menu.
+   */
+  const fileTracks = (props.subtitleTracks ?? []).filter(
+    (t) => t.src && t.format !== "ass",
+  );
+  const fileTracksKey = fileTracks.map((t) => t.src).join("\n");
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || fileTracks.length === 0) return;
+
+    const added = fileTracks.map((t) => {
+      const track = document.createElement("track");
+      track.kind = "subtitles";
+      track.src = t.src ?? "";
+      track.srclang = t.language ?? "";
+      track.label = t.label ?? t.language ?? "Subtitles";
+      el.appendChild(track);
+      return track;
+    });
+    return () => {
+      for (const track of added) track.remove();
+    };
+    // fileTracksKey rather than the array: a new array identity on every render
+    // would detach and re-attach every track, which resets the viewer's choice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileTracksKey]);
+
   // Resume is applied once the element knows it can seek — which is now every
   // path but one. A relayed stream ranges against the upstream; a segmented one
   // has a complete VOD playlist, so a position nothing has produced yet is
