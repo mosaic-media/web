@@ -10,6 +10,16 @@ dist-ssr/
 .env.*
 !.env.example
 
+# The Shell bundle staged into the Go binary's embed directory by
+# scripts/build-shell-binary.sh. The directory itself is tracked — go:embed
+# will not compile against one that is missing — so only its contents are
+# ignored, and the placeholder is kept.
+mosaic-shell/webassets/*
+!mosaic-shell/webassets/.gitkeep
+
+# The linked binary.
+mosaic-shell/mosaic-shell
+
 # Editor and IDE state
 .idea/
 .vscode/

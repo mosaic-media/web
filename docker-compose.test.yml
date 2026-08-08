@@ -93,8 +93,53 @@ services:
         # of the sRGB primaries rather than only against itself.
         node scripts/check-artlight.mjs
 
+  # `mosaic-shell`, the Go binary that serves the built Shell, is gated
+  # separately because it needs a toolchain the Node image does not carry:
+  #
+  #   docker compose -f docker-compose.test.yml run --rm shell-binary
+  #
+  # It is a second service rather than a second stage in the one above because
+  # the two are independent — this gate needs no npm install, and `test` needs
+  # no Go — and running them together would make the slower of them the price
+  # of the faster. The `architecture` repository splits `test` and `pdfs` the
+  # same way and for the same reason.
+  #
+  # Note that it does NOT build the bundle first. The Go module compiles
+  # against a committed-empty `webassets/`, and the handler's tests supply
+  # their own asset trees, so this gate says whether the *server* is correct.
+  # Whether a real bundle got embedded is `scripts/build-shell-binary.sh`'s
+  # job, and the binary refuses to start when it did not.
+  shell-binary:
+    image: golang:1.25-bookworm
+    working_dir: /src/web/mosaic-shell
+    volumes:
+      - .:/src/web
+      # Caches in volumes rather than on the bind mount, matching the Platform
+      # repository: Go writes thousands of small files and doing that across
+      # the host boundary turns a warm run from seconds into minutes.
+      - mosaic-web-gomod:/go/pkg/mod
+      - mosaic-web-gobuild:/root/.cache/go-build
+    command:
+      - bash
+      - -eu
+      - -o
+      - pipefail
+      - -c
+      - |
+        gofmt -l . > /tmp/unformatted
+        if [ -s /tmp/unformatted ]; then
+          echo "These files are not gofmt-clean:" >&2
+          cat /tmp/unformatted >&2
+          exit 1
+        fi
+        go vet ./...
+        go build ./...
+        go test ./...
+
 volumes:
   mosaic-web-npm:
+  mosaic-web-gomod:
+  mosaic-web-gobuild:
   mosaic-web-node-root:
   mosaic-web-node-shell:
   mosaic-web-node-sdui-react:

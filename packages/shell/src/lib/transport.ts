@@ -12,12 +12,15 @@
  */
 
 import { createConnectTransport } from "@connectrpc/connect-web";
+import { platformBaseURL } from "./runtime";
 import { traceInterceptor } from "./trace";
 
-/** Same-origin in dev (Vite proxies both service paths to the Platform);
- *  override with VITE_PLATFORM_URL to point at a Platform directly. */
+/** Resolved at *runtime*, not at build time: the serving `mosaic-shell`
+ *  process injects the endpoint into the document, so one built artefact
+ *  serves every install. See ./runtime.ts for the order of precedence and why
+ *  an injected empty string is same-origin rather than unset. */
 export const transport = createConnectTransport({
-  baseUrl: import.meta.env.VITE_PLATFORM_URL ?? window.location.origin,
+  baseUrl: platformBaseURL(),
   // Every call carries a freshly minted W3C traceparent (ADR 0054). The
   // Platform continues that trace rather than starting its own, so a click
   // here and the database write it causes share one id — which is what makes a

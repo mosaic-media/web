@@ -1,0 +1,10 @@
+# The built Shell is copied here by scripts/build-shell-binary.sh.
+#
+# This file is tracked so the directory exists in a fresh clone: `go:embed`
+# fails to compile against a missing directory, and a repository that does not
+# compile until you have run a JavaScript build first is a bad first ten
+# minutes for anybody.
+#
+# The binary does not treat an empty bundle as acceptable — it refuses to start
+# with ErrNoIndex — so this placeholder cannot become a Shell that serves
+# nothing.
